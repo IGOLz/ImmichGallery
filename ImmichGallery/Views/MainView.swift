@@ -44,6 +44,7 @@ struct MainView: View {
         .focusedSceneValue(\.searchActions, SearchActions(
             find: { selection = .search; searchFocused = true },
             filters: { selection = .search; showSearchFilters = true }))
+        .onReceive(NotificationCenter.default.publisher(for: .viewerShowLibrary)) { _ in selection = .library }
         .onSubmit(of: .search) {
             let query = searchText.trimmingCharacters(in: .whitespaces)
             guard !query.isEmpty else { return }

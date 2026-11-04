@@ -7,6 +7,7 @@ struct ImmichGalleryApp: App {
     init() {
         SharingTemporaryFiles.sweep() // Sharing
         Task.detached { UploadMultipart.sweepStale() } // Upload
+        ViewerState.pruneClipboard() // Viewer
     }
 
     var body: some Scene {
@@ -17,7 +18,7 @@ struct ImmichGalleryApp: App {
         }
         .defaultSize(width: 1280, height: 820)
         .windowToolbarStyle(.unified)
-        .commands { AppCommands(app: app); AdminCommands(app: app); UploadCommands(app: app) }
+        .commands { AppCommands(app: app); AdminCommands(app: app); UploadCommands(app: app); ViewerCommands() }
 
         AdminScene(app: app) // Admin
 

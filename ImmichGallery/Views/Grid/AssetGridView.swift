@@ -79,6 +79,7 @@ struct AssetGridHost: View {
             Text(model.lastError ?? "")
         }
         .onChange(of: model.viewerID) { playLive = false }
+        .modifier(ViewerIntegration(model: model))
     }
 
     private var subtitle: String {
@@ -207,6 +208,7 @@ struct AssetGridView: View {
     }
 
     private var grid: some View {
+        ScrollViewReader { proxy in
         ScrollView {
             LazyVGrid(
                 columns: [GridItem(.adaptive(minimum: thumbnailSize, maximum: thumbnailSize * 1.8), spacing: 2)],
@@ -228,6 +230,9 @@ struct AssetGridView: View {
             }
             .padding(.bottom, 20)
         }
+        .onAppear { scrollToViewerTarget(proxy) }
+        .onChange(of: model.viewerScrollTarget) { scrollToViewerTarget(proxy) }
+        }
         .fastWheelScrolling()
         .background {
             // Clicking empty space clears the selection, like Photos.
@@ -245,6 +250,17 @@ struct AssetGridView: View {
         .focusable()
         .focusEffectDisabled()
         .onKeyPress(action: handleKey)
+    }
+
+    private func scrollToViewerTarget(_ proxy: ScrollViewProxy) {
+        guard let id = model.viewerScrollTarget else { return }
+        for section in model.sections {
+            if let index = section.assets?.firstIndex(where: { $0.id == id }) {
+                proxy.scrollTo(CellKey(section: section.id, index: index), anchor: .center)
+                model.viewerScrollTarget = nil
+                return
+            }
+        }
     }
 
     private func cell(_ s: Int, _ i: Int) -> some View {
@@ -274,6 +290,7 @@ struct AssetGridView: View {
     private func contextMenu(for asset: AssetItem) -> some View {
         let ids = model.selection.contains(asset.id) ? Array(model.selection) : [asset.id]
         Button("Open") { model.open(asset.id) }
+        ViewerContextMenu(model: model, asset: asset)
         Divider()
         if model.source.isPartner {
             SharingMenuItems(assetIDs: ids, allowPublicLinks: false)

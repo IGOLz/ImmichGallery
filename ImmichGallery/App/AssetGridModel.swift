@@ -98,6 +98,17 @@ final class AssetGridModel {
     private(set) var state: LoadState = .idle
     var selection: Set<String> = []
     var viewerID: String?
+    var viewerScrollTarget: String? // Viewer
+    func viewerLoadSection(_ section: Int) async {
+        guard sections.indices.contains(section), sections[section].assets == nil else { return }
+        await loadSection(id: sections[section].id).value
+    }
+
+    func viewerAllItems() async throws -> [AssetItem] {
+        for i in sections.indices { await viewerLoadSection(i) }
+        while isPaged, nextPage != nil { try await fetchNextPage() }
+        return sections.flatMap { $0.assets ?? [] }
+    }
 
     @ObservationIgnored private var anchorID: String?
     @ObservationIgnored private var index: [String: (section: Int, item: Int)] = [:]
