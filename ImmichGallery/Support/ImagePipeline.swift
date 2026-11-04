@@ -3,7 +3,7 @@ import Foundation
 import ImageIO
 
 /// Loads and decodes Immich media off the main thread with a memory cache in front of the
-/// shared URLCache. Cancelling the calling task cancels the network request, which keeps
+/// ephemeral URLSession. Cancelling the calling task cancels the network request, which keeps
 /// fast scrolling responsive.
 final class ImagePipeline: Sendable {
     let client: ImmichClient
@@ -11,7 +11,8 @@ final class ImagePipeline: Sendable {
     nonisolated(unsafe) private let cache: NSCache<NSString, CGImage>
 
     init(client: ImmichClient) {
-        self.client = client
+        client.session.configuration.urlCache?.removeAllCachedResponses()
+        self.client = client.explorePrivateClient() // Explore: media must not survive a move into Locked Folder on disk.
         let cache = NSCache<NSString, CGImage>()
         cache.totalCostLimit = 512 << 20
         self.cache = cache

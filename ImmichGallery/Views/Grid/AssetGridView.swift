@@ -262,6 +262,7 @@ struct AssetGridView: View {
             Button("Delete Permanently…", role: .destructive) { onDelete(ids) }
         } else {
             Button(asset.isFavorite ? "Unfavorite" : "Favorite") { Task { await model.setFavorite(ids, !asset.isFavorite) } }
+            ExploreAssetActions(ids: ids, model: model) // Explore
             Button("Export Unmodified Original…") { Exporter.exportOriginals(ids, session: session) }
             Divider()
             if model.source == .archive {

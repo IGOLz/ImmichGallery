@@ -4,6 +4,7 @@ enum SidebarItem: Hashable {
     case library, favorites, videos, people, albums, archive, trash
     case album(String)
     case search
+    case explore(ExplorePage) // Explore
 }
 
 struct MainView: View {
@@ -68,6 +69,7 @@ struct MainView: View {
             AlbumsView()
         case .album(let id):
             AssetGridContainer(source: .album(id), title: Text(verbatim: session.albums.first { $0.id == id }?.albumName ?? ""))
+        case .explore(let page): ExploreView(page: page) // Explore
         case .search:
             AssetGridContainer(source: .search(submittedSearch), title: Text("Search"))
                 .navigationSubtitle("“\(submittedSearch)”")
@@ -86,6 +88,7 @@ struct SidebarView: View {
                 Label("Favorites", systemImage: "heart").tag(SidebarItem.favorites)
                 Label("Videos", systemImage: "video").tag(SidebarItem.videos)
             }
+            ExploreSidebar() // Explore
             Section("Collections") {
                 Label("Albums", systemImage: "rectangle.stack").tag(SidebarItem.albums)
                 if session.features.facialRecognition {

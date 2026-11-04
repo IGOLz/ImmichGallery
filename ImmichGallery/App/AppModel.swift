@@ -112,6 +112,11 @@ final class LibrarySession {
         for model in gridModels.values where model !== keep { model.markStale() }
     }
 
+    // Explore
+    func exploreRemoveFromGrids(_ ids: Set<String>) {
+        for model in gridModels.values { model.exploreRemove(ids) }
+    }
+
     func handle(_ error: Error) {
         if case ImmichError.unauthorized = error { onUnauthorized() }
     }

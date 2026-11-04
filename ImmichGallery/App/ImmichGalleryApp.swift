@@ -14,6 +14,8 @@ struct ImmichGalleryApp: App {
         .windowToolbarStyle(.unified)
         .commands { AppCommands(app: app) }
 
+        ExploreMemoryScene(app: app) // Explore
+
         Settings {
             SettingsView()
                 .environment(app)

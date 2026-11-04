@@ -8,6 +8,7 @@ enum GridSource: Hashable {
     case album(String)
     case person(String)
     case search(String)
+    case explore(ExploreSource) // Explore
 
     var timelineQuery: TimelineQuery? {
         switch self {
@@ -17,6 +18,8 @@ enum GridSource: Hashable {
         case .trash: TimelineQuery(visibility: nil, isTrashed: true)
         case .album(let id): TimelineQuery(visibility: nil, albumId: id)
         case .person(let id): TimelineQuery(personId: id)
+        case .explore(.tag(let id)): TimelineQuery(tagId: id)
+        case .explore: nil
         case .videos, .search: nil
         }
     }
@@ -126,6 +129,18 @@ final class AssetGridModel {
         await Task { await reload() }.value
     }
 
+    // Explore: remove sensitive items immediately from every cached grid and viewer.
+    func exploreRemove(_ ids: Set<String>) {
+        if let viewerID, ids.contains(viewerID) { self.viewerID = nil }
+        selection.subtract(ids)
+        for i in sections.indices {
+            sections[i].assets?.removeAll { ids.contains($0.id) }
+            if let assets = sections[i].assets { sections[i].count = assets.count }
+        }
+        rebuildIndex()
+        markStale()
+    }
+
     func markStale() { isStale = true }
 
     func reload() async {
@@ -218,6 +233,8 @@ final class AssetGridModel {
             } else {
                 result = try await session.client.metadataSearch(fileName: text, page: page)
             }
+        case .explore(let source):
+            result = try await session.client.exploreAssets(source, page: page)
         case .videos:
             result = try await session.client.metadataSearch(type: .video, page: page)
         default:
@@ -230,7 +247,7 @@ final class AssetGridModel {
         } else {
             nextPage = nil
         }
-        append(result.items.map(AssetItem.init))
+        append(result.items.filter { $0.visibility != "locked" }.map(AssetItem.init))
     }
 
     /// Appends paged results. Search keeps relevance order in one section;
