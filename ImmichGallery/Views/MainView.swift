@@ -24,6 +24,8 @@ struct MainView: View {
             }
             .id(selection)
         }
+        .modifier(UploadDropModifier(queue: session.upload)) // Upload
+        .toolbar { UploadToolbar(queue: session.upload) } // Upload
         .searchable(text: $searchText, placement: .toolbar, prompt: session.features.smartSearch ? "Search photos" : "Search file names")
         .searchFocused($searchFocused)
         .background {
@@ -107,6 +109,7 @@ struct SidebarView: View {
                             Image(systemName: album.shared ? "person.2.crop.square.stack" : "rectangle.stack")
                         }
                         .tag(SidebarItem.album(album.id))
+                        .modifier(UploadDropModifier(queue: session.upload, albumID: album.id)) // Upload
                     }
                 }
             }

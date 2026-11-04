@@ -47,6 +47,7 @@ final class AppModel {
         if case .accessToken = session.client.credential {
             try? await session.client.logout()
         }
+        session.upload.cancelAll() // Upload
         session.pipeline.removeAll()
         AccountStore.clear()
         phase = .signedOut
@@ -66,6 +67,7 @@ final class AppModel {
 @MainActor @Observable
 final class LibrarySession {
     let client: ImmichClient
+    let upload: UploadQueue // Upload
     let pipeline: ImagePipeline
     private(set) var user: User?
     private(set) var features = ServerFeatures()
@@ -78,6 +80,11 @@ final class LibrarySession {
     init(client: ImmichClient, user: User?) {
         self.client = client
         self.pipeline = ImagePipeline(client: client)
+        self.upload = UploadQueue(client: client)
+        self.upload.onFinished = { [weak self] in // Upload
+            self?.invalidateGrids()
+            Task { await self?.reloadAlbums() }
+        }
         self.user = user
     }
 
