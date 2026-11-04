@@ -57,6 +57,7 @@ struct AssetGridHost: View {
                 .inspectorColumnWidth(min: 260, ideal: 300, max: 420)
         }
         .task { await model.loadIfNeeded() }
+        .onChange(of: session.upload.revision) { Task { await model.reload() } } // Upload
         .focusedSceneValue(\.gridModel, model)
         .confirmationDialog(deleteTitle, isPresented: Binding(get: { pendingDelete != nil }, set: { if !$0 { pendingDelete = nil } })) {
             Button(model.source == .trash ? "Delete Permanently" : "Delete", role: .destructive) {

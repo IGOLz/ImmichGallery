@@ -4,7 +4,10 @@ import SwiftUI
 struct ImmichGalleryApp: App {
     @State private var app = AppModel()
 
-    init() { SharingTemporaryFiles.sweep() }
+    init() {
+        SharingTemporaryFiles.sweep() // Sharing
+        Task.detached { UploadMultipart.sweepStale() } // Upload
+    }
 
     var body: some Scene {
         Window("Immich Gallery", id: "main") {
@@ -14,7 +17,7 @@ struct ImmichGalleryApp: App {
         }
         .defaultSize(width: 1280, height: 820)
         .windowToolbarStyle(.unified)
-        .commands { AppCommands(app: app); AdminCommands(app: app) }
+        .commands { AppCommands(app: app); AdminCommands(app: app); UploadCommands(app: app) }
 
         AdminScene(app: app) // Admin
 

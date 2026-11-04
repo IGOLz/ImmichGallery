@@ -28,6 +28,8 @@ struct MainView: View {
             }
             .id(selection)
         }
+        .modifier(UploadDropModifier(queue: session.upload)) // Upload
+        .toolbar { UploadToolbar(queue: session.upload) } // Upload
         .toolbar { ToolbarItemGroup { AccountNotificationBell(session: session); AccountMenu() } } // Account
         .modifier(AlbumPresentation()) // Albums
         .onChange(of: session.albumActions.navigationAlbumID) { _, id in

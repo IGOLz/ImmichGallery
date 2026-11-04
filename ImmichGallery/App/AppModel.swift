@@ -82,6 +82,7 @@ final class AppModel {
         } catch { accountError = error.localizedDescription; return }
         if case .accessToken = session.client.credential { try? await session.client.logout() }
         guard self.session === session else { return }
+        session.upload.cancelAll() // Upload
         session.pipeline.removeAll()
         phase = .signedOut
         currentAccountID = nil
@@ -156,6 +157,7 @@ final class AppModel {
                 self.currentAccountID = client.apiURL.absoluteString + "|" + user.id
             } catch { self.accountError = error.localizedDescription }
         }
+        self.session?.upload.cancelAll() // Upload: the previous account's queue goes away with its session.
         phase = .signedIn(session)
         Task { await session.bootstrap() }
     }
@@ -167,6 +169,7 @@ final class LibrarySession {
     let client: ImmichClient
     let albumActions = AlbumsActions() // Albums
     let sharing: SharingModel // Sharing
+    let upload: UploadQueue // Upload
     let pipeline: ImagePipeline
     private(set) var user: User?
     private(set) var features = ServerFeatures()
@@ -184,6 +187,12 @@ final class LibrarySession {
         self.client = client
         self.sharing = SharingModel(client: client)
         self.pipeline = ImagePipeline(client: client)
+        self.upload = UploadQueue(client: client)
+        self.upload.onFinished = { [weak self] in // Upload
+            self?.invalidateGrids()
+            Task { await self?.reloadAlbums() }
+        }
+        self.upload.onError = { [weak self] in self?.handle($0) } // Upload
         self.user = user
     }
 

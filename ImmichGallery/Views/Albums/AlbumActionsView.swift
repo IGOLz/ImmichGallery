@@ -102,6 +102,7 @@ struct AlbumSidebarSections: View {
             Section(shared ? "Shared Albums" : "My Albums") {
                 ForEach(session.albums.filter { $0.shared == shared }) { album in
                     Label(album.albumName, systemImage: shared ? "person.2.crop.square.stack" : "rectangle.stack")
+                        .modifier(UploadDropModifier(queue: session.upload, albumID: album.id)) // Upload
                         .tag(SidebarItem.album(album.id))
                         .dropDestination(for: AlbumAssetTransfer.self) { values, _ in
                             let ids = values.flatMap(\.ids)

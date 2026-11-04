@@ -1,0 +1,66 @@
+Review fixes verified 2026-11-04
+- This pass never launched the app, read Keychain items, or contacted the user's server. No live Immich requests were needed; URLProtocol fixtures intercepted demo-host requests.
+- Findings 1-10 addressed: per-chunk autorelease pools; key-indexed queue deduplication, cached terminal counts and indexed pending work; 100 ms progress throttle; trashed duplicates including album addition; partial scans with unreadable counts; progress popover on starts/errors; Preparing during multipart copying; stale multipart cleanup at app startup; refresh only after a successful/duplicate result; unsupported-file count; session 401 routing; localized upload messages.
+- Disk-backed multipart remains intentional. It still needs temporary disk space equal to two active files. Named bodies include the process ID; startup removes bodies only after their owner has exited. Existing unprefixed temporary bodies cannot be safely identified retrospectively. A reused/live PID is conservatively left alone.
+- Uploads clone the client's session configuration, preserving custom protocol classes while setting both request idle timeout and URLRequest timeout to 3600 seconds; resource timeout is seven days. Apple documents timeoutIntervalForRequest as the wait for additional data. Offline interception confirms the upload task receives 3600 seconds, rather than 30.
+- Original selected/dropped URL objects and successful security-scope acquisitions remain retained until Clear/destruction for retries. Only successful acquisitions are balanced with stopAccessingSecurityScopedResource. Actual sandboxed Finder delivery and nested album/window drop precedence could not be exercised under the no-launch rule. Album selection tag was moved outside the drop modifier so it applies to the complete row.
+- Build: xcodebuild -project ImmichGallery.xcodeproj -scheme ImmichGallery -configuration Debug -derivedDataPath build/DerivedData build succeeded. No compiler warnings in changed files; Xcode emits its AppIntents metadata warning because this app has no AppIntents framework dependency.
+- scripts/verify-upload.swift is now offline by default. It tests checksum/multipart bytes, scan continuation for missing entries, stale-file cleanup without removing active-process bodies, queue deduplication/counts, trashed duplicate plus album addition, aggregated skipped/unreadable warnings, refresh gating, unauthorized routing, retry counts and upload timeout. All passed.
+- Large-file check: /usr/bin/time -l build/verify-upload --memory build/upload-memory-input.bin, with a 3 GiB sparse input, exercised both hashing and multipart copying; maximum RSS 15,859,712 bytes (15.1 MiB). Temporary bodies/input were removed afterward.
+- Sources checked: v3.3.5 OpenAPI AssetBulkUploadCheckResult/AssetMediaResponseDto and web/src/lib/utils/file-uploader.ts lines 174-215; Apple timeoutIntervalForRequest and startAccessingSecurityScopedResource documentation.
+
+Original implementation notes (historical verification below predates this review pass)
+
+Upload implementation notes (2026-11-04)
+
+Behavior
+- File > Import… (Shift-Command-I) selects multiple files and/or folders with NSOpenPanel.
+- Folders recurse, excluding hidden items, packages, and symlinks. Repeated paths within an import are deduplicated.
+- Finder file URLs can be dropped on the window or a sidebar album. Album drops add both newly uploaded and existing duplicate assets to that album.
+- Session-owned queue runs two uploads concurrently while browsing. Toolbar progress opens a popover with filenames, byte progress, states, duplicate/error summary, Cancel All, Retry Failed, and Clear.
+- Hashing and multipart preparation run off the main actor in 1 MiB chunks. URLSession uploads from a temporary on-disk multipart body and reports actual task bytes, including multipart overhead. Temporary bodies have mode 0600 and are removed after success, failure, or cancellation. This requires temporary disk space equal to each active upload.
+- Original filesystem creation/modification dates are sent; original bytes and embedded metadata are preserved. The server metadata job extracts EXIF capture date and video duration.
+- Live Photo components are uploaded independently, following the web client. Server metadata jobs link matching embedded ContentIdentifier/MediaGroupUUID values and hide the motion asset. Matching filenames alone do not prove a Live Photo pair. Pairing and metadata processing are asynchronous; use Refresh after server processing if needed.
+- Sandbox access is retained for selected/dropped roots until Clear or queue destruction. Existing user-selected read-write entitlement suffices; no entitlement changes. Retry retains the successful upload response when only album membership failed. Signing out cancels work.
+- Queue is in memory; quitting ends it. Watched folders and persistent bookmarks were deliberately omitted as optional stretch work.
+
+Contracts checked before implementation
+- Pinned v3.3.5 OpenAPI, fetched once and queried locally:
+  https://raw.githubusercontent.com/immich-app/immich/v3.3.5/open-api/immich-openapi-specs.json
+  POST /assets: AssetMediaCreateDto, AssetMediaResponseDto, AssetMediaStatus; multipart assetData, fileCreatedAt, fileModifiedAt, isFavorite, file part filename; x-immich-checksum header.
+  POST /assets/bulk-upload-check: AssetBulkUploadCheckDto/Item/Result/ResponseDto; SHA-1 base64 or hex; reject.assetId; isTrashed.
+  GET /server/media-types: ServerMediaTypesResponseDto. Real server returns extensions despite the schema descriptions saying MIME types.
+  PUT /albums/{id}/assets: BulkIdsDto/BulkIdResponseDto, per-item success/error and duplicate membership handling.
+  GET /server/version to select legacy fields.
+- v2.0.0 OpenAPI: legacy uploads require deviceAssetId/deviceId. Sent only for server major < 3. No live v2 instance was available. Duplicate preflight 404 falls back to upload checksum header/server deduplication. Missing server endpoints and permission errors are displayed, without crashing. No upload feature flag exists in ServerFeatures.
+- Official web v3.3.5:
+  web/src/lib/utils/file-uploader.ts (two workers, independent file uploads, SHA-1 preflight, duplicates added to albums, no device IDs, optional fields omitted)
+  web/src/lib/managers/upload-manager.svelte.ts (supported extensions)
+- Official server v3.3.5:
+  server/src/services/metadata.service.ts (linkLivePhotos, content identifiers, EXIF date override, duration extraction)
+- Official mobile v3.3.5:
+  mobile/lib/repositories/upload.repository.dart (file.openRead multipart streaming, progress, abort trigger)
+  mobile/lib/infrastructure/repositories/backup.repository.dart (checksum-based backup matching)
+- Cross-checks:
+  https://api.immich.app/endpoints/assets/uploadAsset
+  https://docs.immich.app/features/command-line-interface/ (recursive imports and SHA-1 deduplication)
+- Apple documentation: NSOpenPanel, URLSession.upload(for:fromFile:delegate:), URLSessionTaskDelegate upload progress, URL.startAccessingSecurityScopedResource(), SwiftUI onDrop(of:isTargeted:perform:). All compile against the macOS 26 SDK. Existing Observation/SwiftUI environment conventions preserved.
+  https://developer.apple.com/documentation/appkit/nsopenpanel
+  https://developer.apple.com/documentation/foundation/urlsession/upload(for:fromfile:delegate:)
+  https://developer.apple.com/documentation/foundation/url/startaccessingsecurityscopedresource()
+  https://developer.apple.com/documentation/swiftui/view/ondrop(of:istargeted:perform:)-982eu
+
+Verification
+- Required Debug xcodebuild succeeds. No Swift warnings. Xcode emits its existing AppIntents metadata extraction warning because this target has no AppIntents dependency.
+- scripts/verify-upload.swift compiles against the real API sources and UploadQueue. It checks a known SHA-1 vector, disk-backed multipart bytes, v2 device field generation, response fixture decoding, recursive file discovery, duplicate paths, hidden files, and symlinks.
+- Live public demo login, server version, supported types, metadata search, and duplicate preflight accept/reject responses decode with the production DTOs. Known existing checksum lookup is read-only.
+- POST /assets returns nginx HTML 403 Forbidden with both production URLSession multipart and independent Python multipart requests. Therefore successful new upload, upload duplicate response, real progress delivery, album addition, and Live Photo processing could not be verified end to end. The verifier intentionally exits nonzero on this live restriction and includes cleanup for any future successful runs.
+- No demo asset or album was created or changed. Test login sessions were logged out on failure. Local test images are generated randomly and removed.
+- Built app launched successfully (process observed). Computer Use inspection failed with timeoutReached (-10005), so no interactive import/drop, cancellation, retry, or sandbox behavior is claimed as verified.
+
+Shared integration files
+ImmichGallery/App/AppModel.swift: session owns UploadQueue, cancels it on sign-out, invalidates grids and reloads albums after completion.
+ImmichGallery/App/ImmichGalleryApp.swift: inserts UploadCommands beside AppCommands.
+ImmichGallery/Views/MainView.swift: inserts window drop modifier, upload toolbar, and per-album drop modifier.
+ImmichGallery/Views/Grid/AssetGridView.swift: reloads the active grid when upload revision changes.
+No project.pbxproj, README, or entitlement changes.
