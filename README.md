@@ -45,7 +45,12 @@ The app is signed with a Developer ID and notarized by Apple, so it opens withou
 
 **Requirements:** macOS 15 Sequoia or later, and an Immich server v2.0 or later (tested with v3.3). The app is a universal binary for Apple silicon and Intel Macs.
 
-On macOS 15 everything works, with two differences from macOS 26 Tahoe: controls use the standard translucent material instead of Liquid Glass, and dragging to the Finder exports only the photo you drag rather than the whole selection. Dragging a selection onto an album works on both.
+On macOS 15 everything works, with a few differences from macOS 26 Tahoe:
+
+- Controls use the standard translucent material instead of Liquid Glass.
+- Dragging to the Finder exports only the photo you drag, named after its Immich ID, rather than the whole selection with original file names. Dragging a selection onto an album works on both.
+- On pages opened from a grid (a place, tag, album or person), the Import, notifications and account buttons are hidden until you go back. Import, Settings and Sign Out stay available in the menus.
+- Video options sit in a strip above the video instead of over it.
 
 ## Try it with the demo
 

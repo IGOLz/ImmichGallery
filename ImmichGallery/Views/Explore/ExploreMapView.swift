@@ -6,18 +6,13 @@ struct ExploreMapView: View {
     @State private var markers: [ExploreMarker] = []
     @State private var clusters: [ExploreMapCluster] = []
     @State private var region = MKCoordinateRegion(center: .init(latitude: 0, longitude: 0), span: .init(latitudeDelta: 180, longitudeDelta: 360))
-    @State private var showingFilters = false
-    @State private var favorites = false
-    @State private var archived = false
-    @State private var partners = true
-    @State private var dateFilter = false
-    @State private var after = Calendar.current.date(byAdding: .year, value: -1, to: Date()) ?? Date()
-    @State private var before = Date()
+    @State private var filters = ExploreMapFilters()
     @State private var error: String?
     @State private var selection: ExploreMapCluster?
     @State private var clusterTask: Task<Void, Never>?
-    private var filterKey: String { "\(favorites)-\(archived)-\(partners)-\(dateFilter)-\(after)-\(before)" }
+    private var filterKey: String { "\(filters.favorites)-\(filters.archived)-\(filters.partners)-\(filters.dateFilter)-\(filters.after)-\(filters.before)" }
     var body: some View {
+        let filters = filters
         let session = session
         let pipeline = session.pipeline
         return Map {
@@ -29,26 +24,11 @@ struct ExploreMapView: View {
             }
         }
         .onMapCameraChange(frequency: .onEnd) { context in region = context.region; recluster() }
-        .toolbar {
-            Button { showingFilters.toggle() } label: { Label("Map Filters", systemImage: "line.3.horizontal.decrease") }
-            .popover(isPresented: $showingFilters) {
-                VStack(alignment: .leading, spacing: 12) {
-                    Toggle("Favorites Only", isOn: $favorites)
-                    Toggle("Include Archived", isOn: $archived)
-                    Toggle("Include Partners", isOn: $partners)
-                    Toggle("Date Range", isOn: $dateFilter)
-                    if dateFilter {
-                        DatePicker("From", selection: $after, in: ...before, displayedComponents: .date)
-                        DatePicker("Through", selection: $before, in: after..., displayedComponents: .date)
-                    }
-                }.padding().frame(width: 300)
-            }
-        }
+        .toolbar { ToolbarItem { ExploreMapFiltersButton(filters: filters) } }
         .task(id: filterKey) {
             do {
-                let loaded = try await session.client.exploreMarkers(favorites: favorites, archived: archived, partners: partners,
-                    after: dateFilter ? Calendar.current.startOfDay(for: after) : nil,
-                    before: dateFilter ? Calendar.current.date(byAdding: .day, value: 1, to: Calendar.current.startOfDay(for: before)) : nil)
+                let loaded = try await session.client.exploreMarkers(favorites: filters.favorites, archived: filters.archived, partners: filters.partners,
+                    after: filters.afterDay, before: filters.beforeDay)
                 guard !Task.isCancelled else { return }
                 markers = loaded
                 error = nil
@@ -57,9 +37,8 @@ struct ExploreMapView: View {
         }
         .overlay { if let error { ContentUnavailableView("Map Unavailable", systemImage: "map", description: Text(error)) } }
         .navigationDestination(item: $selection) { cluster in
-            AssetGridContainer(source: .explore(.map(ExploreMapQuery(bbox: cluster.bbox, favorites: favorites, archived: archived, partners: partners,
-                after: dateFilter ? Calendar.current.startOfDay(for: after) : nil,
-                before: dateFilter ? Calendar.current.date(byAdding: .day, value: 1, to: Calendar.current.startOfDay(for: before)) : nil))), title: Text("Map Photos"))
+            AssetGridContainer(source: .explore(.map(ExploreMapQuery(bbox: cluster.bbox, favorites: filters.favorites, archived: filters.archived, partners: filters.partners,
+                after: filters.afterDay, before: filters.beforeDay))), title: Text("Map Photos"))
         }
         .onDisappear { clusterTask?.cancel() }
     }
@@ -72,5 +51,45 @@ struct ExploreMapView: View {
             let result = await Task.detached { ExploreMapCluster.make(markers, latitude: latitude, longitude: longitude, latSpan: latSpan, lonSpan: lonSpan) }.value
             if !Task.isCancelled { clusters = result }
         }
+    }
+}
+
+@MainActor @Observable
+final class ExploreMapFilters {
+    var favorites = false
+    var archived = false
+    var partners = true
+    var dateFilter = false
+    var after = Calendar.current.date(byAdding: .year, value: -1, to: Date()) ?? Date()
+    var before = Date()
+
+    var afterDay: Date? { dateFilter ? Calendar.current.startOfDay(for: after) : nil }
+    var beforeDay: Date? { dateFilter ? Calendar.current.date(byAdding: .day, value: 1, to: Calendar.current.startOfDay(for: before)) : nil }
+}
+
+/// Takes only a stable reference: on macOS 15 a toolbar item whose inputs change is rebuilt,
+/// which dismisses its popover after every filter change.
+private struct ExploreMapFiltersButton: View {
+    let filters: ExploreMapFilters
+    @State private var showing = false
+    var body: some View {
+        Button { showing.toggle() } label: { Label("Map Filters", systemImage: "line.3.horizontal.decrease") }
+            .popover(isPresented: $showing) { ExploreMapFiltersForm(filters: filters) }
+    }
+}
+
+private struct ExploreMapFiltersForm: View {
+    @Bindable var filters: ExploreMapFilters
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Toggle("Favorites Only", isOn: $filters.favorites)
+            Toggle("Include Archived", isOn: $filters.archived)
+            Toggle("Include Partners", isOn: $filters.partners)
+            Toggle("Date Range", isOn: $filters.dateFilter)
+            if filters.dateFilter {
+                DatePicker("From", selection: $filters.after, in: ...filters.before, displayedComponents: .date)
+                DatePicker("Through", selection: $filters.before, in: filters.after..., displayedComponents: .date)
+            }
+        }.padding().frame(width: 300)
     }
 }

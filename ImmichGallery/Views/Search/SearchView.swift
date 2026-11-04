@@ -55,6 +55,7 @@ struct SearchView: View {
             Divider()
             if query.text.isEmpty && query.chips.isEmpty {
                 ContentUnavailableView("Search Your Photos", systemImage: "magnifyingglass", description: Text("Enter text in the toolbar or choose filters."))
+                    .modifier(SearchEmptyStateLayout())
                 if !explore.isEmpty {
                     ScrollView(.horizontal) {
                         HStack {
@@ -117,5 +118,12 @@ struct SearchFieldSuggestions: View {
             Text(text).searchCompletion(text)
         }
         .onAppear { history.load(session: session) }
+    }
+}
+
+/// macOS 15 doesn't expand the empty state, which pushed the search controls to the middle.
+private struct SearchEmptyStateLayout: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(macOS 26, *) { content } else { content.frame(maxHeight: .infinity) }
     }
 }

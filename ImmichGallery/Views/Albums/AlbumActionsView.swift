@@ -102,20 +102,21 @@ struct AlbumSidebarSections: View {
             Section(shared ? "Shared Albums" : "My Albums") {
                 ForEach(session.albums.filter { $0.shared == shared }) { album in
                     Label(album.albumName, systemImage: shared ? "person.2.crop.square.stack" : "rectangle.stack")
-                        .modifier(UploadDropModifier(queue: session.upload, albumID: album.id)) // Upload
+                        .modifier(AlbumRowUploadDrop(queue: session.upload, albumID: album.id, addAssets: { add($0, to: album) })) // Upload
                         .tag(SidebarItem.album(album.id))
                         .contextMenu { MacAlbumWindowMenu(albumID: album.id) } // MacIntegration
-                        .dropDestination(for: AlbumAssetTransfer.self) { values, _ in
-                            let ids = values.flatMap(\.ids)
-                            guard album.canEdit(session.user?.id),
-                                  !ids.isEmpty, ids.allSatisfy({ UUID(uuidString: $0) != nil }) else { return false }
-                            session.albumActions.perform(session: session, albumID: album.id) {
-                                try await session.client.changeAlbumAssets(album.id, ids: ids)
-                            }
-                            return true
-                        }
+                        .modifier(AlbumRowAssetDrop { add($0, to: album) })
                 }
             }
         }
+    }
+
+    private func add(_ ids: [String], to album: Album) -> Bool {
+        guard album.canEdit(session.user?.id),
+              !ids.isEmpty, ids.allSatisfy({ UUID(uuidString: $0) != nil }) else { return false }
+        session.albumActions.perform(session: session, albumID: album.id) {
+            try await session.client.changeAlbumAssets(album.id, ids: ids)
+        }
+        return true
     }
 }

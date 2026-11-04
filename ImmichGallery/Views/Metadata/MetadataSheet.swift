@@ -9,6 +9,15 @@ struct MetadataSheet: View {
     @State private var loaded = false
     @State private var loadError: String?
 
+    private var minimumWidth: CGFloat {
+        if #available(macOS 26, *) { return 480 }
+        switch request.kind {
+        case .date: return 480
+        case .location: return 580
+        case .crop: return 680
+        }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             if let loadError {
@@ -24,7 +33,9 @@ struct MetadataSheet: View {
             } else { ProgressView().padding(40) }
         }
         .padding(20)
-        .frame(minWidth: 480)
+        // On macOS 15, sized for the editor from the start: a sheet there keeps the width it
+        // had while loading, which clipped the 540 pt location map and the crop canvas.
+        .frame(minWidth: minimumWidth)
         .interactiveDismissDisabled(session.metadata.busy)
         .task {
             do {

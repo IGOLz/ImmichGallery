@@ -1,5 +1,6 @@
 import CoreTransferable
 import SwiftUI
+import UniformTypeIdentifiers
 
 // macOS 15 fallbacks for the few macOS 26 APIs the app uses.
 // On macOS 26+ every helper calls the original API, so behavior there is unchanged.
@@ -16,7 +17,7 @@ extension View {
     }
 
     /// Multi-item drag of the grid selection to the Finder. macOS 26+ only;
-    /// on earlier systems each cell drags its own item (see `LegacyAssetDrag`).
+    /// on earlier systems each cell drags its own item (see `legacyAssetDrag`).
     @ViewBuilder
     func macOriginalDragContainer(model: AssetGridModel, client: ImmichClient) -> some View {
         if #available(macOS 26, *) {
@@ -52,16 +53,87 @@ extension View {
     }
 }
 
-/// macOS 15 grid drag: one item that both album drop targets (asset IDs)
-/// and the Finder (the original file of the dragged photo) understand.
-struct LegacyAssetDrag: Transferable {
-    let album: AlbumAssetTransfer
-    let original: OriginalTransfer
+extension View {
+    /// macOS 15 grid drag. A `Transferable` with a file representation is exported there as a
+    /// file promise only, so album drop targets never saw the asset IDs. This provider carries
+    /// both: the selected IDs (in-app only, for album drops) and the dragged photo's original
+    /// (for the Finder), downloaded on demand.
+    func legacyAssetDrag(albumIDs: AlbumAssetTransfer, original: OriginalTransfer) -> some View {
+        onDrag {
+            let provider = NSItemProvider()
+            // The Finder names the file when the drag starts, before the original (and its real
+            // filename) is downloaded; the asset ID beats the default name "data".
+            provider.suggestedName = original.id
+            // The original first: the Finder takes the first representation it can save.
+            provider.registerFileRepresentation(forTypeIdentifier: UTType.data.identifier, fileOptions: [], visibility: .all) { completion in
+                Task {
+                    do { completion(try await original.client.macIntegrationOriginal(original.id), false, nil) }
+                    catch { completion(nil, false, error) }
+                }
+                return nil
+            }
+            if let data = try? JSONEncoder().encode(albumIDs) {
+                provider.registerDataRepresentation(forTypeIdentifier: UTType.albumAssetIDs.identifier, visibility: .all) { completion in
+                    completion(data, nil)
+                    return nil
+                }
+            }
+            return provider
+        }
+    }
+}
 
-    static var transferRepresentation: some TransferRepresentation {
-        // Original first, so the Finder takes the file rather than the ID payload.
-        ProxyRepresentation(exporting: \.original)
-        ProxyRepresentation(exporting: \.album)
+/// Album sidebar rows accept file drops (upload into the album) and asset drops (add to the
+/// album). macOS 26 keeps the two original drop modifiers. On macOS 15 only the innermost drop
+/// target of a view receives drops, and SwiftUI misses the asset-ID type because AppKit
+/// lowercases it on the drag pasteboard; so one handler there reads the IDs from the
+/// pasteboard itself and otherwise falls back to the file upload.
+struct AlbumRowUploadDrop: ViewModifier {
+    let queue: UploadQueue
+    let albumID: String
+    let addAssets: ([String]) -> Bool
+    @State private var targeted = false
+
+    func body(content: Content) -> some View {
+        if #available(macOS 26, *) {
+            content.modifier(UploadDropModifier(queue: queue, albumID: albumID))
+        } else {
+            content
+                .onDrop(of: [.data], isTargeted: $targeted) { providers in
+                    let ids = Self.draggedAssetIDs()
+                    if !ids.isEmpty { return addAssets(ids) }
+                    let files = providers.filter { $0.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) }
+                    guard !files.isEmpty else { return false }
+                    return UploadDropModifier.enqueue(files, queue: queue, albumID: albumID)
+                }
+                .overlay { if targeted { RoundedRectangle(cornerRadius: 8).stroke(Color.accentColor, lineWidth: 3).allowsHitTesting(false) } }
+        }
+    }
+
+    /// Asset IDs from an in-app grid drag, matched case-insensitively (see above).
+    private static func draggedAssetIDs() -> [String] {
+        let identifier = UTType.albumAssetIDs.identifier.lowercased()
+        return (NSPasteboard(name: .drag).pasteboardItems ?? []).flatMap { item -> [String] in
+            guard let type = item.types.first(where: { $0.rawValue.lowercased() == identifier }),
+                  let data = item.data(forType: type),
+                  let transfer = try? JSONDecoder().decode(AlbumAssetTransfer.self, from: data) else { return [] }
+            return transfer.ids
+        }
+    }
+}
+
+/// The original asset drop target, macOS 26+ only (handled by `AlbumRowUploadDrop` earlier).
+struct AlbumRowAssetDrop: ViewModifier {
+    let addAssets: ([String]) -> Bool
+
+    func body(content: Content) -> some View {
+        if #available(macOS 26, *) {
+            content.dropDestination(for: AlbumAssetTransfer.self) { (values: [AlbumAssetTransfer], _: CGPoint) -> Bool in
+                return addAssets(values.flatMap(\.ids))
+            }
+        } else {
+            content
+        }
     }
 }
 

@@ -14,21 +14,49 @@ struct UploadCommands: Commands {
 }
 
 struct UploadToolbar: ToolbarContent {
-    @Bindable var queue: UploadQueue
+    let queue: UploadQueue
     var body: some ToolbarContent {
-        ToolbarItem {
-            Button { queue.showingProgress.toggle() } label: {
-                if queue.isRunning {
-                    ProgressView(value: Double(queue.completed), total: Double(max(1, queue.items.count)))
-                        .progressViewStyle(.circular).controlSize(.small)
-                        .accessibilityLabel("Importing \(queue.completed) of \(queue.items.count)")
-                } else {
-                    Label("Import", systemImage: "square.and.arrow.down")
-                }
-            }
+        ToolbarItem { UploadToolbarButton(queue: queue) }
+    }
+}
+
+private struct UploadToolbarButton: View {
+    let queue: UploadQueue
+    // On macOS 15 a toolbar item is rebuilt whenever its root view reads changing data, and
+    // a popover bound straight to an @Observable property rebuilds it on every update
+    // (infinite layout loop, then a crash). So the popover uses local state mirrored to the
+    // model, and the changing progress is read only by the label view.
+    @State private var showing = false
+
+    var body: some View {
+        Button { showing.toggle() } label: { UploadToolbarLabel(queue: queue) }
             .help("Import photos and videos")
-            .popover(isPresented: $queue.showingProgress) { UploadProgressView(queue: queue) }
+            .popover(isPresented: $showing) { UploadProgressView(queue: queue) }
+            .background { UploadPopoverSync(queue: queue, showing: $showing) }
+    }
+}
+
+private struct UploadToolbarLabel: View {
+    let queue: UploadQueue
+    var body: some View {
+        if queue.isRunning {
+            ProgressView(value: Double(queue.completed), total: Double(max(1, queue.items.count)))
+                .progressViewStyle(.circular).controlSize(.small)
+                .accessibilityLabel("Importing \(queue.completed) of \(queue.items.count)")
+        } else {
+            Label("Import", systemImage: "square.and.arrow.down")
         }
+    }
+}
+
+/// Mirrors `queue.showingProgress` (set by the queue on errors) and the popover state.
+private struct UploadPopoverSync: View {
+    let queue: UploadQueue
+    @Binding var showing: Bool
+    var body: some View {
+        Color.clear
+            .onChange(of: queue.showingProgress, initial: true) { _, value in if showing != value { showing = value } }
+            .onChange(of: showing) { _, value in if queue.showingProgress != value { queue.showingProgress = value } }
     }
 }
 
@@ -90,19 +118,23 @@ struct UploadDropModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .onDrop(of: [UTType.fileURL], isTargeted: $targeted) { providers in
-                Task { @MainActor in
-                    var urls: [URL] = []
-                    for provider in providers {
-                        let url: URL? = await withCheckedContinuation { continuation in
-                            _ = provider.loadObject(ofClass: URL.self) { url, _ in continuation.resume(returning: url) }
-                        }
-                        if let url, url.isFileURL { urls.append(url) }
-                    }
-                    if !urls.isEmpty { queue.enqueue(urls, albumID: albumID) }
-                    else { queue.lastError = String(localized: "The dropped files could not be read. Try Import… instead.") }
-                }
-                return !providers.isEmpty
+                Self.enqueue(providers, queue: queue, albumID: albumID)
             }
             .overlay { if targeted { RoundedRectangle(cornerRadius: 8).stroke(Color.accentColor, lineWidth: 3).allowsHitTesting(false) } }
+    }
+
+    static func enqueue(_ providers: [NSItemProvider], queue: UploadQueue, albumID: String?) -> Bool {
+        Task { @MainActor in
+            var urls: [URL] = []
+            for provider in providers {
+                let url: URL? = await withCheckedContinuation { continuation in
+                    _ = provider.loadObject(ofClass: URL.self) { url, _ in continuation.resume(returning: url) }
+                }
+                if let url, url.isFileURL { urls.append(url) }
+            }
+            if !urls.isEmpty { queue.enqueue(urls, albumID: albumID) }
+            else { queue.lastError = String(localized: "The dropped files could not be read. Try Import… instead.") }
+        }
+        return !providers.isEmpty
     }
 }

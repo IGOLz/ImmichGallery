@@ -129,7 +129,7 @@ private struct SearchSuggestionField: View {
                     }
                     if let errorMessage { Text(errorMessage) }
                 } label: { Image(systemName: "chevron.down") }
-                .menuStyle(.borderlessButton).fixedSize().accessibilityLabel("\(title) suggestions")
+                .menuStyle(.borderlessButton).modifier(SuggestionMenuIndicator()).fixedSize().accessibilityLabel("\(title) suggestions")
             }
         }
         .task(id: dependencies) {
@@ -178,5 +178,12 @@ private struct SearchPersonButton: View {
         .buttonStyle(.plain)
         .accessibilityAddTraits(selected ? .isSelected : [])
         .task(id: person.id) { image = await session.pipeline.personThumbnail(person.id) }
+    }
+}
+
+/// macOS 15 adds its own indicator next to the chevron label, showing two chevrons.
+private struct SuggestionMenuIndicator: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(macOS 26, *) { content } else { content.menuIndicator(.hidden) }
     }
 }

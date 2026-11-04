@@ -63,8 +63,9 @@ struct ExploreMapQuery: Hashable, Sendable {
     let after: Date?
     let before: Date?
     var timeline: TimelineQuery {
+        // Immich rejects withPartners together with the favorite or archive filters.
         TimelineQuery(visibility: archived ? nil : "timeline", isFavorite: favorites ? true : nil,
-                      withPartners: partners, withStacked: false, bbox: bbox)
+                      withPartners: favorites || archived ? nil : partners, withStacked: false, bbox: bbox)
     }
     func includesMonth(start: Date?) -> Bool {
         guard after != nil || before != nil else { return true }

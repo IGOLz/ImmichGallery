@@ -102,6 +102,14 @@ struct AssetGridHost: View {
         pendingDelete = ids
     }
 
+    private var zoomOutButton: some View {
+        Button { thumbnailSize = GridMetrics.zoomOut(thumbnailSize) } label: { Label("Zoom Out", systemImage: "minus.magnifyingglass") }
+    }
+
+    private var zoomInButton: some View {
+        Button { thumbnailSize = GridMetrics.zoomIn(thumbnailSize) } label: { Label("Zoom In", systemImage: "plus.magnifyingglass") }
+    }
+
     @ToolbarContentBuilder
     private var toolbar: some ToolbarContent {
         let ids = model.viewerID.map { [$0] } ?? Array(model.selection)
@@ -119,11 +127,15 @@ struct AssetGridHost: View {
                 }
             }
         } else {
-            ToolbarItem {
-                ControlGroup {
-                    Button { thumbnailSize = GridMetrics.zoomOut(thumbnailSize) } label: { Label("Zoom Out", systemImage: "minus.magnifyingglass") }
-                    Button { thumbnailSize = GridMetrics.zoomIn(thumbnailSize) } label: { Label("Zoom In", systemImage: "plus.magnifyingglass") }
+            if #available(macOS 26, *) {
+                ToolbarItem {
+                    ControlGroup { zoomOutButton; zoomInButton }
                 }
+            } else {
+                // On macOS 15 this ControlGroup was part of an endless toolbar layout loop on
+                // pushed pages (see GlobalToolbar in MainView.swift). Plain buttons avoid it.
+                ToolbarItem { zoomOutButton }
+                ToolbarItem { zoomInButton }
             }
         }
 
@@ -281,7 +293,7 @@ struct AssetGridView: View {
                 if #available(macOS 26, *) {
                     thumbnail.draggable(albumIDs)
                 } else {
-                    thumbnail.draggable(LegacyAssetDrag(album: albumIDs, original: OriginalTransfer(id: asset.id, isVideo: asset.isVideo, client: session.client)))
+                    thumbnail.legacyAssetDrag(albumIDs: albumIDs, original: OriginalTransfer(id: asset.id, isVideo: asset.isVideo, client: session.client))
                 }
             } else {
                 thumbnail

@@ -26,9 +26,7 @@ struct AssetViewer: View {
                                 onProgress: { viewer?.videoStalledElapsed = 0 },
                                 onFailed: { if viewer?.slideshow == true && viewer?.paused != true { viewer?.step(1) } })
                     .id("\(item.id)-\(viewer?.playbackGeneration ?? 0)")
-                    .overlay(alignment: .topTrailing) { ViewerVideoOptions().padding()
-                        .opacity(!isPresentation || viewer?.controlsVisible != false ? 1 : 0)
-                        .allowsHitTesting(!isPresentation || viewer?.controlsVisible != false) }
+                    .modifier(ViewerVideoOptionsPlacement(visible: !isPresentation || viewer?.controlsVisible != false))
                     .draggable(OriginalTransfer(id: item.id, isVideo: true, client: session.client))
             } else {
                 ZoomableImage(item: item, rotation: viewer?.rotation ?? 0, showsFaces: !isPresentation)
@@ -318,5 +316,28 @@ struct VideoPlayerView: NSViewRepresentable {
             progressToken = nil
             player = nil
         }
+    }
+}
+
+/// macOS 26 floats the video options over the player. On macOS 15 the AVPlayerView draws
+/// above SwiftUI overlays, hiding them, so the options sit in a strip above the video there.
+private struct ViewerVideoOptionsPlacement: ViewModifier {
+    let visible: Bool
+
+    func body(content: Content) -> some View {
+        if #available(macOS 26, *) {
+            content.overlay(alignment: .topTrailing) { options.padding() }
+        } else {
+            content.safeAreaInset(edge: .top, spacing: 0) {
+                HStack { Spacer(); options }.padding(.horizontal, 12).padding(.vertical, 4)
+                    .environment(\.colorScheme, .dark) // sits on the black viewer background
+            }
+        }
+    }
+
+    private var options: some View {
+        ViewerVideoOptions()
+            .opacity(visible ? 1 : 0)
+            .allowsHitTesting(visible)
     }
 }
