@@ -6,9 +6,12 @@ import Observation
 enum GridSource: Hashable {
     case library, favorites, videos, archive, trash
     case album(String)
+    case partner(String) // Sharing
     case person(String)
     case search(String)
     case filteredSearch(SearchQuery) // Search
+
+    var isPartner: Bool { if case .partner = self { true } else { false } }
 
     var timelineQuery: TimelineQuery? {
         switch self {
@@ -17,6 +20,7 @@ enum GridSource: Hashable {
         case .archive: TimelineQuery(visibility: "archive")
         case .trash: TimelineQuery(visibility: nil, isTrashed: true)
         case .album(let id): TimelineQuery(visibility: nil, albumId: id)
+        case .partner(let id): TimelineQuery(userId: id) // Sharing
         case .person(let id): TimelineQuery(personId: id)
         case .videos, .search, .filteredSearch: nil
         }
@@ -341,7 +345,7 @@ final class AssetGridModel {
     // MARK: Actions
 
     func setFavorite(_ ids: [String], _ value: Bool) async {
-        guard let session, !ids.isEmpty else { return }
+        guard !source.isPartner, let session, !ids.isEmpty else { return }
         do {
             try await session.client.setFavorite(ids, value)
             if source == .favorites && !value {
@@ -359,7 +363,7 @@ final class AssetGridModel {
     }
 
     func setArchived(_ ids: [String], _ archived: Bool) async {
-        guard let session, !ids.isEmpty else { return }
+        guard !source.isPartner, let session, !ids.isEmpty else { return }
         do {
             try await session.client.setVisibility(ids, archived ? "archive" : "timeline")
             if [.library, .archive].contains(source) || { if case .person = source { true } else { false } }() {
@@ -370,7 +374,7 @@ final class AssetGridModel {
     }
 
     func delete(_ ids: [String], permanently: Bool) async {
-        guard let session, !ids.isEmpty else { return }
+        guard !source.isPartner, let session, !ids.isEmpty else { return }
         do {
             try await session.client.delete(ids, force: permanently)
             remove(ids)
@@ -380,7 +384,7 @@ final class AssetGridModel {
     }
 
     func restore(_ ids: [String]) async {
-        guard let session, !ids.isEmpty else { return }
+        guard !source.isPartner, let session, !ids.isEmpty else { return }
         do {
             try await session.client.restore(ids)
             remove(ids)

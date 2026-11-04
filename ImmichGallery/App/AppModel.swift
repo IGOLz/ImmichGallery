@@ -166,6 +166,7 @@ final class AppModel {
 final class LibrarySession {
     let client: ImmichClient
     let albumActions = AlbumsActions() // Albums
+    let sharing: SharingModel // Sharing
     let pipeline: ImagePipeline
     private(set) var user: User?
     private(set) var features = ServerFeatures()
@@ -181,6 +182,7 @@ final class LibrarySession {
     init(client: ImmichClient, user: User?, cacheUserID: String) {
         self.cacheUserID = cacheUserID
         self.client = client
+        self.sharing = SharingModel(client: client)
         self.pipeline = ImagePipeline(client: client)
         self.user = user
     }
@@ -194,6 +196,7 @@ final class LibrarySession {
         if let user = await user { self.user = user; onUserLoaded(user) }
         preferences = try? await client.accountPreferences()
         await reloadAlbums()
+        await sharing.reload() // Sharing
     }
 
     func setPreferences(_ value: AccountPreferences) { preferences = value }
