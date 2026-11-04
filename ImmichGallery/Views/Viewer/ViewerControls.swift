@@ -127,7 +127,7 @@ struct ViewerPresentation: View {
                 .labelStyle(.iconOnly)
                 .buttonStyle(.plain)
                 .padding(20)
-                .glassEffect(.regular, in: .capsule)
+                .adaptiveGlass(in: .capsule)
                 .padding(24)
                 .onHover { overControls = $0 }
             }

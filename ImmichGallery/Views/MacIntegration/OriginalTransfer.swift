@@ -20,13 +20,3 @@ extension AssetGridModel {
         sections.flatMap { $0.assets ?? [] }.filter { selection.contains($0.id) }.map(\.id)
     }
 }
-
-import SwiftUI
-
-extension View {
-    func macOriginalDragContainer(model: AssetGridModel, client: ImmichClient) -> some View {
-        dragContainer(for: OriginalTransfer.self) { (ids: [String]) in
-            ids.map { OriginalTransfer(id: $0, isVideo: model.item($0)?.isVideo ?? false, client: client) }
-        }
-    }
-}

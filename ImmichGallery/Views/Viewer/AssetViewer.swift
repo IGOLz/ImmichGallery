@@ -80,7 +80,7 @@ struct AssetViewer: View {
                 .frame(width: 36, height: 36)
         }
         .buttonStyle(.plain)
-        .glassEffect(.regular.interactive(), in: .circle)
+        .adaptiveGlass(in: .circle, interactive: true)
         .opacity(0.9)
     }
 
@@ -150,8 +150,8 @@ private struct ZoomableImage: View {
                         .resizable()
                         .interpolation(.high)
                         .scaledToFit()
-                        .draggable(OriginalTransfer.self, item: scale * gestureScale <= 1
-                                   ? OriginalTransfer(id: item.id, client: session.client) : nil)
+                        .macOriginalDraggable(OriginalTransfer(id: item.id, client: session.client),
+                                              isEnabled: scale * gestureScale <= 1)
                 } else if let hash = item.thumbhash, let placeholder = ThumbHash.image(base64: hash) {
                     Image(decorative: placeholder, scale: 1)
                         .resizable()

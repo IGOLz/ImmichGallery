@@ -123,7 +123,7 @@ struct MetadataLocationEditor: View {
                     VStack(alignment: .leading) {
                         ForEach(results.indices, id: \.self) { i in
                             Button(results[i].name ?? "Place") {
-                                coordinate = results[i].location.coordinate
+                                coordinate = results[i].adaptiveCoordinate
                                 if let coordinate { position = .region(.init(center: coordinate, latitudinalMeters: 5000, longitudinalMeters: 5000)) }
                             }.buttonStyle(.link)
                         }

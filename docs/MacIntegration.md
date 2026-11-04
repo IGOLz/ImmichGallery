@@ -1,6 +1,8 @@
 # Native macOS integrations
 
-Implemented for macOS 26 without new dependencies or targets.
+Implemented for macOS 26 without new dependencies or targets. Since 0.2.0 the deployment target is macOS 15; `OSCompatibility.swift` provides the fallbacks.
+
+- macOS 15 fallbacks: Liquid Glass becomes `.regularMaterial`; the toolbar's fixed spacer is omitted. The multi-item drag container (`dragContainer`, `dragContainerSelection`) is macOS 26 only, so on macOS 15 each grid cell drags a `LegacyAssetDrag` that carries the dragged photo's original (for the Finder) and the selected asset IDs (for album drops). The viewer drags its single original on both systems.
 
 - Drag promises download originals on demand. Downloads use the response's suggested filename, strip path components, map HTTP 401 to the session-expired error, and clean up failed moves. Receivers may access the original temporary file in place, avoiding the previous forced second copy. Files expire after ten minutes; cleanup runs on startup, every minute, and termination. Preview files have a separate directory and remain leased while Quick Look uses them. Cleanup also handles the previous cache layout.
 - Space previews selected items in grid order, with a maximum of 20 originals. Quick Look opens when the first original arrives and adds the others as they finish. Space during downloads cancels them. The originating window is captured before downloading. Return and double-click still open the viewer.

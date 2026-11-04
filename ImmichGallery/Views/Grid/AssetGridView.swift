@@ -128,7 +128,7 @@ struct AssetGridHost: View {
         }
 
         ToolbarItem { SharingMenu(assetIDs: ids, allowPublicLinks: model.canMutate(ids), albumID: { if case .album(let id) = model.source { return id }; return nil }()) } // Sharing
-        ToolbarSpacer(.fixed)
+        if #available(macOS 26, *) { ToolbarSpacer(.fixed) }
 
         if model.source == .trash {
             ToolbarItem {
@@ -238,7 +238,6 @@ struct AssetGridView: View {
         .onChange(of: model.viewerScrollTarget) { scrollToViewerTarget(proxy) }
         }
         .macOriginalDragContainer(model: model, client: session.client)
-        .dragContainerSelection(Array(model.selection))
         .fastWheelScrolling()
         .background {
             // Clicking empty space clears the selection, like Photos.
@@ -278,13 +277,18 @@ struct AssetGridView: View {
         )
         return Group {
             if let asset {
-                thumbnail.draggable(AlbumAssetTransfer(ids: model.selection.contains(asset.id) ? Array(model.selection) : [asset.id]))
+                let albumIDs = AlbumAssetTransfer(ids: model.selection.contains(asset.id) ? Array(model.selection) : [asset.id])
+                if #available(macOS 26, *) {
+                    thumbnail.draggable(albumIDs)
+                } else {
+                    thumbnail.draggable(LegacyAssetDrag(album: albumIDs, original: OriginalTransfer(id: asset.id, isVideo: asset.isVideo, client: session.client)))
+                }
             } else {
                 thumbnail
             }
         }
         .overlay(alignment: .topLeading) { AssetsLargeFileBadge(asset: asset, source: model.source) }
-        .draggable(OriginalTransfer.self, item: asset.map { OriginalTransfer(id: $0.id, isVideo: $0.isVideo, client: session.client) })
+        .macOriginalContainerItem(asset.map { OriginalTransfer(id: $0.id, isVideo: $0.isVideo, client: session.client) })
         .onAppear { model.cellAppeared(section: s, item: i) }
         .onTapGesture(count: 2) { if let asset { model.open(asset.id) } }
         .simultaneousGesture(TapGesture().onEnded { if let asset { model.click(asset.id) } })
@@ -369,7 +373,7 @@ private struct SectionHeader: View {
                 .font(.headline)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 7)
-                .glassEffect(.regular, in: .capsule)
+                .adaptiveGlass(in: .capsule)
             Spacer()
         }
         .padding(.horizontal, 10)

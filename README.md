@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://github.com/IGOLz/ImmichGallery/releases/latest"><img src="https://img.shields.io/github/v/release/IGOLz/ImmichGallery?include_prereleases&style=for-the-badge&label=Release&color=E8475F&labelColor=ececec" alt="Latest release"></a>
-  <img src="https://img.shields.io/badge/macOS-26%2B-blue?style=for-the-badge&logo=apple&logoColor=000000&color=3F51B5&labelColor=ececec" alt="macOS 26 or later">
+  <img src="https://img.shields.io/badge/macOS-15%2B-blue?style=for-the-badge&logo=apple&logoColor=000000&color=3F51B5&labelColor=ececec" alt="macOS 15 or later">
   <img src="https://img.shields.io/badge/Swift-6-orange?style=for-the-badge&logo=swift&logoColor=000000&color=F05138&labelColor=ececec" alt="Swift 6">
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue?style=for-the-badge&color=3F51B5&labelColor=ececec" alt="License: MIT"></a>
 </p>
@@ -43,7 +43,9 @@ Immich has a great web app and mobile apps, but on the Mac you live in a browser
 
 The app is signed with a Developer ID and notarized by Apple, so it opens without Gatekeeper warnings.
 
-**Requirements:** macOS 26 or later, and an Immich server v2.0 or later (tested with v3.3).
+**Requirements:** macOS 15 Sequoia or later, and an Immich server v2.0 or later (tested with v3.3). The app is a universal binary for Apple silicon and Intel Macs.
+
+On macOS 15 everything works, with two differences from macOS 26 Tahoe: controls use the standard translucent material instead of Liquid Glass, and dragging to the Finder exports only the photo you drag rather than the whole selection. Dragging a selection onto an album works on both.
 
 ## Try it with the demo
 
@@ -137,7 +139,7 @@ Immich Gallery talks only to the servers you sign in to. There is no analytics, 
 
 ## Build from source
 
-You need Xcode 26 or later.
+You need Xcode 26 or later. The app builds with the macOS 26 SDK or later and runs on macOS 15 or later; macOS 26–only APIs are wrapped in `#available` checks in `ImmichGallery/Views/MacIntegration/OSCompatibility.swift`.
 
 ```sh
 git clone https://github.com/IGOLz/ImmichGallery.git
