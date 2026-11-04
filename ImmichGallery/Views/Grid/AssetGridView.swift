@@ -30,7 +30,9 @@ struct AssetGridHost: View {
     @State private var pendingDelete: [String]?
     @State private var playLive = false
 
-    private var viewerItem: AssetItem? { model.viewerID.flatMap(model.item) }
+    private var viewerItem: AssetItem? {
+        model.viewerID.flatMap { id in model.item(id) ?? (session.metadata.viewerSnapshot?.id == id ? session.metadata.viewerSnapshot : nil) }
+    }
 
     private var inspectedID: String? {
         model.viewerID ?? (model.selection.count == 1 ? model.selection.first : nil)
@@ -43,10 +45,12 @@ struct AssetGridHost: View {
                 .allowsHitTesting(model.viewerID == nil)
             if let item = viewerItem {
                 AssetViewer(model: model, item: item, playLive: $playLive, onDelete: requestDelete)
+                    .id("\(item.id)-\(session.metadata.revision)") // Metadata
                     .transition(.opacity)
             }
         }
         .animation(.easeOut(duration: 0.18), value: model.viewerID)
+        .modifier(MetadataHost(model: model)) // Metadata
         .navigationTitle(viewerItem?.date.map { Text(ImmichDate.day($0)) } ?? title)
         .navigationSubtitle(subtitle)
         .toolbar { toolbar }
@@ -262,6 +266,7 @@ struct AssetGridView: View {
             Button("Delete Permanently…", role: .destructive) { onDelete(ids) }
         } else {
             Button(asset.isFavorite ? "Unfavorite" : "Favorite") { Task { await model.setFavorite(ids, !asset.isFavorite) } }
+            MetadataMenuItems(ids: ids, canEditImage: !asset.isVideo && asset.livePhotoVideoID == nil).disabled(session.metadata.busy) // Metadata
             Button("Export Unmodified Original…") { Exporter.exportOriginals(ids, session: session) }
             Divider()
             if model.source == .archive {
@@ -357,10 +362,10 @@ struct ThumbnailCell: View {
                 }
             }
             .contentShape(Rectangle())
-            .task(id: TaskKey(id: asset?.id, size: size)) { await load() }
+            .task(id: TaskKey(id: asset?.id, size: size, revision: session.metadata.revision)) { await load() }
     }
 
-    private struct TaskKey: Equatable { let id: String?; let size: ImmichClient.ThumbnailSize }
+    private struct TaskKey: Equatable { let id: String?; let size: ImmichClient.ThumbnailSize; let revision: Int }
 
     private func load() async {
         failed = false

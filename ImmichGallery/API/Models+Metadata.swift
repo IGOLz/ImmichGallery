@@ -1,0 +1,61 @@
+import Foundation
+
+struct MetadataUpdate: Encodable, Sendable {
+    var ids: [String]
+    var dateTimeOriginal: String?
+    var dateTimeRelative: Int?
+    var timeZone: String?
+    var latitude: Double?
+    var longitude: Double?
+    var description: String?
+    var rating: Int?
+    var clearRating = false
+
+    enum CodingKeys: String, CodingKey {
+        case ids, dateTimeOriginal, dateTimeRelative, timeZone, latitude, longitude, description, rating
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(ids, forKey: .ids)
+        try c.encodeIfPresent(dateTimeOriginal, forKey: .dateTimeOriginal)
+        try c.encodeIfPresent(dateTimeRelative, forKey: .dateTimeRelative)
+        try c.encodeIfPresent(timeZone, forKey: .timeZone)
+        try c.encodeIfPresent(latitude, forKey: .latitude)
+        try c.encodeIfPresent(longitude, forKey: .longitude)
+        try c.encodeIfPresent(description, forKey: .description)
+        if clearRating { try c.encodeNil(forKey: .rating) }
+        else { try c.encodeIfPresent(rating, forKey: .rating) }
+    }
+}
+
+struct MetadataPreferences: Decodable {
+    struct Ratings: Decodable { var enabled: Bool }
+    var ratings: Ratings?
+}
+
+struct MetadataEdit: Codable, Sendable {
+    var action: String
+    var parameters: Parameters
+
+    struct Parameters: Codable, Sendable {
+        var angle: Int?
+        var axis: String?
+        var x: Int?
+        var y: Int?
+        var width: Int?
+        var height: Int?
+    }
+}
+
+struct MetadataEdits: Codable, Sendable {
+    var edits: [MetadataEdit]
+}
+
+
+extension Exif {
+    var metadataDimensions: (width: Int, height: Int)? {
+        guard let width = exifImageWidth, let height = exifImageHeight, width > 0, height > 0 else { return nil }
+        return ["5", "6", "7", "8"].contains(orientation ?? "") ? (height, width) : (width, height)
+    }
+}

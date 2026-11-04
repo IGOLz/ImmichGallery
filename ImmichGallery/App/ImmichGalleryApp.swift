@@ -12,7 +12,7 @@ struct ImmichGalleryApp: App {
         }
         .defaultSize(width: 1280, height: 820)
         .windowToolbarStyle(.unified)
-        .commands { AppCommands(app: app) }
+        .commands { AppCommands(app: app); MetadataCommands(app: app) }
 
         Settings {
             SettingsView()
@@ -80,7 +80,7 @@ struct AppCommands: Commands {
             Button("Zoom Out") { thumbnailSize = GridMetrics.zoomOut(thumbnailSize) }
                 .keyboardShortcut("-", modifiers: .command)
             Divider()
-            Button("Refresh") { if let grid { Task { await grid.reload() } } }
+            Button("Refresh") { if let session = app.session { session.pipeline.removeAll(); session.metadata.revision += 1 } }
                 .keyboardShortcut("r", modifiers: .command)
                 .disabled(grid == nil)
             Divider()

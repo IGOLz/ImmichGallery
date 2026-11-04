@@ -30,8 +30,8 @@ final class ImagePipeline: Sendable {
     }
 
     /// Full-resolution original (HEIC, RAW, JPEG…), downsampled to `maxPixelSize`.
-    func original(_ id: String, maxPixelSize: Int = 8192) async -> CGImage? {
-        await load(client.originalRequest(id), key: "\(id)-original", maxPixelSize: maxPixelSize)
+    func original(_ id: String, maxPixelSize: Int = 8192, edited: Bool = false) async -> CGImage? {
+        await load(try! client.request("assets/\(id)/original", query: ["edited": String(edited)]), key: "\(id)-original-\(edited)", maxPixelSize: maxPixelSize)
     }
 
     func removeAll() {

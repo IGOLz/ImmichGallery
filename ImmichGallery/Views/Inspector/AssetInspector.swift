@@ -22,7 +22,7 @@ struct AssetInspector: View {
                 ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-        .task(id: assetID) {
+        .task(id: "\(assetID ?? "")-\(session.metadata.revision)") {
             guard let assetID else { return }
             failed = false
             asset = nil
@@ -47,10 +47,9 @@ struct AssetInspector: View {
                     if let date = ImmichDate.parse(asset.localDateTime) {
                         Text(ImmichDate.long(date)).foregroundStyle(.secondary)
                     }
-                    if let description = exif?.description, !description.isEmpty {
-                        Text(description).padding(.top, 4).textSelection(.enabled)
-                    }
                 }
+
+                MetadataInspectorControls(asset: asset) // Metadata
 
                 if let exif, exif.make != nil || exif.model != nil || exif.lensModel != nil {
                     card {

@@ -1,0 +1,170 @@
+import MapKit
+import SwiftUI
+
+struct MetadataSheet: View {
+    @Environment(LibrarySession.self) private var session
+    @Environment(\.dismiss) private var dismiss
+    let request: MetadataState.Presentation
+    @State private var asset: AssetResponse?
+    @State private var loaded = false
+    @State private var loadError: String?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            if let loadError {
+                Text(loadError)
+                Button("Close") { dismiss() }
+            } else if loaded {
+                switch request.kind {
+                case .date: MetadataDateEditor(ids: request.ids, asset: asset)
+                case .location: MetadataLocationEditor(ids: request.ids, asset: asset)
+                case .crop:
+                    if let asset { MetadataCropEditor(asset: asset) }
+                }
+            } else { ProgressView().padding(40) }
+        }
+        .padding(20)
+        .frame(minWidth: 480)
+        .interactiveDismissDisabled(session.metadata.busy)
+        .task {
+            do {
+                if let id = request.ids.first { asset = try await session.client.asset(id) }
+                loaded = true
+            } catch { loadError = error.localizedDescription }
+        }
+    }
+}
+
+struct MetadataDateEditor: View {
+    @Environment(LibrarySession.self) private var session
+    @Environment(\.dismiss) private var dismiss
+    let ids: [String]
+    let asset: AssetResponse?
+    @State private var date = Date()
+    @State private var zone = TimeZone.current.identifier
+    @State private var relative = false
+    @State private var minutes = 0
+    private var timeZone: TimeZone { TimeZone(identifier: zone) ?? .current }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Adjust Date and Time").font(.title2)
+            Text("\(ids.count) selected items").foregroundStyle(.secondary)
+            Toggle("Shift each item's date by an offset", isOn: $relative)
+            if relative {
+                TextField("Offset in minutes", value: $minutes, format: .number)
+                Text("Positive values move dates later; negative values move them earlier.").font(.caption)
+            } else {
+                DatePicker("Date and time", selection: $date, displayedComponents: [.date, .hourAndMinute])
+                    .environment(\.timeZone, timeZone)
+                if ids.count > 1 { Text("All selected items will receive the same date and time.").font(.caption) }
+            }
+            Picker("Time zone", selection: Binding(get: { zone }, set: changeTimeZone)) {
+                ForEach(TimeZone.knownTimeZoneIdentifiers, id: \.self) { name in Text(name).tag(name) }
+            }
+            Text("UTC offset: \(timeZone.secondsFromGMT(for: date) / 60) minutes").font(.caption).foregroundStyle(.secondary)
+            HStack {
+                Spacer()
+                Button("Cancel") { dismiss() }.keyboardShortcut(.cancelAction)
+                Button("Adjust") {
+                    let formatter = ISO8601DateFormatter()
+                    formatter.timeZone = timeZone
+                    let update = relative
+                        ? MetadataUpdate(ids: ids, dateTimeRelative: minutes, timeZone: zone)
+                        : MetadataUpdate(ids: ids, dateTimeOriginal: formatter.string(from: date), timeZone: zone)
+                    Task { if await session.metadata.update(update, session: session) { dismiss() } }
+                }.keyboardShortcut(.defaultAction)
+            }
+        }
+        .disabled(session.metadata.busy)
+        .onAppear {
+            if let name = asset?.exifInfo?.timeZone, TimeZone(identifier: name) != nil { zone = name }
+            date = ImmichDate.parse(asset?.exifInfo?.dateTimeOriginal ?? asset?.fileCreatedAt ?? "") ?? Date()
+        }
+    }
+
+    private func changeTimeZone(_ name: String) {
+        guard let new = TimeZone(identifier: name) else { return }
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = timeZone
+        let components = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second], from: date)
+        calendar.timeZone = new
+        if let adjusted = calendar.date(from: components) { date = adjusted }
+        zone = name
+    }
+}
+
+struct MetadataLocationEditor: View {
+    @Environment(LibrarySession.self) private var session
+    @Environment(\.dismiss) private var dismiss
+    let ids: [String]
+    let asset: AssetResponse?
+    @State private var query = ""
+    @State private var results: [MKMapItem] = []
+    @State private var coordinate: CLLocationCoordinate2D?
+    @State private var position: MapCameraPosition = .automatic
+    @State private var error: String?
+    @State private var searching = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Assign Location").font(.title2)
+            HStack {
+                TextField("Search for a place", text: $query).onSubmit { search() }
+                Button("Search", action: search).disabled(searching || query.trimmingCharacters(in: .whitespaces).isEmpty)
+            }
+            if let error { Text(error).foregroundStyle(.red) }
+            if !results.isEmpty {
+                ScrollView {
+                    VStack(alignment: .leading) {
+                        ForEach(results.indices, id: \.self) { i in
+                            Button(results[i].name ?? "Place") {
+                                coordinate = results[i].location.coordinate
+                                if let coordinate { position = .region(.init(center: coordinate, latitudinalMeters: 5000, longitudinalMeters: 5000)) }
+                            }.buttonStyle(.link)
+                        }
+                    }
+                }.frame(maxHeight: 95)
+            }
+            MapReader { proxy in
+                Map(position: $position) {
+                    if let coordinate { Marker("Selected Location", coordinate: coordinate) }
+                }
+                .onTapGesture { point in coordinate = proxy.convert(point, from: .local) }
+            }.frame(width: 540, height: 330).clipShape(.rect(cornerRadius: 10))
+            Text("Click the map to place a pin. Applies to \(ids.count) items.").font(.caption)
+            if let coordinate {
+                Text("\(coordinate.latitude.formatted()), \(coordinate.longitude.formatted())").font(.caption.monospacedDigit())
+            }
+            HStack {
+                Spacer()
+                Button("Cancel") { dismiss() }.keyboardShortcut(.cancelAction)
+                Button("Assign") {
+                    guard let coordinate else { return }
+                    Task {
+                        if await session.metadata.update(.init(ids: ids, latitude: coordinate.latitude, longitude: coordinate.longitude), session: session) { dismiss() }
+                    }
+                }.keyboardShortcut(.defaultAction).disabled(coordinate == nil)
+            }
+        }
+        .disabled(session.metadata.busy)
+        .onAppear {
+            if let lat = asset?.exifInfo?.latitude, let lon = asset?.exifInfo?.longitude {
+                coordinate = .init(latitude: lat, longitude: lon)
+                position = .region(.init(center: coordinate!, latitudinalMeters: 5000, longitudinalMeters: 5000))
+            }
+        }
+    }
+
+    private func search() {
+        searching = true
+        error = nil
+        let request = MKLocalSearch.Request()
+        request.naturalLanguageQuery = query
+        Task {
+            defer { searching = false }
+            do { results = try await MKLocalSearch(request: request).start().mapItems }
+            catch { self.error = error.localizedDescription }
+        }
+    }
+}

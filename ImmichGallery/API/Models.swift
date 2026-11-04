@@ -106,6 +106,7 @@ struct Exif: Decodable, Sendable {
     var focalLength: Double?
     var iso: Int?
     var exposureTime: String?
+    var orientation: String? // Metadata: crop coordinates use orientation-corrected original dimensions.
     var exifImageWidth: Int?
     var exifImageHeight: Int?
     var fileSizeInByte: Int64?

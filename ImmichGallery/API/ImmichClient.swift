@@ -297,7 +297,7 @@ extension ImmichClient {
     enum ThumbnailSize: String, Sendable { case thumbnail, preview, fullsize }
 
     func thumbnailRequest(_ id: String, size: ThumbnailSize) -> URLRequest {
-        try! request("assets/\(id)/thumbnail", query: ["size": size.rawValue])
+        try! request("assets/\(id)/thumbnail", query: ["size": size.rawValue, "edited": "true"])
     }
 
     func originalRequest(_ id: String) -> URLRequest {

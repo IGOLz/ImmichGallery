@@ -66,6 +66,7 @@ final class AppModel {
 @MainActor @Observable
 final class LibrarySession {
     let client: ImmichClient
+    let metadata = MetadataState() // Metadata
     let pipeline: ImagePipeline
     private(set) var user: User?
     private(set) var features = ServerFeatures()
