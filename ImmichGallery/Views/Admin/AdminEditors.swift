@@ -15,14 +15,14 @@ struct AdminUserEditor: View {
         self.model = model; self.user = user
         _name = State(initialValue: user?.name ?? "")
         _email = State(initialValue: user?.email ?? "")
-        _quota = State(initialValue: user?.quotaSizeInBytes.map { String($0) } ?? "")
+        _quota = State(initialValue: AdminQuota.text(from: user?.quotaSizeInBytes))
         _isAdmin = State(initialValue: user?.isAdmin ?? false)
         _shouldChangePassword = State(initialValue: user?.shouldChangePassword ?? true)
     }
     private var valid: Bool {
         !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && email.contains("@") &&
         (user != nil || !password.isEmpty) &&
-        (quota.isEmpty || Int64(quota).map { $0 >= 0 && $0 <= 9_007_199_254_740_991 } == true)
+        (quota.isEmpty || AdminQuota.bytes(from: quota) != nil)
     }
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -30,8 +30,10 @@ struct AdminUserEditor: View {
             Form {
                 TextField("Name", text: $name)
                 TextField("Email", text: $email)
-                SecureField(user == nil ? "Password" : "New password (leave blank to keep)", text: $password)
-                TextField("Quota in bytes (blank for unlimited)", text: $quota)
+                if user?.id != model.session.user?.id {
+                    SecureField(user == nil ? "Password" : "New password (leave blank to keep)", text: $password)
+                }
+                TextField("Quota in GiB (blank for unlimited)", text: $quota)
                 Toggle("Administrator", isOn: $isAdmin)
                 Toggle("Require password change at next login", isOn: $shouldChangePassword)
                 if let error = model.error { Text(error).foregroundStyle(.red) }
@@ -41,8 +43,8 @@ struct AdminUserEditor: View {
                 Button("Cancel") { dismiss() }.keyboardShortcut(.cancelAction)
                 Button("Save") {
                     Task {
-                        let input = AdminUserInput(name: name.trimmingCharacters(in: .whitespacesAndNewlines), email: email.trimmingCharacters(in: .whitespacesAndNewlines), isAdmin: isAdmin, password: password.isEmpty ? nil : password, shouldChangePassword: shouldChangePassword, quotaSizeInBytes: Int64(quota))
-                        if await model.perform({ try await model.session.client.adminSaveUser(id: user?.id, input: input) }) { dismiss() }
+                        let input = AdminUserInput(name: name.trimmingCharacters(in: .whitespacesAndNewlines), email: email.trimmingCharacters(in: .whitespacesAndNewlines), isAdmin: isAdmin, password: password.isEmpty ? nil : password, shouldChangePassword: shouldChangePassword, quotaSizeInBytes: AdminQuota.bytes(from: quota))
+                        if await model.perform({ try await model.client.adminSaveUser(id: user?.id, input: input) }) { dismiss() }
                     }
                 }.keyboardShortcut(.defaultAction).disabled(!valid || model.busy)
             }
@@ -99,7 +101,7 @@ struct AdminLibraryEditor: View {
                 if let library {
                     Button("Validate Paths") {
                         Task { await model.perform {
-                            let result = try await model.session.client.adminValidateLibrary(library.id, input: input)
+                            let result = try await model.client.adminValidateLibrary(library.id, input: input)
                             validation = result.readable
                         } }
                     }.disabled(!valid || model.busy)
@@ -109,7 +111,7 @@ struct AdminLibraryEditor: View {
                 Spacer()
                 Button("Cancel") { dismiss() }.keyboardShortcut(.cancelAction)
                 Button("Save") {
-                    Task { if await model.perform({ try await model.session.client.adminSaveLibrary(id: library?.id, input: input) }) { dismiss() } }
+                    Task { if await model.perform({ try await model.client.adminSaveLibrary(id: library?.id, input: input) }) { dismiss() } }
                 }.keyboardShortcut(.defaultAction).disabled(!valid || model.busy)
             }
         }.padding(24).frame(width: 600).disabled(model.busy)

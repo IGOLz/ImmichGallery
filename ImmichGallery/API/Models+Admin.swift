@@ -63,12 +63,33 @@ struct AdminQueue: Decodable, Identifiable, Sendable {
         let paused: Int
         let waiting: Int
     }
-    // Only these queues support manually scheduling assets in the official web client.
-    var canStart: Bool {
-        ["thumbnailGeneration", "metadataExtraction", "videoConversion", "faceDetection",
-         "facialRecognition", "smartSearch", "duplicateDetection", "storageTemplateMigration",
-         "migration", "sidecar", "library", "ocr"].contains(name)
+    // Same order and manageable queues as the v3.3.5 web QueuePanel.
+    static let managedNames = ["thumbnailGeneration", "metadataExtraction", "library", "sidecar",
+                               "smartSearch", "duplicateDetection", "faceDetection", "facialRecognition",
+                               "ocr", "videoConversion", "storageTemplateMigration", "migration"]
+    var title: String {
+        ["thumbnailGeneration": "Generate Thumbnails", "metadataExtraction": "Extract Metadata",
+         "library": "External Libraries", "sidecar": "Sidecar Metadata", "smartSearch": "Smart Search",
+         "duplicateDetection": "Duplicate Detection", "faceDetection": "Face Detection",
+         "facialRecognition": "Facial Recognition", "ocr": "OCR", "videoConversion": "Transcode Videos",
+         "storageTemplateMigration": "Storage Template Migration", "migration": "Migration"][name] ?? name
     }
+    var startTitle: String {
+        switch name {
+        case "library": "Rescan Libraries"
+        case "sidecar": "Discover Sidecars"
+        case "migration", "storageTemplateMigration": "Start"
+        default: "Start Missing Jobs"
+        }
+    }
+    var allTitle: String {
+        switch name {
+        case "sidecar": "Sync Sidecars…"
+        case "faceDetection", "facialRecognition": "Reset Faces…"
+        default: "Process All Assets…"
+        }
+    }
+    var canStart: Bool { Self.managedNames.contains(name) }
     var canStartAll: Bool {
         canStart && !["storageTemplateMigration", "migration", "library"].contains(name)
     }
@@ -101,6 +122,16 @@ indirect enum AdminValue: Codable, Sendable {
         if case .object(let fields) = self { fields[key] } else { nil }
     }
     var boolValue: Bool { if case .bool(let value) = self { value } else { false } }
+    func display(forKey key: String) -> String {
+        if case .string = self, ["password", "clientSecret", "apiKey", "secret"].contains(key) { return "Hidden" }
+        if case .number(let bytes) = self,
+           (key.hasPrefix("usage") || key.hasSuffix("Raw")), bytes.isFinite,
+           bytes >= Double(Int64.min), bytes < Double(Int64.max) {
+            return ByteCountFormatter.string(fromByteCount: Int64(bytes), countStyle: .file)
+        }
+        return display
+    }
+
     var display: String {
         switch self {
         case .object, .array: ""
@@ -109,5 +140,18 @@ indirect enum AdminValue: Codable, Sendable {
         case .bool(let v): v ? "Yes" : "No"
         case .null: "Not set"
         }
+    }
+}
+
+// Immich quotas are bytes on the wire and GiB in the editor.
+enum AdminQuota {
+    static let bytesPerGiB = 1_073_741_824.0
+    static func bytes(from text: String) -> Int64? {
+        guard let gib = Double(text), gib.isFinite, gib >= 0,
+              gib * bytesPerGiB <= 9_007_199_254_740_991 else { return nil }
+        return Int64(gib * bytesPerGiB)
+    }
+    static func text(from bytes: Int64?) -> String {
+        bytes.map { String(Double($0) / bytesPerGiB) } ?? ""
     }
 }

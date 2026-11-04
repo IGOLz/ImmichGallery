@@ -69,11 +69,11 @@ private struct AdminView: View {
                             Button("Refresh", systemImage: "arrow.clockwise") { Task { await model.refresh() } }
                                 .disabled(model.busy)
                             if model.section == .users {
-                                Button("New User", systemImage: "person.badge.plus") { userEditor = .init(user: nil) }
+                                Button("New User", systemImage: "person.badge.plus") { model.error = nil; userEditor = .init(user: nil) }
                                     .disabled(model.busy)
                             }
                             if model.section == .libraries {
-                                Button("New Library", systemImage: "plus") { libraryEditor = .init(library: nil) }
+                                Button("New Library", systemImage: "plus") { model.error = nil; libraryEditor = .init(library: nil) }
                                     .disabled(model.busy || model.users.filter { !$0.isDeleted }.isEmpty)
                             }
                         }
@@ -87,12 +87,18 @@ private struct AdminView: View {
             await model.refresh()
             while !Task.isCancelled && model.section == .queues && model.authorized && !model.unavailable.contains(.queues) {
                 do { try await Task.sleep(for: .seconds(10)) } catch { return }
-                await model.refresh()
+                await model.refresh(polling: true)
             }
         }
-        .alert("Administration", isPresented: Binding(get: { model.error != nil }, set: { if !$0 { model.error = nil } })) {
-            Button("OK") { model.error = nil }
-        } message: { Text(model.error ?? "") }
+        .safeAreaInset(edge: .bottom) {
+            if userEditor == nil && libraryEditor == nil, let error = model.error {
+                HStack {
+                    Text(error).foregroundStyle(.red).textSelection(.enabled)
+                    Spacer()
+                    Button("Dismiss") { model.error = nil }
+                }.padding()
+            }
+        }
         .confirmationDialog(pending?.title ?? "Confirm", isPresented: Binding(get: { pending != nil }, set: { if !$0 { pending = nil } }), titleVisibility: .visible) {
             if let action = pending {
                 Button(action.button, role: .destructive) {
@@ -102,8 +108,8 @@ private struct AdminView: View {
             }
             Button("Cancel", role: .cancel) { pending = nil }
         } message: { Text(pending?.message ?? "") }
-        .sheet(item: $userEditor) { item in AdminUserEditor(model: model, user: item.user) }
-        .sheet(item: $libraryEditor) { item in AdminLibraryEditor(model: model, library: item.library) }
+        .sheet(item: $userEditor, onDismiss: { model.error = nil }) { item in AdminUserEditor(model: model, user: item.user) }
+        .sheet(item: $libraryEditor, onDismiss: { model.error = nil }) { item in AdminLibraryEditor(model: model, library: item.library) }
         .sheet(isPresented: Binding(get: { model.notice != nil }, set: { if !$0 { model.notice = nil } })) {
             VStack(alignment: .leading, spacing: 16) {
                 ScrollView { Text(model.notice ?? "").textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading) }
@@ -151,14 +157,16 @@ private struct AdminView: View {
                 Spacer()
                 Menu("Actions") {
                     if user.isDeleted {
-                        Button("Restore User") { Task { await model.perform { try await model.session.client.adminRestoreUser(user.id) } } }
+                        Button("Restore User") { Task { await model.perform { try await model.client.adminRestoreUser(user.id) } } }
                             .disabled(user.status == "removing")
                     } else {
-                        Button("Edit User…") { userEditor = .init(user: user) }
+                        Button("Edit User…") { model.error = nil; userEditor = .init(user: user) }
                         Button("Delete User…", role: .destructive) { deleteUser(user, force: false) }
+                            .disabled(user.id == model.session.user?.id)
                         Button("Force Delete User…", role: .destructive) { deleteUser(user, force: true) }
+                            .disabled(user.id == model.session.user?.id)
                     }
-                }.disabled(model.busy || user.id == model.session.user?.id)
+                }.disabled(model.busy)
             }.padding(.vertical, 5)
         }
     }
@@ -166,7 +174,7 @@ private struct AdminView: View {
     private func deleteUser(_ user: AdminUser, force: Bool) {
         pending = .init(title: "Delete \(user.name)?", button: force ? "Force Delete" : "Delete User",
                         message: force ? "Force deletion can permanently remove this user's assets. This cannot be undone once removal starts." : "This user will be scheduled for deletion. Restore is available until the server removes the account.") {
-            try await model.session.client.adminDeleteUser(user.id, force: force)
+            try await model.client.adminDeleteUser(user.id, force: force)
         }
     }
 
@@ -183,22 +191,22 @@ private struct AdminView: View {
                     }
                     Spacer()
                     Menu("Actions") {
-                        Button("Edit Library…") { libraryEditor = .init(library: library) }
+                        Button("Edit Library…") { model.error = nil; libraryEditor = .init(library: library) }
                         Button("Scan Library") {
                             Task { await model.perform {
-                                try await model.session.client.adminScanLibrary(library.id)
+                                try await model.client.adminScanLibrary(library.id)
                                 model.notice = "Library scan queued. Progress is shown in Jobs."
                             } }
                         }
                         Button("Statistics…") {
                             Task { await model.perform {
-                                let value: AdminValue = try await model.session.client.get("libraries/\(library.id)/statistics")
+                                let value: AdminValue = try await model.client.get("libraries/\(library.id)/statistics")
                                 model.notice = value.readable
                             } }
                         }
                         Button("Delete Library…", role: .destructive) {
                             pending = .init(title: "Delete \(library.name)?", button: "Delete Library", message: "The server will remove this library's assets from Immich. Original files on disk are preserved.") {
-                                try await model.session.client.adminDeleteLibrary(library.id)
+                                try await model.client.adminDeleteLibrary(library.id)
                             }
                         }
                     }.disabled(model.busy)
@@ -208,10 +216,10 @@ private struct AdminView: View {
     }
 
     private var queues: some View {
-        List(model.queues) { queue in
+        List(AdminQueue.managedNames.compactMap { name in model.queues.first { $0.name == name } }) { queue in
             HStack {
                 VStack(alignment: .leading, spacing: 5) {
-                    Text(queue.name).font(.headline)
+                    Text(queue.title).font(.headline)
                     Text(queue.isPaused ? "Paused" : "Running").foregroundStyle(.secondary)
                     Text("Active \(queue.statistics.active) · Waiting \(queue.statistics.waiting) · Paused \(queue.statistics.paused) · Failed \(queue.statistics.failed) · Delayed \(queue.statistics.delayed) · Completed \(queue.statistics.completed)")
                         .font(.caption).foregroundStyle(.secondary)
@@ -220,27 +228,34 @@ private struct AdminView: View {
                 Menu("Actions") {
                     Button(queue.isPaused ? "Resume" : "Pause") { queueCommand(queue, queue.isPaused ? "resume" : "pause") }
                     if model.canStart(queue) {
-                        Button(queue.name == "library" ? "Scan Libraries" : queue.name == "sidecar" ? "Discover Sidecars" : "Start Missing Jobs") { queueCommand(queue, "start") }
+                        Button(queue.startTitle) { queueCommand(queue, "start") }
+                        if queue.name == "faceDetection" {
+                            Button("Refresh Faces") {
+                                Task { await model.perform { try await model.client.adminQueueCommand(queue.name, command: "start", force: nil) } }
+                            }
+                        }
                         if queue.canStartAll {
-                            Button("Process All Assets…") {
+                            Button(queue.allTitle) {
                                 pending = .init(title: "Reprocess all assets?", button: "Process All", message: "This can take a long time. Face detection and recognition will reset existing face data; sidecar jobs will sync metadata.") {
-                                    try await model.session.client.adminQueueCommand(queue.name, command: "start", force: true)
+                                    try await model.client.adminQueueCommand(queue.name, command: "start", force: true)
                                 }
                             }
                         }
                     }
+                    Button("Clear Failed Jobs", role: .destructive) { queueCommand(queue, "clear-failed") }
+                        .disabled(queue.statistics.failed == 0)
                     Button("Clear Queue…", role: .destructive) {
-                        pending = .init(title: "Clear \(queue.name)?", button: "Clear Queue", message: "Waiting and failed jobs will be removed. Active jobs may finish.") {
-                            try await model.session.client.adminQueueCommand(queue.name, command: "empty")
+                        pending = .init(title: "Clear \(queue.title)?", button: "Clear Queue", message: "Waiting jobs will be removed. Failed jobs are preserved. Active jobs may finish.") {
+                            try await model.client.adminQueueCommand(queue.name, command: "empty")
                         }
                     }
                 }.disabled(model.busy)
             }.padding(.vertical, 5)
         }
-        .safeAreaInset(edge: .bottom) { Text("Refreshes every 10 seconds while Jobs is open.").font(.caption).foregroundStyle(.secondary).padding(8) }
+        .safeAreaInset(edge: .bottom) { Text(model.pollingError ?? "Refreshes every 10 seconds while Jobs is open.").font(.caption).foregroundStyle(.secondary).padding(8) }
     }
     private func queueCommand(_ queue: AdminQueue, _ command: String) {
-        Task { await model.perform { try await model.session.client.adminQueueCommand(queue.name, command: command) } }
+        Task { await model.perform { try await model.client.adminQueueCommand(queue.name, command: command) } }
     }
 }
 
@@ -259,14 +274,10 @@ struct AdminValueView: View {
         switch value {
         case .object(let fields):
             ForEach(fields.keys.sorted(), id: \.self) { key in
-                if ["password", "secret", "token", "apikey", "clientsecret"].contains(where: { key.lowercased().contains($0) }) {
-                    LabeledContent(key, value: "Hidden")
-                } else {
-                    switch fields[key]! {
-                    case .object, .array:
-                        DisclosureGroup(key) { AdminValueView(value: fields[key]!) }
-                    default: LabeledContent(key, value: fields[key]!.display).textSelection(.enabled)
-                    }
+                switch fields[key]! {
+                case .object, .array:
+                    DisclosureGroup(key) { AdminValueView(value: fields[key]!) }
+                default: LabeledContent(key, value: fields[key]!.display(forKey: key)).textSelection(.enabled)
                 }
             }
         case .array(let values):
@@ -279,9 +290,15 @@ struct AdminValueView: View {
 }
 
 extension AdminValue {
+    func readable(forKey key: String) -> String {
+        switch self {
+        case .object, .array: readable
+        default: display(forKey: key)
+        }
+    }
     var readable: String {
         switch self {
-        case .object(let fields): fields.keys.sorted().map { "\($0): \(fields[$0]!.readable)" }.joined(separator: "\n")
+        case .object(let fields): fields.keys.sorted().map { "\($0): \(fields[$0]!.readable(forKey: $0))" }.joined(separator: "\n")
         case .array(let values): values.map(\.readable).joined(separator: "\n\n")
         default: display
         }
