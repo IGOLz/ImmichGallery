@@ -66,6 +66,7 @@ final class AppModel {
 @MainActor @Observable
 final class LibrarySession {
     let client: ImmichClient
+    let sharing: SharingModel // Sharing
     let pipeline: ImagePipeline
     private(set) var user: User?
     private(set) var features = ServerFeatures()
@@ -77,6 +78,7 @@ final class LibrarySession {
 
     init(client: ImmichClient, user: User?) {
         self.client = client
+        self.sharing = SharingModel(client: client)
         self.pipeline = ImagePipeline(client: client)
         self.user = user
     }
@@ -89,6 +91,7 @@ final class LibrarySession {
         self.version = await version
         if let user = await user { self.user = user }
         await reloadAlbums()
+        await sharing.reload() // Sharing
     }
 
     func reloadAlbums() async {

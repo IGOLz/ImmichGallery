@@ -6,6 +6,7 @@ import Observation
 enum GridSource: Hashable {
     case library, favorites, videos, archive, trash
     case album(String)
+    case partner(String) // Sharing
     case person(String)
     case search(String)
 
@@ -16,6 +17,7 @@ enum GridSource: Hashable {
         case .archive: TimelineQuery(visibility: "archive")
         case .trash: TimelineQuery(visibility: nil, isTrashed: true)
         case .album(let id): TimelineQuery(visibility: nil, albumId: id)
+        case .partner(let id): TimelineQuery(userId: id) // Sharing
         case .person(let id): TimelineQuery(personId: id)
         case .videos, .search: nil
         }

@@ -50,6 +50,7 @@ struct AssetGridHost: View {
         .navigationTitle(viewerItem?.date.map { Text(ImmichDate.day($0)) } ?? title)
         .navigationSubtitle(subtitle)
         .toolbar { toolbar }
+        .sharingPresentation() // Sharing
         .inspector(isPresented: $showInspector) {
             AssetInspector(assetID: inspectedID)
                 .inspectorColumnWidth(min: 260, ideal: 300, max: 420)
@@ -119,6 +120,7 @@ struct AssetGridHost: View {
             }
         }
 
+        ToolbarItem { SharingMenu(assetIDs: ids, albumID: { if case .album(let id) = model.source { return id }; return nil }()) } // Sharing
         ToolbarSpacer(.fixed)
 
         if model.source == .trash {
@@ -262,6 +264,7 @@ struct AssetGridView: View {
             Button("Delete Permanently…", role: .destructive) { onDelete(ids) }
         } else {
             Button(asset.isFavorite ? "Unfavorite" : "Favorite") { Task { await model.setFavorite(ids, !asset.isFavorite) } }
+            SharingMenu(assetIDs: ids) // Sharing
             Button("Export Unmodified Original…") { Exporter.exportOriginals(ids, session: session) }
             Divider()
             if model.source == .archive {

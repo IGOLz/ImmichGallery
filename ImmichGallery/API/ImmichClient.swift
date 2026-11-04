@@ -190,6 +190,7 @@ struct TimelineQuery: Hashable, Sendable {
     var isTrashed: Bool?
     var albumId: String?
     var personId: String?
+    var userId: String? // Sharing
     var withPartners: Bool?
     var withStacked: Bool? = true
 
@@ -200,6 +201,7 @@ struct TimelineQuery: Hashable, Sendable {
             "isTrashed": isTrashed.map(String.init),
             "albumId": albumId,
             "personId": personId,
+            "userId": userId, // Sharing
             "withPartners": withPartners.map(String.init),
             "withStacked": withStacked.map(String.init),
         ]

@@ -4,6 +4,9 @@ enum SidebarItem: Hashable {
     case library, favorites, videos, people, albums, archive, trash
     case album(String)
     case search
+    case sharedLinks // Sharing
+    case partners // Sharing
+    case partner(String) // Sharing
 }
 
 struct MainView: View {
@@ -68,6 +71,9 @@ struct MainView: View {
             AlbumsView()
         case .album(let id):
             AssetGridContainer(source: .album(id), title: Text(verbatim: session.albums.first { $0.id == id }?.albumName ?? ""))
+        case .sharedLinks: SharedLinksView() // Sharing
+        case .partners: PartnersView() // Sharing
+        case .partner(let id): AssetGridContainer(source: .partner(id), title: Text(session.sharing.receivedPartners.first { $0.id == id }?.name ?? "Partner Library")) // Sharing
         case .search:
             AssetGridContainer(source: .search(submittedSearch), title: Text("Search"))
                 .navigationSubtitle("“\(submittedSearch)”")
@@ -92,6 +98,7 @@ struct SidebarView: View {
                     Label("People", systemImage: "person.crop.square").tag(SidebarItem.people)
                 }
             }
+            SharingSidebar() // Sharing
             Section("Utilities") {
                 Label("Archive", systemImage: "archivebox").tag(SidebarItem.archive)
                 if session.features.trash {
