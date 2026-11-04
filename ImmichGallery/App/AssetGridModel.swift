@@ -8,6 +8,7 @@ enum GridSource: Hashable {
     case album(String)
     case person(String)
     case search(String)
+    case filteredSearch(SearchQuery) // Search
 
     var timelineQuery: TimelineQuery? {
         switch self {
@@ -17,7 +18,7 @@ enum GridSource: Hashable {
         case .trash: TimelineQuery(visibility: nil, isTrashed: true)
         case .album(let id): TimelineQuery(visibility: nil, albumId: id)
         case .person(let id): TimelineQuery(personId: id)
-        case .videos, .search: nil
+        case .videos, .search, .filteredSearch: nil
         }
     }
 }
@@ -92,6 +93,7 @@ final class AssetGridModel {
     @ObservationIgnored private var isStale = false
     // Paged sources (search, videos)
     @ObservationIgnored private var nextPage: ImmichClient.SearchPage?
+    @ObservationIgnored private var pageFailed = false
     @ObservationIgnored private var pageTask: Task<Void, Never>?
 
     init(source: GridSource, session: LibrarySession) {
@@ -102,7 +104,7 @@ final class AssetGridModel {
     var totalCount: Int { sections.reduce(0) { $0 + $1.count } }
     var isPaged: Bool { source.timelineQuery == nil }
     var showsSectionHeaders: Bool {
-        if case .search = source { false } else { true }
+        switch source { case .search, .filteredSearch: false; default: true }
     }
 
     func asset(_ section: Int, _ item: Int) -> AssetItem? {
@@ -131,6 +133,7 @@ final class AssetGridModel {
     func reload() async {
         guard let session else { return }
         isStale = false
+        pageFailed = false
         sectionTasks.values.forEach { $0.cancel() }
         sectionTasks = [:]
         pageTask?.cancel()
@@ -200,10 +203,11 @@ final class AssetGridModel {
     }
 
     private func loadNextPage() {
-        guard pageTask == nil, nextPage != nil else { return }
+        guard !pageFailed, pageTask == nil, nextPage != nil else { return }
         pageTask = Task { [weak self] in
             guard let self else { return }
-            do { try await fetchNextPage() } catch { session?.handle(error) }
+            do { try await fetchNextPage() }
+            catch { if !error.isCancellation { pageFailed = true; report(error) } }
             pageTask = nil
         }
     }
@@ -218,6 +222,8 @@ final class AssetGridModel {
             } else {
                 result = try await session.client.metadataSearch(fileName: text, page: page)
             }
+        case .filteredSearch(let query):
+            result = try await session.client.advancedSearch(query, smartEnabled: session.features.smartSearch, page: page)
         case .videos:
             result = try await session.client.metadataSearch(type: .video, page: page)
         default:
@@ -236,6 +242,7 @@ final class AssetGridModel {
     /// Appends paged results. Search keeps relevance order in one section;
     /// other paged sources are grouped by month like the timeline.
     private func append(_ items: [AssetItem]) {
+        guard !items.isEmpty else { return }
         if !showsSectionHeaders {
             if sections.isEmpty { sections = [GridSection(id: "results", title: nil, count: 0, assets: [])] }
             sections[0].assets!.append(contentsOf: items)
@@ -276,8 +283,12 @@ final class AssetGridModel {
                 if sections[s].assets == nil { await loadSection(id: sections[s].id).value }
                 i = (sections[s].assets?.count ?? 0) - 1
             } else if i >= count {
-                if isPaged, s == sections.count - 1, nextPage != nil {
-                    try? await fetchNextPage()
+                if isPaged, s == sections.count - 1, nextPage != nil, !pageFailed {
+                    do { try await fetchNextPage() }
+                    catch {
+                        if !error.isCancellation { pageFailed = true; report(error) }
+                        return nil
+                    }
                     continue
                 }
                 s += 1

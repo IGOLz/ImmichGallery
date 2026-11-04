@@ -186,7 +186,7 @@ struct AssetGridView: View {
         case .videos: ("No Videos", "video")
         case .archive: ("Archive Is Empty", "archivebox")
         case .trash: ("No Recently Deleted Items", "trash")
-        case .search: ("No Results", "magnifyingglass")
+        case .search, .filteredSearch: ("No Results", "magnifyingglass")
         default: ("No Photos", "photo.on.rectangle")
         }
         return ContentUnavailableView(title, systemImage: symbol)

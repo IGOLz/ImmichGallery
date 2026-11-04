@@ -14,6 +14,7 @@ struct ServerVersion: Decodable, Sendable, CustomStringConvertible {
 }
 
 struct ServerFeatures: Decodable, Sendable {
+    var ocr = false
     var smartSearch = false
     var facialRecognition = false
     var map = false
@@ -25,6 +26,7 @@ struct ServerFeatures: Decodable, Sendable {
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
+        ocr = try c.decodeIfPresent(Bool.self, forKey: .ocr) ?? false
         smartSearch = try c.decodeIfPresent(Bool.self, forKey: .smartSearch) ?? false
         facialRecognition = try c.decodeIfPresent(Bool.self, forKey: .facialRecognition) ?? false
         map = try c.decodeIfPresent(Bool.self, forKey: .map) ?? false
@@ -34,7 +36,7 @@ struct ServerFeatures: Decodable, Sendable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case smartSearch, facialRecognition, map, trash, passwordLogin, oauth
+        case ocr, smartSearch, facialRecognition, map, trash, passwordLogin, oauth
     }
 }
 

@@ -1,0 +1,32 @@
+# Advanced search
+
+Search is available in the sidebar and through the toolbar search field. Submit text with Return. Edit > Find opens Search and focuses the toolbar field with ⌘F; Search Filters… opens the filter sheet with ⌥⌘F. The results view offers Context, File Name, Description, and Text in Images modes. Context is shown only when smart search is enabled; OCR requires the server's `ocr` feature flag. Empty text with active filters uses metadata search.
+
+Filters combine people, country/state/city, camera make/model/lens, inclusive local calendar dates, photo/video type, archived assets, favorites, assets outside albums, and an exact one-to-five-star rating. Rating controls appear only when `users/me/preferences.ratings.enabled` is true. People are paged, show face thumbnails, and can be filtered by name among loaded people. Suggestion menus use the server's distinct metadata values; each menu shows all available values and the text field permits manual entry. Requests wait 250 ms after parent changes and send only the relevant location or camera parents. Changing a parent location or camera clears its dependent fields.
+
+Chips above results reopen the editable filter sheet and have individual remove buttons. The people chip shows the selected names. Recent searches preserve the complete query and filters, keep at most 20 entries, and can be cleared. They are stored in UserDefaults under a server API URL and user ID key, without tokens. Missing fields in older history entries decode to defaults. Restored modes are clamped to server capabilities, and toolbar completions deduplicate text before limiting to eight suggestions. No history is persisted if the user ID is unavailable. Toolbar completions offer the text of recent searches; the Recent Searches menu restores their complete filters. Explore cities are offered in the empty search view.
+
+Results reuse AssetGridContainer, including infinite paging, selection, context menus, the viewer, export, and inspector. Later-page failures now surface through the grid's existing error alert and stop automatic paging until an explicit Refresh with ⌘R. This also covers viewer navigation past the last loaded asset. Only one search grid is cached at a time. Empty pages no longer create an empty results section that hides the No Results state.
+
+## Contracts checked
+
+- Immich v3.3.5 `open-api/immich-openapi-specs.json`: POST `/search/smart`, POST `/search/metadata`, GET `/search/suggestions`, GET `/search/explore`, GET `/people`, GET `/server/features`, GET `/users/me/preferences`; SmartSearchDto, MetadataSearchDto, SearchSuggestionType, SearchExploreResponseDto, SearchExploreItem, RatingsResponse, and search paging fields.
+- Official v3.3.5 web source: `web/src/lib/managers/search-manager.svelte.ts`, `SearchTextSection.svelte`, `SearchLocationSection.svelte`, `SearchDisplaySection.svelte`, and `search-bar-utils.ts`. OCR maps to metadata `ocr`, archive maps to `visibility: archive`, and date limits cover complete days.
+- https://docs.immich.app/features/searching/ for supported modes and filters. https://api.immich.app was fetched, but its client-rendered endpoint pages were not readable through the documentation fetcher; the version-pinned OpenAPI and official web source supply the exact contract.
+- Apple's SwiftUI reference for searchSuggestions, DatePicker, and sheet. These predate macOS 26. The other UI primitives follow the existing app's SwiftUI patterns.
+
+## Compatibility
+
+v3.3.5 marks flat search filters deprecated in favor of SearchFilter, but accepts them and uses them in its own web client. Using the flat form retains v2 compatibility. Smart search uses numbered pages; metadata accepts either numbered pages or the returned cursor. The session feature flags supply OCR availability without another server/features request on opening Search. A missing smart endpoint falls back to filename metadata search. Missing OCR flags hide OCR; missing ratings preferences hide ratings. Suggestion 404s hide the suggestion menu while allowing typed filters; unavailable explore data is omitted. A v2 server was not available for runtime checks.
+
+Exact ratings 1–5 are supported. An explicit unrated filter and null metadata values are not exposed. Explore dates are omitted because the endpoint returns month buckets rather than Things categories. Only city explore groups are exposed.
+
+## Verification
+
+The review-fix revision passed the requested Debug xcodebuild command with no warnings in changed Swift files. Xcode emitted its existing AppIntents metadata-extraction warning because the app has no AppIntents dependency.
+
+`scripts/check-search.swift` checks field mapping, combined filters, deterministic people IDs, same-day date validation, individual chip removal, person names, unavailable-mode clamping, backward-compatible history decoding, parent-only suggestion parameters, OCR feature decoding, and omission of unused EXIF. Its optional fixture-folder argument can decode demo responses with production DTOs. Compile/run instructions are in its header.
+
+`scripts/check-search-paging.swift` uses the production grid and session models with an intercepting URLProtocol and fail-closed credential stubs. It verifies a failed second page is reported once, scrolling and viewer navigation cannot retry it, explicit refresh permits another attempt, and a new search evicts the previous model while retaining ordinary library caching. It covers videos, legacy search, and filtered search. All responses are local fixtures; no network requests leave the harness.
+
+The app was not launched during this revision. No Keychain access or live Immich requests were made. UI behavior is checked through compilation and source inspection, with no runtime UI verification. The v3.3.5 OpenAPI and official web sources were fetched to verify suggestion dependencies and top-level asset dimensions, which allow omitting EXIF.
