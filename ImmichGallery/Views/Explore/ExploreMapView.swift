@@ -11,24 +11,20 @@ struct ExploreMapView: View {
     @State private var archived = false
     @State private var partners = true
     @State private var dateFilter = false
-    @State private var after = Calendar.current.date(byAdding: .year, value: -1, to: Date())!
+    @State private var after = Calendar.current.date(byAdding: .year, value: -1, to: Date()) ?? Date()
     @State private var before = Date()
     @State private var error: String?
     @State private var selection: ExploreMapCluster?
     @State private var clusterTask: Task<Void, Never>?
     private var filterKey: String { "\(favorites)-\(archived)-\(partners)-\(dateFilter)-\(after)-\(before)" }
     var body: some View {
-        Map {
+        let session = session
+        let pipeline = session.pipeline
+        return Map {
             ForEach(clusters) { cluster in
-                Annotation("\(cluster.assets.count) photos", coordinate: .init(latitude: cluster.lat, longitude: cluster.lon)) {
-                    Button { selection = cluster } label: {
-                        RemoteThumbnail(assetID: cluster.assets.first)
-                            .frame(width: 52, height: 52).clipShape(.rect(cornerRadius: 8))
-                            .overlay(alignment: .bottomTrailing) {
-                                Text("\(cluster.assets.count)").font(.caption.bold()).padding(3).background(.regularMaterial, in: Capsule())
-                            }
-                            .overlay(RoundedRectangle(cornerRadius: 8).stroke(.white, lineWidth: 2))
-                    }.buttonStyle(.plain)
+                Annotation(String(localized: "\(cluster.assets.count) photos"), coordinate: .init(latitude: cluster.lat, longitude: cluster.lon)) {
+                    ExploreMapAnnotation(cluster: cluster, pipeline: pipeline) { selection = cluster }
+                        .environment(session)
                 }
             }
         }
@@ -50,9 +46,11 @@ struct ExploreMapView: View {
         }
         .task(id: filterKey) {
             do {
-                markers = try await session.client.exploreMarkers(favorites: favorites, archived: archived, partners: partners,
+                let loaded = try await session.client.exploreMarkers(favorites: favorites, archived: archived, partners: partners,
                     after: dateFilter ? Calendar.current.startOfDay(for: after) : nil,
                     before: dateFilter ? Calendar.current.date(byAdding: .day, value: 1, to: Calendar.current.startOfDay(for: before)) : nil)
+                guard !Task.isCancelled else { return }
+                markers = loaded
                 error = nil
                 recluster()
             } catch { if !Task.isCancelled { self.error = error.localizedDescription } }

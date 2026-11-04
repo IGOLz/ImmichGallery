@@ -16,7 +16,7 @@ struct ExploreMemoriesView: View {
                 ForEach(memories) { memory in
                     Button { openWindow(id: "explore-memory", value: memory.id) } label: {
                         VStack(alignment: .leading) {
-                            RemoteThumbnail(assetID: memory.assets.first?.id, size: .preview).aspectRatio(1.4, contentMode: .fit).clipShape(.rect(cornerRadius: 12))
+                            RemoteThumbnail(pipeline: session.pipeline, assetID: memory.assets.first?.id, size: .preview).aspectRatio(1.4, contentMode: .fit).clipShape(.rect(cornerRadius: 12))
                             Text(memory.title).font(.headline)
                             Text("\(memory.assets.count) photos").foregroundStyle(.secondary)
                         }

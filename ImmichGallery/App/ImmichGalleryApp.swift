@@ -57,28 +57,36 @@ struct RootView: View {
     }
 }
 
-struct AccountChrome: ViewModifier {
+/// Kept inside the split view's detail column so native sidebar safe areas stay intact.
+struct AccountPasswordBanner: View {
     @Environment(AppModel.self) private var app
     @State private var changingPassword = false
+
+    var body: some View {
+        Group {
+            if app.services?.user?.shouldChangePassword == true {
+                HStack {
+                    Text("Your server asks you to change your password.")
+                    Button("Change Password…") { changingPassword = true }
+                }.padding(8).frame(maxWidth: .infinity).background(.bar)
+            }
+        }
+        .onChange(of: app.services.map(ObjectIdentifier.init)) { changingPassword = false }
+        .sheet(isPresented: $changingPassword) {
+            if let services = app.services {
+                VStack {
+                    AccountSecurityView(session: services)
+                    Button("Done") { changingPassword = false }.padding()
+                }.frame(width: 640, height: 650)
+            }
+        }
+    }
+}
+
+struct AccountChrome: ViewModifier {
+    @Environment(AppModel.self) private var app
     func body(content: Content) -> some View {
         content
-            .safeAreaInset(edge: .top) {
-                if app.services?.user?.shouldChangePassword == true {
-                    HStack {
-                        Text("Your server asks you to change your password.")
-                        Button("Change Password…") { changingPassword = true }
-                    }.padding(8).frame(maxWidth: .infinity).background(.bar)
-                }
-            }
-            .onChange(of: app.services.map(ObjectIdentifier.init)) { changingPassword = false }
-            .sheet(isPresented: $changingPassword) {
-                if let services = app.services {
-                    VStack {
-                        AccountSecurityView(session: services)
-                        Button("Done") { changingPassword = false }.padding()
-                    }.frame(width: 640, height: 650)
-                }
-            }
             .alert("Account Error", isPresented: Binding(get: { app.accountError != nil }, set: { if !$0 { app.accountError = nil } })) {
                 Button("OK") { app.accountError = nil }
             } message: { Text(app.accountError ?? "") }

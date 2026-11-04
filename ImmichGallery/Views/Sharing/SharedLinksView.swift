@@ -84,7 +84,7 @@ struct SharedLinkAssetsView: View {
             List(selection: $selected) {
                 ForEach(link?.assets ?? []) { asset in
                     HStack {
-                        RemoteThumbnail(assetID: asset.id).frame(width: 48, height: 48)
+                        RemoteThumbnail(pipeline: session.pipeline, assetID: asset.id).frame(width: 48, height: 48)
                         Text(asset.originalFileName)
                     }.tag(asset.id)
                 }

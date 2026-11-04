@@ -7,6 +7,12 @@ struct ExploreMapCluster: Identifiable, Sendable {
     let assets: [String]
     let bbox: String
     static func make(_ markers: [ExploreMarker], latitude: Double, longitude: Double, latSpan: Double, lonSpan: Double) -> [Self] {
+        guard latitude.isFinite, longitude.isFinite, latSpan.isFinite, lonSpan.isFinite else { return [] }
+        let latitude = min(90, max(-90, latitude))
+        let wrappedLongitude = longitude.truncatingRemainder(dividingBy: 360)
+        let longitude = wrappedLongitude < -180 ? wrappedLongitude + 360 : (wrappedLongitude > 180 ? wrappedLongitude - 360 : wrappedLongitude)
+        let latSpan = min(180, max(0.00001, abs(latSpan)))
+        let lonSpan = min(360, max(0.00001, abs(lonSpan)))
         let latStep = max(latSpan / 12, 0.00001)
         let lonStep = max(lonSpan / 16, 0.00001)
         var groups: [String: [ExploreMarker]] = [:]

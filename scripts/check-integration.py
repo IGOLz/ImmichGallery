@@ -19,6 +19,7 @@ cases = {
     'paging-and-services': api + [app(s) for s in ['AppModel', 'AssetGridModel', 'AlbumsActions', 'MetadataState', 'SharingModel', 'UploadQueue']] + [support('ImagePipeline'), support('Formatters'), 'scripts/check-search-paging.swift'],
     'sharing': api + [app('SharingModel'), 'scripts/checks/SharingModelCheck.swift'],
     'upload': api + [app('UploadQueue'), 'scripts/verify-upload.swift'],
+    'map-annotation': api + [support('ImagePipeline'), app('ExploreClustering'), 'ImmichGallery/Views/Albums/RemoteThumbnail.swift', 'ImmichGallery/Views/Explore/ExploreMapAnnotation.swift', 'Tests/MapAnnotationChecks.swift'],
     'explore': api + [support('ImagePipeline'), app('ExploreClustering'), app('ExploreFolders'), 'Tests/ExploreChecks.swift'],
     'people-cache': api + [support('ImagePipeline'), 'scripts/checks/people-network.swift'],
     'search': api + ['scripts/check-search.swift'],

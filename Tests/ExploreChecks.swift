@@ -45,6 +45,22 @@ import ImageIO
         precondition(near.count < clusters.count)
         let dateline = [ExploreMarker(id: "east", lat: 0, lon: 179.9), ExploreMarker(id: "west", lat: 0, lon: -179.9)]
         precondition(ExploreMapCluster.make(dateline, latitude: 0, longitude: 180, latSpan: 10, lonSpan: 10).flatMap(\.assets).count == 2)
+        for longitude in [-1260.0, -540, -180, 180, 540, 1260] {
+            precondition(ExploreMapCluster.make(dateline, latitude: 0, longitude: longitude, latSpan: 10, lonSpan: 10).flatMap(\.assets).count == 2)
+        }
+        for span in [0.0, -10, 720, Double.greatestFiniteMagnitude] {
+            let extreme = ExploreMapCluster.make(markers, latitude: 0, longitude: 0, latSpan: span, lonSpan: span)
+            precondition(extreme.allSatisfy { $0.lat.isFinite && $0.lon.isFinite })
+            if abs(span) >= 360 { precondition(extreme.flatMap(\.assets).count == markers.count) }
+        }
+        for invalid in [Double.nan, .infinity, -.infinity] {
+            precondition(ExploreMapCluster.make(markers, latitude: invalid, longitude: 0, latSpan: 10, lonSpan: 10).isEmpty)
+            precondition(ExploreMapCluster.make(markers, latitude: 0, longitude: invalid, latSpan: 10, lonSpan: 10).isEmpty)
+            precondition(ExploreMapCluster.make(markers, latitude: 0, longitude: 0, latSpan: invalid, lonSpan: 10).isEmpty)
+            precondition(ExploreMapCluster.make(markers, latitude: 0, longitude: 0, latSpan: 10, lonSpan: invalid).isEmpty)
+        }
+        let invalidMarkers = [ExploreMarker(id: "nan", lat: .nan, lon: 0), ExploreMarker(id: "infinity", lat: 0, lon: .infinity), ExploreMarker(id: "invalid", lat: 91, lon: 181)]
+        precondition(ExploreMapCluster.make(invalidMarkers, latitude: 0, longitude: 0, latSpan: 180, lonSpan: 360).isEmpty)
         print("Explore checks passed: preferences, auth, folder deduplication, 50,000-marker clustering, dateline")
     }
 }

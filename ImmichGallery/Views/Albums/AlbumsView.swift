@@ -17,7 +17,7 @@ struct AlbumsView: View {
                                 .font(.title2.bold()).frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 20)
                             LazyVGrid(columns: [GridItem(.adaptive(minimum: 170, maximum: 240), spacing: 20)], spacing: 24) {
                                 ForEach(albums) { album in
-                                    NavigationLink(value: album) { AlbumCell(album: album) }.buttonStyle(.plain)
+                                    NavigationLink(value: album) { AlbumCell(album: album, pipeline: session.pipeline) }.buttonStyle(.plain)
                                         .contextMenu { MacAlbumWindowMenu(albumID: album.id) } // MacIntegration
                                 }
                             }.padding(20)
@@ -40,10 +40,11 @@ struct AlbumsView: View {
 
 private struct AlbumCell: View {
     let album: Album
+    let pipeline: ImagePipeline
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            RemoteThumbnail(assetID: album.albumThumbnailAssetId, size: .preview)
+            RemoteThumbnail(pipeline: pipeline, assetID: album.albumThumbnailAssetId, size: .preview)
                 .aspectRatio(1, contentMode: .fit)
                 .clipShape(.rect(cornerRadius: 10))
             Text(album.albumName)
@@ -57,31 +58,5 @@ private struct AlbumCell: View {
             .foregroundStyle(.secondary)
         }
         .contentShape(Rectangle())
-    }
-}
-
-/// Square, cropped thumbnail for an asset id (album covers etc.).
-struct RemoteThumbnail: View {
-    @Environment(LibrarySession.self) private var session
-    let assetID: String?
-    var size: ImmichClient.ThumbnailSize = .thumbnail
-    @State private var image: CGImage?
-
-    var body: some View {
-        Rectangle()
-            .fill(.quaternary)
-            .overlay {
-                if let image {
-                    Image(decorative: image, scale: 1).resizable().scaledToFill()
-                } else if assetID == nil {
-                    Image(systemName: "photo.on.rectangle").font(.largeTitle).foregroundStyle(.tertiary)
-                }
-            }
-            .clipped()
-            .task(id: assetID) {
-                guard let assetID else { return }
-                image = session.pipeline.cachedThumbnail(assetID, size: size)
-                if image == nil { image = await session.pipeline.thumbnail(assetID, size: size) }
-            }
     }
 }

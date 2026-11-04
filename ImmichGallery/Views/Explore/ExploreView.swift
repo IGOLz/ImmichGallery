@@ -76,7 +76,7 @@ struct ExplorePlacesView: View {
                             AssetGridContainer(source: .explore(.city(city)), title: Text(city))
                         } label: {
                             VStack(alignment: .leading) {
-                                RemoteThumbnail(assetID: asset.id).aspectRatio(1, contentMode: .fit).clipShape(.rect(cornerRadius: 10))
+                                RemoteThumbnail(pipeline: session.pipeline, assetID: asset.id).aspectRatio(1, contentMode: .fit).clipShape(.rect(cornerRadius: 10))
                                 Text(city).font(.headline)
                                 Text(asset.exifInfo?.country ?? "").foregroundStyle(.secondary)
                             }
