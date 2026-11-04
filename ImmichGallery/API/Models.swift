@@ -95,6 +95,7 @@ struct TimeBucketAssets: Decodable, Sendable {
     let duration: [MediaDuration?]
     let fileCreatedAt: [String]
     let livePhotoVideoId: [String?]
+    var visibility: [String]?
     var ownerId: [String]?
     var stack: [[String]?]?
     var city: [String?]?

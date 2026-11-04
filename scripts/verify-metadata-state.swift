@@ -32,7 +32,8 @@ enum ImmichError: Error { case http(Int, String) }
 
 @MainActor final class MetadataTestPipeline {
     var clears = 0
-    func removeAll() { clears += 1 }
+    var evicted: [String] = []
+    func evict(ids: [String]) { clears += 1; evicted += ids }
 }
 
 @MainActor final class LibrarySession {
@@ -47,11 +48,15 @@ enum ImmichError: Error { case http(Int, String) }
 @main struct VerifyMetadataState {
     @MainActor static func main() async throws {
         let session = LibrarySession()
-        let state = MetadataState()
+        let sharedState = MetadataSharedState()
+        let state = MetadataState(shared: sharedState)
+        let secondWindow = MetadataState(shared: sharedState)
+        state.present(.location, ids: ["own"])
+        assert(secondWindow.presentation == nil)
         var exif = Exif()
         exif.exifImageWidth = 192
         exif.exifImageHeight = 128
-        let own = AssetResponse(id: "own", type: .image, originalFileName: "photo.jpg", ownerId: "me",
+        let own = AssetResponse(id: "own", ownerId: "me", type: .image, originalFileName: "photo.jpg",
                                 fileCreatedAt: "", localDateTime: "", isFavorite: false, isTrashed: false, exifInfo: exif)
         var shared = own
         shared.ownerId = "other"
@@ -79,7 +84,8 @@ enum ImmichError: Error { case http(Int, String) }
         assert(edited && session.client.editWrites == 1 && state.imageRevision == 1)
         assert(Date().timeIntervalSince(started) < 5 && !state.busy)
         assert(state.error?.contains("processing") != true)
-        assert(session.pipeline.clears == 1 && state.gridRevision == 2)
+        assert(session.pipeline.clears == 1 && session.pipeline.evicted == ["own"] && state.gridRevision == 2)
+        assert(secondWindow.imageRevision == 1 && secondWindow.gridRevision == 2)
         session.client.editsError = ImmichError.http(404, "Missing")
         do { _ = try await state.loadEdits("missing", session: session) } catch {}
         assert(!state.unavailableEdits)

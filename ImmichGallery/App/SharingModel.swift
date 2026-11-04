@@ -6,7 +6,7 @@ final class SharingModel {
     let client: ImmichClient
     var presentation: SharingPresentation?
     let data: SharingData
-    init(client: ImmichClient, data: SharingData = SharingData()) { self.client = client; self.data = data }
+    init(client: ImmichClient, data: SharingData? = nil) { self.client = client; self.data = data ?? SharingData() }
     var links: [SharedLink] { get { data.links } set { data.links = newValue } }
     var receivedPartners: [SharingPartner] { get { data.receivedPartners } set { data.receivedPartners = newValue } }
     var outgoingPartners: [SharingPartner] { get { data.outgoingPartners } set { data.outgoingPartners = newValue } }

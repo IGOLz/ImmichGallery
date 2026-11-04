@@ -83,7 +83,7 @@ struct PeopleView: View {
             PersonDetailView(person: person)
         }
         .toolbar { Toggle(isOn: $showHidden) { Label("Show Hidden People", systemImage: "eye.slash") } }
-        .onReceive(NotificationCenter.default.publisher(for: .peopleChanged)) { _ in revision += 1 }
+        .onReceive(NotificationCenter.default.publisher(for: .peopleChanged, object: session.services)) { _ in revision += 1 }
         .task(id: "\(showHidden)-\(revision)") {
             requestID = UUID(); isLoading = false
             people = []; page = 1; hasMore = true; error = nil
@@ -93,7 +93,7 @@ struct PeopleView: View {
 
     private func changed() {
         session.invalidateGrids()
-        NotificationCenter.default.post(name: .peopleChanged, object: nil)
+        NotificationCenter.default.post(name: .peopleChanged, object: session.services)
     }
 
     private func update(_ person: Person, _ edit: PersonEdit) {
@@ -153,8 +153,8 @@ struct PersonCell: View {
         .task(id: person.id) {
             image = await session.pipeline.personThumbnail(person.id)
         }
-        .onReceive(NotificationCenter.default.publisher(for: .personThumbnailChanged)) { notification in
-            guard notification.object as? String == person.id else { return }
+        .onReceive(NotificationCenter.default.publisher(for: .personThumbnailChanged, object: session.services)) { notification in
+            guard notification.userInfo?["personID"] as? String == person.id else { return }
             Task { image = await session.pipeline.personThumbnail(person.id) }
         }
     }

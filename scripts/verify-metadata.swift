@@ -41,7 +41,7 @@ struct VerifyMetadata {
         assert(decoded.edits[0].parameters.width == 100 && decoded.edits[1].parameters.angle == 270)
         assert(decoded.edits == edits.edits)
         assert(decoded.edits != [rotation, crop])
-        var asset = AssetResponse(id: "asset", type: .image, originalFileName: "photo.jpg", ownerId: "me",
+        var asset = AssetResponse(id: "asset", ownerId: "me", type: .image, originalFileName: "photo.jpg",
                                   fileCreatedAt: "", localDateTime: "", isFavorite: false, isTrashed: false, exifInfo: exif)
         assert(asset.canEditMetadataImage(userID: "me"))
         assert(!asset.canEditMetadataImage(userID: "someone-else"))

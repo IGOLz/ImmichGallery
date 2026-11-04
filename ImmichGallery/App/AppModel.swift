@@ -91,11 +91,11 @@ final class AppModel {
             UserDefaults.standard.set(true, forKey: "accountVaultMigrated")
             try refreshEntries()
         } catch { accountError = error.localizedDescription; return }
-        if case .accessToken = services.client.credential { try? await services.client.logout() }
         guard self.services === services else { return }
         endSession(services)
         phase = .signedOut
         currentAccountID = nil
+        if case .accessToken = services.client.credential { try? await services.client.logout() }
         do { try clearCache(services) } catch { accountError = error.localizedDescription }
     }
 
@@ -198,6 +198,8 @@ final class AccountServices {
     private(set) var version: ServerVersion?
     private(set) var albums: [Album] = []
     private(set) var preferences: AccountPreferences? // Account: loaded preferences for feature consumers.
+    var explorePreferences: ExplorePreferences?
+    var lockedAvailable = false
     var exploreTags: [ExploreTag] = []
     var exploreTagsEnabled = false
     @ObservationIgnored private var exploreTagsLoaded = false
@@ -208,7 +210,8 @@ final class AccountServices {
         guard refresh || !exploreTagsLoaded else { return }
         let task = Task {
             do {
-                exploreTagsEnabled = try await client.explorePreferences().tags?.enabled == true
+                explorePreferences = try await client.explorePreferences()
+                exploreTagsEnabled = explorePreferences?.tags?.enabled == true
                 exploreTags = exploreTagsEnabled ? try await client.exploreTags().sorted { $0.value.localizedStandardCompare($1.value) == .orderedAscending } : []
                 exploreTagsLoaded = true
             } catch { handle(error) }
@@ -240,17 +243,28 @@ final class AccountServices {
     @ObservationIgnored var bootstrapTask: Task<Void, Never>?
     var notifications: [AccountNotification] = []
     var notificationsAvailable = true
+    var notificationError: String?
     @ObservationIgnored var notificationTask: Task<Void, Never>?
     func reloadNotifications() async throws {
         notifications = try await client.accountNotifications().sorted { $0.createdAt > $1.createdAt }
     }
     func startNotifications() {
         notificationTask = Task { [weak self] in
+            var delay = 60
             while !Task.isCancelled {
-                do { try await self?.reloadNotifications() }
+                guard self != nil else { return }
+                do {
+                    try await self?.reloadNotifications()
+                    self?.notificationError = nil
+                    delay = 60
+                } catch is CancellationError { return }
                 catch ImmichError.http(404, _), ImmichError.http(403, _) { self?.notificationsAvailable = false; return }
-                catch { self?.handle(error) }
-                do { try await Task.sleep(for: .seconds(60)) } catch { return }
+                catch {
+                    self?.notificationError = error.localizedDescription
+                    self?.handle(error)
+                    delay = min(delay * 2, 900)
+                }
+                do { try await Task.sleep(for: .seconds(delay)) } catch { return }
             }
         }
     }
@@ -269,6 +283,7 @@ final class AccountServices {
         await reloadAlbums()
         await sharing.reload() // Sharing
         await loadExploreTags()
+        if client.exploreSupportsLockedFolder { lockedAvailable = (try? await client.exploreAuth()) != nil }
     }
 
     var preferencesRevision = 0
@@ -292,7 +307,10 @@ final class AccountServices {
         for window in windows.allObjects { window.invalidateMacWindowGrids() }
     }
 
+    var hiddenAssetIDs: Set<String> = []
+
     func removeFromGrids(_ ids: Set<String>) {
+        hiddenAssetIDs.formUnion(ids)
         for window in windows.allObjects { window.removeFromGrids(ids) }
         MacQuickLook.shared.dismiss()
     }
@@ -308,7 +326,7 @@ final class LibrarySession {
     let services: AccountServices
     @ObservationIgnored var lockFolder: () -> Void = {}
     @ObservationIgnored var closeViewer: () -> Void = {}
-    func endSession() { lockFolder(); closeViewer() }
+    func endSession() { lockFolder(); closeViewer(); lockFolder = {}; closeViewer = {} }
     let albumActions = AlbumsActions()
     let metadata: MetadataState
     let sharing: SharingModel
@@ -350,7 +368,10 @@ final class LibrarySession {
     }
 
     func invalidateAlbumGrid(_ id: String) {
-        gridModels[.album(id)]?.markStale()
+        for window in services.windows.allObjects {
+            window.gridModels[.album(id)]?.markStale()
+            window.albumActions.revisions[id, default: 0] += 1
+        }
     }
 
     func discardAlbumGrid(_ id: String) {
@@ -378,9 +399,10 @@ final class LibrarySession {
     }
 
     func removeFromGrids(_ ids: Set<String>) {
+        if let snapshot = metadata.viewerSnapshot, ids.contains(snapshot.id) { metadata.viewerSnapshot = nil }
         for model in gridModels.values {
+            if let id = model.viewerID, ids.contains(id) { closeViewer() }
             model.exploreRemove(ids)
-            if let id = model.viewerID, ids.contains(id) { model.viewerID = nil }
         }
     }
 

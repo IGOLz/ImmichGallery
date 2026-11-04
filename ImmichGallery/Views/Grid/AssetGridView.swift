@@ -98,7 +98,7 @@ struct AssetGridHost: View {
     }
 
     private func requestDelete(_ ids: [String]) {
-        guard !model.source.isPartner, !ids.isEmpty else { return }
+        guard model.canDelete(ids) else { return }
         pendingDelete = ids
     }
 
@@ -127,13 +127,13 @@ struct AssetGridHost: View {
             }
         }
 
-        ToolbarItem { SharingMenu(assetIDs: ids, allowPublicLinks: !model.source.isPartner, albumID: { if case .album(let id) = model.source { return id }; return nil }()) } // Sharing
+        ToolbarItem { SharingMenu(assetIDs: ids, allowPublicLinks: model.canMutate(ids), albumID: { if case .album(let id) = model.source { return id }; return nil }()) } // Sharing
         ToolbarSpacer(.fixed)
 
         if model.source == .trash {
             ToolbarItem {
                 Button { Task { await model.restore(ids) } } label: { Label("Restore", systemImage: "arrow.uturn.backward") }
-                    .disabled(ids.isEmpty)
+                    .disabled(!model.canDelete(ids))
                     .help("Restore")
             }
         } else if !model.source.isPartner {
@@ -142,14 +142,14 @@ struct AssetGridHost: View {
                 Button { Task { await model.toggleFavorite(ids) } } label: {
                     Label("Favorite", systemImage: allFavorite ? "heart.fill" : "heart")
                 }
-                .disabled(ids.isEmpty)
+                .disabled(!model.canMutate(ids))
                 .help(allFavorite ? "Unfavorite" : "Favorite")
             }
         }
         if !model.source.isPartner {
             ToolbarItem {
                 Button { requestDelete(ids) } label: { Label("Delete", systemImage: "trash") }
-                    .disabled(ids.isEmpty)
+                    .disabled(!model.canDelete(ids))
                     .help("Delete")
             }
         }
@@ -198,6 +198,10 @@ struct AssetGridView: View {
         case .archive: ("Archive Is Empty", "archivebox")
         case .trash: ("No Recently Deleted Items", "trash")
         case .search, .filteredSearch: ("No Results", "magnifyingglass")
+        case .partner: ("No Partner Photos", "person.2")
+        case .largeFiles: ("No Large Files", "externaldrive")
+        case .geolocation: ("No Photos to Locate", "mappin.and.ellipse")
+        case .explore: ("No Photos to Explore", "globe")
         default: ("No Photos", "photo.on.rectangle")
         }
         return ContentUnavailableView(title, systemImage: symbol)
@@ -295,12 +299,12 @@ struct AssetGridView: View {
         Button("Open") { model.open(asset.id) }
         ViewerContextMenu(model: model, asset: asset)
         Divider()
-        if model.source.isPartner {
+        if !model.canMutate(ids), model.source != .trash {
             SharingMenuItems(assetIDs: ids, allowPublicLinks: false)
-            Button("Export Unmodified Original…") { Exporter.exportOriginals(ids, session: session) }
+            AssetsExportMenu(ids: ids)
         } else if model.source == .trash {
-            Button("Restore") { Task { await model.restore(ids) } }
-            Button("Delete Permanently…", role: .destructive) { onDelete(ids) }
+            Button("Restore") { Task { await model.restore(ids) } }.disabled(!model.canDelete(ids))
+            Button("Delete Permanently…", role: .destructive) { onDelete(ids) }.disabled(!model.canDelete(ids))
         } else {
             AlbumSelectionMenu(session: session, model: model, ids: ids) // Albums
             Button(asset.isFavorite ? "Unfavorite" : "Favorite") { Task { await model.setFavorite(ids, !asset.isFavorite) } }
@@ -308,7 +312,7 @@ struct AssetGridView: View {
             AssetsContextMenu(model: model, ids: [asset.id] + ids.filter { $0 != asset.id })
             MetadataMenuItems(ids: ids, canEditImage: !asset.isVideo && asset.livePhotoVideoID == nil).disabled(session.metadata.busy) // Metadata
             ExploreAssetActions(ids: ids, model: model) // Explore
-            Button("Export Unmodified Original…") { Exporter.exportOriginals(ids, session: session) }
+            AssetsExportMenu(ids: ids)
             Divider()
             if model.source == .archive {
                 Button("Unarchive") { Task { await model.setArchived(ids, false) } }

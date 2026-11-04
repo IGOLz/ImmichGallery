@@ -12,8 +12,17 @@ enum GridSource: Hashable {
     case search(String)
     case filteredSearch(SearchQuery) // Search
 
-    var isPartner: Bool { if case .partner = self { true } else { false } }
     case explore(ExploreSource) // Explore
+
+    var isPartner: Bool { if case .partner = self { true } else { false } }
+
+    var excludesArchived: Bool {
+        switch self {
+        case .library, .videos, .geolocation, .largeFiles, .person, .explore(.city), .explore(.folder): true
+        case .explore(.map(let query)): !query.archived
+        default: false
+        }
+    }
 
     var timelineQuery: TimelineQuery? {
         switch self {
@@ -64,7 +73,7 @@ struct AssetItem: Identifiable, Hashable, Sendable {
     }
 
     static func from(_ c: TimeBucketAssets) -> [AssetItem] {
-        c.id.indices.map { i in
+        c.id.indices.filter { c.visibility?.indices.contains($0) != true || c.visibility?[$0] != "locked" }.map { i in
             AssetItem(
                 id: c.id[i], ownerId: c.ownerId.flatMap { $0.indices.contains(i) ? $0[i] : nil }, isVideo: !c.isImage[i], isFavorite: c.isFavorite[i], isTrashed: c.isTrashed[i],
                 thumbhash: c.thumbhash[i], ratio: c.ratio[i] ?? 1, durationMS: c.duration[i]?.milliseconds,
@@ -143,6 +152,16 @@ final class AssetGridModel {
     func item(_ id: String) -> AssetItem? {
         guard let pos = index[id] else { return nil }
         return asset(pos.section, pos.item)
+    }
+
+    func canMutate(_ ids: [String]) -> Bool {
+        guard !source.isPartner, source != .trash, !ids.isEmpty, let userID = session?.user?.id else { return false }
+        return ids.allSatisfy { item($0)?.ownerId == userID }
+    }
+
+    func canDelete(_ ids: [String]) -> Bool {
+        guard !source.isPartner, !ids.isEmpty, let userID = session?.user?.id else { return false }
+        return ids.allSatisfy { item($0)?.ownerId == userID }
     }
 
     var selectedItems: [AssetItem] { selection.compactMap(item) }
@@ -235,7 +254,7 @@ final class AssetGridModel {
                     ? session.client.albumTimeBucket(id, query, order: albumOrder)
                     : session.client.timeBucket(id, query)
                 guard let i = sections.firstIndex(where: { $0.id == id }) else { return }
-                var assets = AssetItem.from(columns).filter { source != .geolocation || (session.user?.id != nil && $0.ownerId == session.user?.id) }
+                var assets = AssetItem.from(columns).filter { self.source != .geolocation || (session.user?.id != nil && $0.ownerId == session.user?.id) }
                 if case .explore(.map(let query)) = source { assets.removeAll { !query.includes($0.date) } }
                 sections[i].assets = assets
                 sections[i].count = assets.count
@@ -266,7 +285,7 @@ final class AssetGridModel {
         case .largeFiles:
             let assets = try await session.client.assetsLargeFiles()
             nextPage = nil
-            append(assets.map(AssetItem.init))
+            append(assets.filter { $0.visibility != "locked" }.map(AssetItem.init))
             return
         case .search(let text):
             if session.features.smartSearch {
@@ -394,7 +413,7 @@ final class AssetGridModel {
     // MARK: Actions
 
     func setFavorite(_ ids: [String], _ value: Bool) async {
-        guard !source.isPartner, let session, !ids.isEmpty else { return }
+        guard canMutate(ids), let session else { return }
         do {
             try await session.client.setFavorite(ids, value)
             if source == .favorites && !value {
@@ -412,7 +431,7 @@ final class AssetGridModel {
     }
 
     func moveToLockedFolder(_ ids: [String]) async {
-        guard let session, !ids.isEmpty else { return }
+        guard canMutate(ids), let session else { return }
         do {
             try await session.client.setVisibility(ids, "locked")
             session.exploreRemoveFromGrids(Set(ids))
@@ -427,10 +446,10 @@ final class AssetGridModel {
     }
 
     func setArchived(_ ids: [String], _ archived: Bool) async {
-        guard !source.isPartner, let session, !ids.isEmpty else { return }
+        guard canMutate(ids), let session else { return }
         do {
             try await session.client.setVisibility(ids, archived ? "archive" : "timeline")
-            if [.library, .archive].contains(source) || { if case .person = source { true } else { false } }() {
+            if source == .archive || source.excludesArchived {
                 remove(ids)
             }
             session.invalidateGrids(except: self)
@@ -438,7 +457,7 @@ final class AssetGridModel {
     }
 
     func delete(_ ids: [String], permanently: Bool) async {
-        guard !source.isPartner, let session, !ids.isEmpty else { return }
+        guard canDelete(ids), let session else { return }
         do {
             try await session.client.delete(ids, force: permanently)
             remove(ids)
@@ -448,7 +467,7 @@ final class AssetGridModel {
     }
 
     func restore(_ ids: [String]) async {
-        guard !source.isPartner, let session, !ids.isEmpty else { return }
+        guard canDelete(ids), let session else { return }
         do {
             try await session.client.restore(ids)
             remove(ids)

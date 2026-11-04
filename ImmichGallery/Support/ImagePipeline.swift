@@ -34,8 +34,9 @@ final class ImagePipeline: Sendable {
     }
 
     func invalidatePerson(_ id: String) {
-        cache.removeObject(forKey: "person-\(id)" as NSString)
-        client.session.configuration.urlCache?.removeCachedResponse(for: client.personThumbnailRequest(id))
+        evictionLock.withLock {
+            evict(key: "person-\(id)", request: client.personThumbnailRequest(id))
+        }
     }
 
     /// Featured thumbnails are generated asynchronously by the server.

@@ -1,6 +1,6 @@
 import Foundation
 
-/// Run with the command documented in Docs/Account.md. No writes to a server or Keychain.
+/// Run with the command documented in docs/Account.md. No writes to a server or Keychain.
 @main
 struct AccountChecks {
     static func main() async throws {

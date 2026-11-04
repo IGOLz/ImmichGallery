@@ -85,8 +85,7 @@ enum AccountStore {
 # precondition's autoclosure cannot throw.
 checks = checks.replace('precondition(try ', 'precondition(try! ')
 (output / 'Checks.swift').write_text(checks)
-sources = ['ImmichGallery/API/Models.swift', 'ImmichGallery/API/Models+Account.swift',
-           'ImmichGallery/API/ImmichClient.swift', 'ImmichGallery/App/AccountOperation.swift']
+sources = [str(p.relative_to(root)) for p in sorted((root / 'ImmichGallery/API').glob('*.swift'))] + ['ImmichGallery/App/AccountOperation.swift']
 subprocess.run(['swiftc', '-swift-version', '6', *sources, str(output / 'AccountVault.swift'),
                 str(output / 'Checks.swift'), '-o', str(output / 'check')], cwd=root, check=True)
 subprocess.run([str(output / 'check')], cwd=root, check=True)

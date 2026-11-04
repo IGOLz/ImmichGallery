@@ -72,7 +72,7 @@ struct PeopleFaceOverlay: View {
                 _ = try await session.client.reassignFace(face.id, to: person.id)
                 await load()
                 session.invalidateGrids()
-                NotificationCenter.default.post(name: .peopleChanged, object: nil)
+                NotificationCenter.default.post(name: .peopleChanged, object: session.services)
             }
         }
         .confirmationDialog("Remove Face?", isPresented: Binding(get: { removing != nil }, set: { if !$0 { removing = nil } })) {
@@ -90,9 +90,9 @@ struct PeopleFaceOverlay: View {
         let previous = try? await session.client.data(for: session.client.personThumbnailRequest(personID))
         _ = try await session.client.editPerson(personID, PersonEdit(featureFaceAssetId: assetID))
         session.pipeline.invalidatePerson(personID)
-        NotificationCenter.default.post(name: .personThumbnailChanged, object: personID)
+        NotificationCenter.default.post(name: .personThumbnailChanged, object: session.services, userInfo: ["personID": personID])
         await session.pipeline.refreshPersonThumbnail(personID, replacing: previous)
-        NotificationCenter.default.post(name: .personThumbnailChanged, object: personID)
+        NotificationCenter.default.post(name: .personThumbnailChanged, object: session.services, userInfo: ["personID": personID])
     }
     private func perform(_ action: @escaping () async throws -> Void) {
         busy = true
@@ -102,7 +102,7 @@ struct PeopleFaceOverlay: View {
                 try await action()
                 await load()
                 session.invalidateGrids()
-                NotificationCenter.default.post(name: .peopleChanged, object: nil)
+                NotificationCenter.default.post(name: .peopleChanged, object: session.services)
             } catch { session.handle(error); self.error = error.localizedDescription }
         }
     }

@@ -16,17 +16,13 @@ enum ExplorePage: String, CaseIterable, Hashable {
 
 struct ExploreSidebar: View {
     @Environment(LibrarySession.self) private var session
-    @State private var preferences: ExplorePreferences?
-    @State private var lockedAvailable = false
+    private var preferences: ExplorePreferences? { session.services.explorePreferences }
+    private var lockedAvailable: Bool { session.services.lockedAvailable }
     var body: some View {
         Section("Explore") {
             ForEach(ExplorePage.allCases, id: \.self) { page in
                 if enabled(page) { Label(page.rawValue, systemImage: page.icon).tag(SidebarItem.explore(page)) }
             }
-        }
-        .task {
-            preferences = try? await session.client.explorePreferences()
-            if session.client.exploreSupportsLockedFolder { lockedAvailable = (try? await session.client.exploreAuth()) != nil }
         }
     }
     private func enabled(_ page: ExplorePage) -> Bool {

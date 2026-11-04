@@ -49,7 +49,7 @@ struct AssetsStackBrowser: View {
                 AssetsPreview(asset: asset).frame(maxWidth: .infinity, maxHeight: .infinity)
                 ScrollView(.horizontal) {
                     HStack {
-                        ForEach(stack.assets) { member in
+                        ForEach(stack.assets.filter { $0.visibility != "locked" }) { member in
                             Button { selected = member.id } label: {
                                 ThumbnailCell(asset: AssetItem(member), isSelected: selected == member.id, size: .thumbnail)
                                     .frame(width: 80, height: 80)
@@ -65,7 +65,7 @@ struct AssetsStackBrowser: View {
                     Button("Remove from Stack") { perform { try await session.client.assetsRemoveFromStack(stackID, asset: asset.id) } }
                         .disabled(asset.id == stack.primaryAssetId)
                     Button("Unstack…") { unstack = true }
-                }.disabled(busy)
+                }.disabled(busy || model.source == .trash || stack.assets.contains { $0.ownerId != session.user?.id })
             } else if error == nil { ProgressView() }
             if let error { Text(error).foregroundStyle(.red) }
         }
@@ -78,7 +78,8 @@ struct AssetsStackBrowser: View {
     }
     private func load() async {
         do {
-            stack = try await session.client.assetsStack(stackID)
+            let loaded = try await session.client.assetsStack(stackID)
+            stack = AssetsStack(id: loaded.id, primaryAssetId: loaded.primaryAssetId, assets: loaded.assets.filter { $0.visibility != "locked" })
             if stack?.assets.contains(where: { $0.id == selected }) != true { selected = stack?.primaryAssetId }
         } catch ImmichError.http(404, _) { dismiss() }
         catch { session.handle(error); self.error = error.localizedDescription }
@@ -115,6 +116,6 @@ struct AssetsPreview: View {
                 Button { playing = true } label: { Label("Play Video", systemImage: "play.circle.fill") }.buttonStyle(.borderedProminent)
             }
         }
-        .task(id: asset.id) { playing = false; image = nil; image = await session.pipeline.thumbnail(asset.id, size: .preview) }
+        .task(id: "\(asset.id)-\(session.metadata.imageRevision)") { playing = false; image = nil; image = await session.pipeline.thumbnail(asset.id, size: .preview) }
     }
 }

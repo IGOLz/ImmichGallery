@@ -42,7 +42,7 @@ struct PeoplePicker: View {
                                 // Keep the new person available if assignment fails, so Retry never creates duplicates.
                                 people.insert(person, at: 0)
                                 try await selected(person)
-                                NotificationCenter.default.post(name: .peopleChanged, object: nil)
+                                NotificationCenter.default.post(name: .peopleChanged, object: session.services)
                                 dismiss()
                             } catch { session.handle(error); self.error = error.localizedDescription }
                         }

@@ -44,6 +44,8 @@ struct SettingsView: View {
                     HStack {
                         Button("Clear Cache") {
                             session.pipeline.removeAll()
+                            session.metadata.imageRevision += 1
+                            session.invalidateGrids()
                             cacheSize = 0
                         }
                         Spacer()

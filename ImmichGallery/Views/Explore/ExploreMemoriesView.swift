@@ -102,7 +102,12 @@ struct ExploreMemoryPlayer: View {
             }.padding(24).foregroundStyle(.white)
         }
         .task { do { try await session.client.exploreSeenMemory(memory.id) } catch { self.error = error.localizedDescription } }
-        .task(id: asset?.id) {
+        .onChange(of: session.services.hiddenAssetIDs) {
+            memory.assets.removeAll { session.services.hiddenAssetIDs.contains($0.id) }
+            index = min(index, max(0, memory.assets.count - 1))
+            image = nil
+        }
+        .task(id: "\(asset?.id ?? "")-\(session.metadata.imageRevision)") {
             image = nil
             if let asset { image = await session.pipeline.thumbnail(asset.id, size: .preview) }
         }

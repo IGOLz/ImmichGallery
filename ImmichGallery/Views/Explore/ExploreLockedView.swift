@@ -156,6 +156,7 @@ struct ExploreLockedView: View {
             do {
                 try await client.setVisibility([asset.id], "timeline")
                 assets.removeAll { $0.id == asset.id }; selected = nil
+                session.services.hiddenAssetIDs.remove(asset.id)
                 session.invalidateGrids()
             } catch { self.error = error.localizedDescription }
         }

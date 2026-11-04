@@ -47,7 +47,6 @@ import UniformTypeIdentifiers
     }
 }
 ''')
-subprocess.run(['swiftc', '-swift-version', '6', 'ImmichGallery/API/Models.swift',
-                'ImmichGallery/API/ImmichClient.swift', str(output / 'ImageHelper.swift'),
+subprocess.run(['swiftc', '-swift-version', '6', *[str(p.relative_to(root)) for p in sorted((root / 'ImmichGallery/API').glob('*.swift'))], str(output / 'ImageHelper.swift'),
                 str(output / 'Checks.swift'), '-o', str(output / 'check')], cwd=root, check=True)
 subprocess.run([str(output / 'check')], cwd=root, check=True)

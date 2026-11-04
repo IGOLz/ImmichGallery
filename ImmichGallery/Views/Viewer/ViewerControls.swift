@@ -79,8 +79,8 @@ struct ViewerCommands: Commands {
         CommandGroup(after: .toolbar) {
             Button("Start Slideshow") { state?.present(slideshow: true) }.disabled(state == nil || state?.model.totalCount == 0)
             Button("Open Full-Screen Viewer") { state?.present(slideshow: false) }.disabled(state?.currentID == nil)
-            Button("Rotate View Left") { state?.rotation -= 90 }.disabled(!canRotate)
-            Button("Rotate View Right") { state?.rotation += 90 }.disabled(!canRotate)
+            Button("Rotate View Temporarily Left") { state?.rotation -= 90 }.disabled(!canRotate)
+            Button("Rotate View Temporarily Right") { state?.rotation += 90 }.disabled(!canRotate)
             Button("Show in All Photos") { state?.showInLibrary() }.disabled(state?.currentID == nil)
         }
     }

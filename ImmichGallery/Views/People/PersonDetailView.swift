@@ -48,7 +48,7 @@ struct PersonDetailView: View {
             AssetGridContainer(source: .person(person.id), title: Text(verbatim: person.displayName))
         }
         .task { await reload() }
-        .onReceive(NotificationCenter.default.publisher(for: .peopleChanged)) { _ in
+        .onReceive(NotificationCenter.default.publisher(for: .peopleChanged, object: session.services)) { _ in
             Task { await reload(); await session.gridModel(for: .person(person.id)).reload() }
         }
         .sheet(isPresented: $editing) {
@@ -95,7 +95,7 @@ struct PersonDetailView: View {
     private func report(_ error: Error) { session.handle(error); self.error = error.localizedDescription }
     private func changed() {
         session.invalidateGrids()
-        NotificationCenter.default.post(name: .peopleChanged, object: nil)
+        NotificationCenter.default.post(name: .peopleChanged, object: session.services)
     }
 }
 

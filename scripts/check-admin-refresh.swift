@@ -2,7 +2,7 @@
 // These stand-ins exercise the production coordinator without network or app startup.
 import Foundation
 
-@MainActor final class LibrarySession {
+@MainActor final class AccountServices {
     let client = ImmichClient()
     let user: User? = try! JSONDecoder().decode(User.self, from: Data(#"{"id":"admin","name":"Admin","email":"admin@example.com","isAdmin":true}"#.utf8))
     var handledErrors = 0
@@ -58,7 +58,7 @@ enum ImmichError: Error { case http(Int, String?) }
 
 @main struct AdminRefreshChecks {
     @MainActor static func main() async {
-        let session = LibrarySession()
+        let session = AccountServices()
         let model = AdminModel(session: session)
         model.section = .queues
         let client = model.client

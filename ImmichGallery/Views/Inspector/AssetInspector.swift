@@ -23,7 +23,7 @@ struct AssetInspector: View {
                 ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-        .onReceive(NotificationCenter.default.publisher(for: .peopleChanged)) { _ in peopleRevision += 1 }
+        .onReceive(NotificationCenter.default.publisher(for: .peopleChanged, object: session.services)) { _ in peopleRevision += 1 }
         .task(id: "\(assetID ?? "")-\(session.metadata.revision)") { // Metadata: reload after edits, keeping the current asset visible.
             failed = false
             if asset?.id != assetID { asset = nil }

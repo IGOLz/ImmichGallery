@@ -2,7 +2,6 @@ import SwiftUI
 
 struct AccountNotificationBell: View {
     let session: AccountServices
-    @Environment(\.scenePhase) private var scenePhase
     private var notifications: [AccountNotification] { session.notifications }
     @State private var showing = false
     @State private var operation = AccountOperation()
@@ -62,6 +61,7 @@ struct AccountNotificationBell: View {
                             }.padding(.vertical, 4)
                         }
                     }
+                    if let error = session.notificationError { Text(error).foregroundStyle(.red).padding(.horizontal) }
                     AccountOperationStatus(operation: operation).padding(.horizontal)
                 }.frame(width: 500, height: 430).disabled(operation.busy)
                     .task { operation.run { try await reload() } }

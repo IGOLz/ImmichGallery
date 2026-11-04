@@ -19,7 +19,6 @@ struct MetadataMenuItems: View {
                 Button("Crop…") { session.metadata.present(.crop, ids: ids) }
             }
         }
-        .task(id: ids) { await session.metadata.checkImageEligibility(ids, session: session) }
     }
 
     @ViewBuilder private func rotateButton(_ title: String, clockwise: Bool) -> some View {

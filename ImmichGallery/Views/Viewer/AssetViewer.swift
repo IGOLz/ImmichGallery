@@ -31,7 +31,7 @@ struct AssetViewer: View {
                         .allowsHitTesting(!isPresentation || viewer?.controlsVisible != false) }
                     .draggable(OriginalTransfer(id: item.id, isVideo: true, client: session.client))
             } else {
-                ZoomableImage(item: item, rotation: viewer?.rotation ?? 0)
+                ZoomableImage(item: item, rotation: viewer?.rotation ?? 0, showsFaces: !isPresentation)
                     .id(item.id)
                 if playLive, let videoID = item.livePhotoVideoID {
                     VideoPlayerView(
@@ -53,9 +53,9 @@ struct AssetViewer: View {
                 .padding(.horizontal, 16)
             }
         }
-        .safeAreaInset(edge: .top) { AssetsStackButton(item: item, model: model).id(item.id) }
+        .safeAreaInset(edge: .top) { if !isPresentation { AssetsStackButton(item: item, model: model).id(item.id) } }
         .contextMenu {
-            if !model.source.isPartner, model.source != .trash { // Explore
+            if model.canMutate([item.id]) { // Explore
                 Button("Move to Locked Folder") { Task { await model.moveToLockedFolder([item.id]) } }
             }
         }
@@ -132,6 +132,7 @@ private struct ZoomableImage: View {
     @Environment(LibrarySession.self) private var session
     let item: AssetItem
     let rotation: Int
+    var showsFaces = true
 
     @State private var image: CGImage?
     @State private var hasOriginal = false
@@ -164,7 +165,7 @@ private struct ZoomableImage: View {
             .scaleEffect(scale * gestureScale)
             .offset(offset)
             .overlay {
-                if let image {
+                if let image, showsFaces, rotation % 360 == 0 {
                     PeopleFaceOverlay(assetID: item.id, imageSize: CGSize(width: image.width, height: image.height),
                                       zoom: scale * gestureScale, offset: offset)
                 }
