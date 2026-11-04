@@ -14,7 +14,11 @@ extension ImmichClient {
     }
     func mergePeople(into id: String, ids: [String]) async throws {
         struct Body: Encodable { let ids: [String] }
-        let results: [PeopleOperationResult] = try await send("POST", "people/\(id)/merge", body: Body(ids: ids))
+        let results: [PeopleOperationResult]
+        do { results = try await send("POST", "people/merge", body: Body(ids: [id] + ids)) }
+        catch ImmichError.http(404, _) {
+            results = try await send("POST", "people/\(id)/merge", body: Body(ids: ids))
+        }
         if let failed = results.first(where: { !$0.success }) {
             throw ImmichError.http(400, failed.errorMessage ?? failed.error ?? "Couldn't merge people.")
         }

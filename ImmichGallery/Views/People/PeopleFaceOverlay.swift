@@ -1,12 +1,15 @@
 import SwiftUI
 
-/// Inside the image's zoom/pan transform, so boxes track the displayed pixels.
+/// Passive boxes in viewer coordinates; face actions live in Manage Faces so pan/zoom stays available.
 struct PeopleFaceOverlay: View {
     @Environment(LibrarySession.self) private var session
     let assetID: String
     let imageSize: CGSize
+    let zoom: CGFloat
+    let offset: CGSize
     @State private var faces: [PeopleFace] = []
-    @State private var visible = false
+    @AppStorage("showPeopleFaces") private var visible = false
+    @State private var coordinatesMatch = false
     @State private var showingList = false
     @State private var supported = true
     @State private var assigning: PeopleFace?
@@ -16,36 +19,22 @@ struct PeopleFaceOverlay: View {
 
     var body: some View {
         GeometryReader { geo in
-            if visible {
+            if visible && coordinatesMatch {
                 ForEach(faces) { face in
-                    let rect = face.displayedRect(in: geo.size, imageSize: imageSize)
-                    Menu {
-                        Text(face.person?.displayName ?? "Unassigned Face")
-                        Button("Assign to Person…") { assigning = face }
-                        if let person = face.person {
-                            Button("Use as Featured Photo") {
-                                perform {
-                                    try await setFeaturedPhoto(person.id)
-                                }
-                            }
+                    let rect = face.displayedRect(in: geo.size, imageSize: imageSize, zoom: zoom, offset: offset)
+                    Rectangle().stroke(.white, lineWidth: 2)
+                        .overlay(alignment: .bottom) {
+                            Text(face.person?.displayName ?? "Unassigned Face")
+                                .font(.caption).padding(3).background(.black.opacity(0.7)).foregroundStyle(.white)
+                                .lineLimit(1)
                         }
-                        Button("Remove Face…", role: .destructive) { removing = face }
-                    } label: {
-                        Rectangle().stroke(.white, lineWidth: 2)
-                            .background(.white.opacity(0.08))
-                            .overlay(alignment: .bottom) {
-                                Text(face.person?.displayName ?? "Unassigned Face")
-                                    .font(.caption).padding(3).background(.black.opacity(0.7)).foregroundStyle(.white)
-                            }
-                    }
-                    .menuStyle(.borderlessButton).menuIndicator(.hidden)
-                    .frame(width: rect.width, height: rect.height)
-                    .position(x: rect.midX, y: rect.midY)
-                    .accessibilityLabel(face.person?.displayName ?? "Unassigned Face")
-                    .disabled(busy)
+                        .frame(width: rect.width, height: rect.height)
+                        .clipped()
+                        .position(x: rect.midX, y: rect.midY)
                 }
             }
         }
+        .allowsHitTesting(false)
         .toolbar {
             if session.features.facialRecognition && supported {
                 Button { showingList = true } label: { Label("Manage Faces", systemImage: "person.2") }
@@ -57,6 +46,9 @@ struct PeopleFaceOverlay: View {
         .sheet(isPresented: $showingList) {
             VStack(spacing: 16) {
                 Text("Faces in This Photo").font(.headline)
+                if !coordinatesMatch {
+                    Text("Face boxes are unavailable for edited photos.").foregroundStyle(.secondary)
+                }
                 if faces.isEmpty { Text("No faces found.").foregroundStyle(.secondary) }
                 List(faces) { face in
                     HStack {
@@ -67,8 +59,8 @@ struct PeopleFaceOverlay: View {
                             Button("Use as Featured Photo") {
                                 perform { try await setFeaturedPhoto(person.id) }
                             }
+                            Button("Remove…", role: .destructive) { showingList = false; removing = face }
                         }
-                        Button("Remove…", role: .destructive) { showingList = false; removing = face }
                     }.disabled(busy)
                 }
                 Button("Done") { showingList = false }.keyboardShortcut(.cancelAction)
@@ -79,6 +71,7 @@ struct PeopleFaceOverlay: View {
             PeoplePicker(title: "Assign Face", excludedID: face.person?.id, allowsCreation: true) { person in
                 _ = try await session.client.reassignFace(face.id, to: person.id)
                 await load()
+                session.invalidateGrids()
                 NotificationCenter.default.post(name: .peopleChanged, object: nil)
             }
         }
@@ -94,8 +87,11 @@ struct PeopleFaceOverlay: View {
         } message: { Text(error ?? "") }
     }
     private func setFeaturedPhoto(_ personID: String) async throws {
+        let previous = try? await session.client.data(for: session.client.personThumbnailRequest(personID))
         _ = try await session.client.editPerson(personID, PersonEdit(featureFaceAssetId: assetID))
-        session.client.session.configuration.urlCache?.removeCachedResponse(for: session.client.personThumbnailRequest(personID))
+        session.pipeline.invalidatePerson(personID)
+        NotificationCenter.default.post(name: .personThumbnailChanged, object: personID)
+        await session.pipeline.refreshPersonThumbnail(personID, replacing: previous)
         NotificationCenter.default.post(name: .personThumbnailChanged, object: personID)
     }
     private func perform(_ action: @escaping () async throws -> Void) {
@@ -105,12 +101,18 @@ struct PeopleFaceOverlay: View {
             do {
                 try await action()
                 await load()
+                session.invalidateGrids()
                 NotificationCenter.default.post(name: .peopleChanged, object: nil)
             } catch { session.handle(error); self.error = error.localizedDescription }
         }
     }
     private func load() async {
-        do { faces = try await session.client.faces(assetID: assetID) }
+        do {
+            // TODO: allow edited boxes once the viewer requests edited=true for previews AND originals.
+            let asset = try await session.client.asset(assetID)
+            coordinatesMatch = asset.isEdited == false
+            faces = try await session.client.faces(assetID: assetID)
+        }
         catch ImmichError.http(404, _) { supported = false; visible = false }
         catch { session.handle(error); self.error = error.localizedDescription }
     }

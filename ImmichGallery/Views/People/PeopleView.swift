@@ -10,6 +10,9 @@ struct PeopleView: View {
     @State private var isLoading = false
     @State private var requestID = UUID()
     @State private var error: String?
+    @State private var editing: Person?
+    @State private var merging: Person?
+    @State private var mergePair: (target: Person, source: Person)?
 
     var body: some View {
         Group {
@@ -24,6 +27,16 @@ struct PeopleView: View {
                         ForEach(people) { person in
                             NavigationLink(value: person) { PersonCell(person: person) }
                                 .buttonStyle(.plain)
+                                .contextMenu {
+                                    Button("Rename…") { editing = person }
+                                    Button(person.isHidden ? "Unhide Person" : "Hide Person") {
+                                        update(person, PersonEdit(isHidden: !person.isHidden))
+                                    }
+                                    Button("Merge…") { merging = person }
+                                    Button(person.isFavorite == true ? "Unfavorite Person" : "Favorite Person") {
+                                        update(person, PersonEdit(isFavorite: person.isFavorite != true))
+                                    }
+                                }
                                 .onAppear { if person.id == people.last?.id { Task { await loadMore() } } }
                         }
                     }
@@ -43,16 +56,50 @@ struct PeopleView: View {
                 }.padding().background(.bar)
             }
         }
+        .sheet(item: $editing) { person in
+            PersonEditSheet(person: person) { _ in changed() }
+        }
+        .sheet(item: $merging) { person in
+            PeoplePicker(title: "Merge into \(person.displayName)", excludedID: person.id) {
+                mergePair = (person, $0)
+            }
+        }
+        .confirmationDialog("Merge People?", isPresented: Binding(get: { mergePair != nil }, set: { if !$0 { mergePair = nil } })) {
+            Button("Merge", role: .destructive) {
+                guard let pair = mergePair else { return }
+                mergePair = nil
+                Task {
+                    do {
+                        try await session.client.mergePeople(into: pair.target.id, ids: [pair.source.id])
+                        changed()
+                    } catch { session.handle(error); self.error = error.localizedDescription }
+                }
+            }
+        } message: {
+            Text("All faces of \(mergePair?.source.displayName ?? "this person") will move to \(mergePair?.target.displayName ?? "the selected person"). This cannot be undone.")
+        }
         .navigationTitle("People")
         .navigationDestination(for: Person.self) { person in
             PersonDetailView(person: person)
         }
-        .toolbar { Toggle("Show Hidden People", isOn: $showHidden) }
+        .toolbar { Toggle(isOn: $showHidden) { Label("Show Hidden People", systemImage: "eye.slash") } }
         .onReceive(NotificationCenter.default.publisher(for: .peopleChanged)) { _ in revision += 1 }
         .task(id: "\(showHidden)-\(revision)") {
             requestID = UUID(); isLoading = false
             people = []; page = 1; hasMore = true; error = nil
             await loadMore()
+        }
+    }
+
+    private func changed() {
+        session.invalidateGrids()
+        NotificationCenter.default.post(name: .peopleChanged, object: nil)
+    }
+
+    private func update(_ person: Person, _ edit: PersonEdit) {
+        Task {
+            do { _ = try await session.client.editPerson(person.id, edit); changed() }
+            catch { session.handle(error); self.error = error.localizedDescription }
         }
     }
 
@@ -104,19 +151,11 @@ struct PersonCell: View {
         }
         .contentShape(Rectangle())
         .task(id: person.id) {
-            if let data = try? await session.client.data(for: session.client.personThumbnailRequest(person.id)) {
-                image = ImagePipeline.decode(data, maxPixelSize: 320)
-            }
+            image = await session.pipeline.personThumbnail(person.id)
         }
         .onReceive(NotificationCenter.default.publisher(for: .personThumbnailChanged)) { notification in
             guard notification.object as? String == person.id else { return }
-            Task {
-                var request = session.client.personThumbnailRequest(person.id)
-                request.cachePolicy = .reloadIgnoringLocalCacheData
-                if let data = try? await session.client.data(for: request) {
-                    image = ImagePipeline.decode(data, maxPixelSize: 320)
-                }
-            }
+            Task { image = await session.pipeline.personThumbnail(person.id) }
         }
     }
 }

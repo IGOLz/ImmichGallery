@@ -121,9 +121,14 @@ private struct ZoomableImage: View {
                 }
             }
             .frame(width: geo.size.width, height: geo.size.height)
-            .overlay { if let image { PeopleFaceOverlay(assetID: item.id, imageSize: CGSize(width: image.width, height: image.height)) } }
             .scaleEffect(scale * gestureScale)
             .offset(offset)
+            .overlay {
+                if let image {
+                    PeopleFaceOverlay(assetID: item.id, imageSize: CGSize(width: image.width, height: image.height),
+                                      zoom: scale * gestureScale, offset: offset)
+                }
+            }
             .contentShape(Rectangle())
             .gesture(magnify)
             .simultaneousGesture(pan(in: geo.size))

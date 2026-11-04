@@ -12,6 +12,9 @@ import CoreGraphics
         // Square image letterboxed horizontally, then scaled by 2.
         let rect = face.displayedRect(in: CGSize(width: 400, height: 200), imageSize: CGSize(width: 100, height: 100))
         assert(rect == CGRect(x: 150, y: 40, width: 100, height: 80))
+        let zoomed = face.displayedRect(in: CGSize(width: 400, height: 200), imageSize: CGSize(width: 100, height: 100),
+                                        zoom: 8, offset: CGSize(width: 30, height: -10))
+        assert(zoomed == CGRect(x: -170, y: -390, width: 800, height: 640))
         assert(face.displayedRect(in: .zero, imageSize: .zero) == .zero)
         let edit = try JSONSerialization.jsonObject(with: JSONEncoder().encode(PersonEdit(clearBirthDate: true))) as! [String: Any]
         assert(edit["birthDate"] is NSNull)

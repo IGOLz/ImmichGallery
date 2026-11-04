@@ -29,6 +29,28 @@ final class ImagePipeline: Sendable {
         await load(client.personThumbnailRequest(id), key: "person-\(id)", maxPixelSize: nil)
     }
 
+    func invalidatePerson(_ id: String) {
+        cache.removeObject(forKey: "person-\(id)" as NSString)
+        client.session.configuration.urlCache?.removeCachedResponse(for: client.personThumbnailRequest(id))
+    }
+
+    /// Featured thumbnails are generated asynchronously by the server.
+    func refreshPersonThumbnail(_ id: String, replacing previous: Data?) async {
+        invalidatePerson(id)
+        for delay in [1, 3, 6] {
+            do { try await Task.sleep(for: .seconds(delay)) } catch { return }
+            invalidatePerson(id)
+            var request = client.personThumbnailRequest(id)
+            request.cachePolicy = .reloadIgnoringLocalCacheData
+            guard let data = try? await client.data(for: request), !Task.isCancelled else { continue }
+            guard data != previous, let image = Self.decode(data, maxPixelSize: nil) else { continue }
+            cache.setObject(image, forKey: "person-\(id)" as NSString, cost: image.bytesPerRow * image.height)
+            return
+        }
+        // Don't leave an old cached response behind after retries expire.
+        invalidatePerson(id)
+    }
+
     /// Full-resolution original (HEIC, RAW, JPEG…), downsampled to `maxPixelSize`.
     func original(_ id: String, maxPixelSize: Int = 8192) async -> CGImage? {
         await load(client.originalRequest(id), key: "\(id)-original", maxPixelSize: maxPixelSize)

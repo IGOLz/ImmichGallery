@@ -8,17 +8,22 @@ records. Favorite and hidden badges identify their state. The inspector opens th
 same detail page in a sheet, including unnamed people.
 
 The photo viewer toolbar offers Show Faces and Manage Faces. Boxes use each
-face's image dimensions and the displayed image's aspect-fit rectangle, inside
-the existing zoom/pan transform. Each box and list row can assign the face to an
-existing or newly created named person, set the associated person's featured
-photo, or remove the face after confirmation. Null person values display as
+face's image dimensions and the displayed image's aspect-fit rectangle. Their
+positions track zoom/pan, while strokes and labels stay at screen size. Boxes
+pass pointer events through to the viewer; Manage Faces holds the actions.
+Show Faces persists across photos. Boxes are hidden when isEdited is true or
+unknown, because the viewer currently requests unedited previews and originals.
+A TODO at the coordinate check explains when to enable edited boxes.
+Each list row can assign the face to an existing or newly created named person,
+set the associated person's featured photo, or remove an assigned face after confirmation. Null person values display as
 Unassigned Face. Removal sends force=false, preserving the server's protection
 against unsafe removal; errors are displayed rather than automatically forcing
 an operation. These controls require the facialRecognition server feature.
 
 People and pickers request 100 records per page, deduplicate IDs, load thumbnails
-lazily, and reject stale responses when filters change. The v3.3.5 response omits
-hasNextPage; total plus nonempty pages determine when to stop. Pickers search on
+lazily through ImagePipeline, and reject stale responses when filters change.
+The v3.3.5 response includes hasNextPage; total plus nonempty pages are a fallback
+for older responses. Pickers search on
 the server and offer explicit Load More. Failed creation-plus-assignment retains
 the created person in the picker for retry rather than creating a duplicate.
 
@@ -27,7 +32,7 @@ the created person in the picker for retry rather than creating a duplicate.
 - Immich v3.3.5 OpenAPI, fetched once from
   https://raw.githubusercontent.com/immich-app/immich/v3.3.5/open-api/immich-openapi-specs.json
 - GET/POST/PUT /people; GET/PUT /people/{id}; GET /people/{id}/statistics;
-  POST /people/{id}/merge; GET /faces?id=; PUT/DELETE /faces/{id}.
+  POST /people/merge and legacy POST /people/{id}/merge; GET /faces?id=; PUT/DELETE /faces/{id}.
 - PersonResponseDto, PersonCreateDto, PersonUpdateDto, PeopleUpdateDto,
   PeopleResponseDto, PersonStatisticsResponseDto, MergePersonDto,
   AssetFaceResponseDto, FaceDto, AssetFaceDeleteDto, BulkIdResponseDto.
@@ -49,9 +54,10 @@ the created person in the picker for retry rather than creating a duplicate.
 
 The selected endpoints and favorite/birthday fields are v2-stable according to
 OpenAPI history. Missing optional birthday/favorite fields decode safely. Face
-controls disappear when GET /faces returns 404. The merge endpoint specified by
-the task is retained and works against v3.3.5, although newer web source also
-uses a bulk merge endpoint. Server permission failures remain visible to users.
+controls disappear when GET /faces returns 404. Merge uses POST /people/merge
+with the target ID first, falling back to the legacy endpoint only on HTTP 404.
+Single-person updates retain PUT /people/{id}, which is deprecated but still
+supported in v3.3.5; bulk updates require per-record result handling. Server permission failures remain visible to users.
 No new sharing or administration permissions are assumed.
 
 ## Verification
@@ -85,7 +91,30 @@ face decoding, birthday clear encoding, and omission of unchanged birthday field
 An optional argument supplies a directory of live JSON fixtures for DTO checks;
 live responses and build logs are kept under ignored build/ only.
 
-The app launch command succeeded but macOS reused an already-running app with
-an existing account. Read-only People navigation worked there; this does not
-verify the newly built executable's UI. New controls still need an interactive
-smoke test in the merged app. No simulator is needed for this macOS feature.
+## Review fixes verification
+
+The review-fix build succeeded without Swift compiler warnings. The existing
+AppIntents metadata warning remains. The built app was never launched during
+these fixes, and no live Immich requests or mutations were made.
+
+Inspector people refreshes retain the current details, albums and sheet host,
+including when the refreshed asset has no people. Person headers disappear while
+their viewer is open. Person edits and face mutations invalidate cached grids.
+The People grid has Rename, Hide/Unhide, Merge and Favorite actions, and Show
+Hidden People has an icon.
+
+Featured-photo updates invalidate both thumbnail caches, then retry fresh bytes
+after 1, 3 and 6 seconds until the bytes differ. If server generation takes longer,
+the bounded retries may still show the old thumbnail until a later refresh.
+
+Offline checks cover 8x zoom with pan, birthday encoding, thumbnail memory-cache
+reuse and invalidation, delayed generated thumbnails, ordered bulk merge and
+HTTP-404 legacy fallback. No network traffic leaves the mocked test process:
+
+```sh
+xcrun swiftc -swift-version 6 ImmichGallery/API/*.swift ImmichGallery/Support/ImagePipeline.swift scripts/checks/people-network.swift -o build/people-verification/network-checks
+build/people-verification/network-checks
+```
+
+Sheet continuity, pointer gestures and header layout have source/build checks only;
+interactive verification remains for an authorized app session.

@@ -17,32 +17,34 @@ struct PersonDetailView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack(spacing: 20) {
-                PersonCell(person: person).frame(width: 80)
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(person.displayName).font(.largeTitle.bold())
-                    if let birthday = person.birthday {
-                        let age = Calendar.current.dateComponents([.year], from: birthday, to: .now).year ?? 0
-                        Text("\(birthday.formatted(date: .abbreviated, time: .omitted)) · Age \(age)")
-                            .foregroundStyle(.secondary)
+            if session.gridModel(for: .person(person.id)).viewerID == nil {
+                HStack(spacing: 20) {
+                    PersonCell(person: person).frame(width: 80)
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(person.displayName).font(.largeTitle.bold())
+                        if let birthday = person.birthday {
+                            let age = Calendar.current.dateComponents([.year], from: birthday, to: .now).year ?? 0
+                            Text("\(birthday.formatted(date: .abbreviated, time: .omitted)) · Age \(age)")
+                                .foregroundStyle(.secondary)
+                        }
+                        if let count { Text("\(count) photos and videos").foregroundStyle(.secondary) }
                     }
-                    if let count { Text("\(count) photos and videos").foregroundStyle(.secondary) }
+                    Spacer()
+                    Menu {
+                        Button("Edit Name and Birthday…") { editing = true }
+                        Button(person.isFavorite == true ? "Unfavorite Person" : "Favorite Person") {
+                            update(PersonEdit(isFavorite: person.isFavorite != true))
+                        }
+                        Button(person.isHidden ? "Unhide Person" : "Hide Person") {
+                            update(PersonEdit(isHidden: !person.isHidden))
+                        }
+                        Button("Merge with Another Person…") { merging = true }
+                    } label: { Label("Person Actions", systemImage: "ellipsis.circle") }
+                    .menuStyle(.borderlessButton).fixedSize().disabled(busy)
                 }
-                Spacer()
-                Menu {
-                    Button("Edit Name and Birthday…") { editing = true }
-                    Button(person.isFavorite == true ? "Unfavorite Person" : "Favorite Person") {
-                        update(PersonEdit(isFavorite: person.isFavorite != true))
-                    }
-                    Button(person.isHidden ? "Unhide Person" : "Hide Person") {
-                        update(PersonEdit(isHidden: !person.isHidden))
-                    }
-                    Button("Merge with Another Person…") { merging = true }
-                } label: { Label("Person Actions", systemImage: "ellipsis.circle") }
-                .menuStyle(.borderlessButton).fixedSize().disabled(busy)
+                .padding(20)
+                Divider()
             }
-            .padding(20)
-            Divider()
             AssetGridContainer(source: .person(person.id), title: Text(verbatim: person.displayName))
         }
         .task { await reload() }
@@ -91,10 +93,13 @@ struct PersonDetailView: View {
         } catch { report(error) }
     }
     private func report(_ error: Error) { session.handle(error); self.error = error.localizedDescription }
-    private func changed() { NotificationCenter.default.post(name: .peopleChanged, object: nil) }
+    private func changed() {
+        session.invalidateGrids()
+        NotificationCenter.default.post(name: .peopleChanged, object: nil)
+    }
 }
 
-private struct PersonEditSheet: View {
+struct PersonEditSheet: View {
     @Environment(LibrarySession.self) private var session
     @Environment(\.dismiss) private var dismiss
     let person: Person
@@ -142,6 +147,7 @@ struct InspectorPeopleList: View {
     @State private var error: String?
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
+            if people.isEmpty { Text("No people").foregroundStyle(.secondary) }
             ForEach(people) { person in
                 Button {
                     Task {

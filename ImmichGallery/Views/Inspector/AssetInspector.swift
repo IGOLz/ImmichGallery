@@ -24,16 +24,26 @@ struct AssetInspector: View {
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .peopleChanged)) { _ in peopleRevision += 1 }
-        .task(id: "\(assetID ?? "")-\(peopleRevision)") {
-            guard let assetID else { return }
+        .task(id: assetID) {
             failed = false
             asset = nil
             albums = []
+            guard let assetID else { return }
             do {
-                asset = try await session.client.asset(assetID)
-                albums = (try? await session.client.albums(containing: assetID)) ?? []
+                let loaded = try await session.client.asset(assetID)
+                try Task.checkCancellation()
+                asset = loaded
+                let loadedAlbums = (try? await session.client.albums(containing: assetID)) ?? []
+                try Task.checkCancellation()
+                albums = loadedAlbums
             } catch {
                 if !Task.isCancelled { failed = true }
+            }
+        }
+        .task(id: "\(assetID ?? "")-\(peopleRevision)") {
+            guard peopleRevision > 0, let assetID else { return }
+            if let loaded = try? await session.client.asset(assetID), !Task.isCancelled, self.assetID == assetID {
+                asset = loaded
             }
         }
     }
@@ -106,10 +116,8 @@ struct AssetInspector: View {
                     }
                 }
 
-                if let people = asset.people, !people.isEmpty {
-                    section("People") {
-                        InspectorPeopleList(people: people)
-                    }
+                section("People") {
+                    InspectorPeopleList(people: asset.people ?? [])
                 }
 
                 if !albums.isEmpty {
