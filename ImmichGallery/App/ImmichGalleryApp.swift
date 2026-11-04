@@ -58,12 +58,12 @@ struct RootView: View {
 }
 
 /// Kept inside the split view's detail column so native sidebar safe areas stay intact.
-struct AccountPasswordBanner: View {
+struct AccountPasswordBanner: ViewModifier {
     @Environment(AppModel.self) private var app
     @State private var changingPassword = false
 
-    var body: some View {
-        Group {
+    func body(content: Content) -> some View {
+        content.safeAreaInset(edge: .top, spacing: 0) {
             if app.services?.user?.shouldChangePassword == true {
                 HStack {
                     Text("Your server asks you to change your password.")
@@ -72,7 +72,7 @@ struct AccountPasswordBanner: View {
             }
         }
         .onChange(of: app.services.map(ObjectIdentifier.init)) { changingPassword = false }
-        .sheet(isPresented: $changingPassword) {
+        .sheet(isPresented: $changingPassword, onDismiss: { changingPassword = false }) {
             if let services = app.services {
                 VStack {
                     AccountSecurityView(session: services)

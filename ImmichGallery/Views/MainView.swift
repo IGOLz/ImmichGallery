@@ -34,7 +34,7 @@ struct MainView: View {
                 detail
             }
             .id(selection)
-            .safeAreaInset(edge: .top, spacing: 0) { AccountPasswordBanner() }
+            .modifier(AccountPasswordBanner())
         }
         .modifier(UploadDropModifier(queue: session.upload)) // Upload
         .toolbar { UploadToolbar(queue: session.upload) } // Upload
