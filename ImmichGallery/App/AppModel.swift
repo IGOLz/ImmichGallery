@@ -170,6 +170,7 @@ final class LibrarySession {
     let albumActions = AlbumsActions() // Albums
     let sharing: SharingModel // Sharing
     let upload: UploadQueue // Upload
+    let metadata = MetadataState() // Metadata
     let pipeline: ImagePipeline
     private(set) var user: User?
     private(set) var features = ServerFeatures()

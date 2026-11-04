@@ -24,9 +24,9 @@ struct AssetInspector: View {
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .peopleChanged)) { _ in peopleRevision += 1 }
-        .task(id: assetID) {
+        .task(id: "\(assetID ?? "")-\(session.metadata.revision)") { // Metadata: reload after edits, keeping the current asset visible.
             failed = false
-            asset = nil
+            if asset?.id != assetID { asset = nil }
             albums = []
             guard let assetID else { return }
             do {
@@ -59,10 +59,9 @@ struct AssetInspector: View {
                     if let date = ImmichDate.parse(asset.localDateTime) {
                         Text(ImmichDate.long(date)).foregroundStyle(.secondary)
                     }
-                    if let description = exif?.description, !description.isEmpty {
-                        Text(description).padding(.top, 4).textSelection(.enabled)
-                    }
                 }
+
+                MetadataInspectorControls(asset: asset).id(asset.id) // Metadata
 
                 if let exif, exif.make != nil || exif.model != nil || exif.lensModel != nil {
                     card {

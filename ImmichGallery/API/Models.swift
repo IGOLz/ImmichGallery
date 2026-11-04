@@ -106,6 +106,7 @@ enum AssetType: String, Decodable, Sendable {
 }
 
 struct Exif: Decodable, Sendable {
+    var projectionType: String? // Metadata: panoramas cannot be edited.
     var make: String?
     var model: String?
     var lensModel: String?
@@ -113,6 +114,7 @@ struct Exif: Decodable, Sendable {
     var focalLength: Double?
     var iso: Int?
     var exposureTime: String?
+    var orientation: String? // Metadata: crop coordinates use orientation-corrected original dimensions.
     var exifImageWidth: Int?
     var exifImageHeight: Int?
     var fileSizeInByte: Int64?

@@ -144,7 +144,7 @@ private struct ZoomableImage: View {
         .onChange(of: scale) { _, newValue in
             if newValue > 1.1 && !hasOriginal {
                 hasOriginal = true
-                Task { if let original = await session.pipeline.original(item.id) { image = original } }
+                Task { if let original = await session.pipeline.original(item.id, edited: true) { image = original } }
             }
         }
     }

@@ -129,7 +129,14 @@ struct AppCommands: Commands {
             Button("Zoom Out") { thumbnailSize = GridMetrics.zoomOut(thumbnailSize) }
                 .keyboardShortcut("-", modifiers: .command)
             Divider()
-            Button("Refresh") { if let grid { Task { await grid.reload() } } }
+            Button("Refresh") {
+                if let session = app.session {
+                    session.pipeline.removeAll()
+                    session.metadata.revision += 1
+                    session.metadata.imageRevision += 1
+                }
+                if let grid { Task { await grid.reload() } }
+            }
                 .keyboardShortcut("r", modifiers: .command)
                 .disabled(grid == nil)
             Divider()
@@ -139,6 +146,13 @@ struct AppCommands: Commands {
         }
 
         CommandMenu("Image") {
+            if let session = app.session {
+                let metadataIDs = grid?.viewerID.map { [$0] } ?? Array(grid?.selection ?? [])
+                MetadataMenuItems(ids: metadataIDs, canEditImage: true, menuBarShortcuts: true)
+                    .environment(session)
+                    .disabled(metadataIDs.isEmpty || session.metadata.busy || grid?.source == .trash)
+                Divider()
+            }
             let ids = grid?.selectedItems.map(\.id) ?? []
             if let session = app.session { AlbumSelectionMenu(session: session, model: grid, ids: ids) } // Albums
             // "." and ⌘⌫ are handled by the grid/viewer so they don't steal keys from text fields.
