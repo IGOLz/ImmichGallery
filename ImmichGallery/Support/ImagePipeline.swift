@@ -17,12 +17,12 @@ final class ImagePipeline: Sendable {
         self.cache = cache
     }
 
-    func cachedThumbnail(_ id: String, size: ImmichClient.ThumbnailSize) -> CGImage? {
-        cache.object(forKey: "\(id)-\(size.rawValue)" as NSString)
+    func cachedThumbnail(_ id: String, size: ImmichClient.ThumbnailSize, edited: Bool = true) -> CGImage? {
+        cache.object(forKey: "\(id)-\(size.rawValue)-\(edited)" as NSString)
     }
 
-    func thumbnail(_ id: String, size: ImmichClient.ThumbnailSize) async -> CGImage? {
-        await load(client.thumbnailRequest(id, size: size), key: "\(id)-\(size.rawValue)", maxPixelSize: nil)
+    func thumbnail(_ id: String, size: ImmichClient.ThumbnailSize, edited: Bool = true) async -> CGImage? {
+        await load(client.thumbnailRequest(id, size: size, edited: edited), key: "\(id)-\(size.rawValue)-\(edited)", maxPixelSize: nil)
     }
 
     func personThumbnail(_ id: String) async -> CGImage? {
@@ -31,7 +31,7 @@ final class ImagePipeline: Sendable {
 
     /// Full-resolution original (HEIC, RAW, JPEG…), downsampled to `maxPixelSize`.
     func original(_ id: String, maxPixelSize: Int = 8192, edited: Bool = false) async -> CGImage? {
-        await load(try! client.request("assets/\(id)/original", query: ["edited": String(edited)]), key: "\(id)-original-\(edited)", maxPixelSize: maxPixelSize)
+        await load(client.originalRequest(id, edited: edited), key: "\(id)-original-\(edited)", maxPixelSize: maxPixelSize)
     }
 
     func removeAll() {

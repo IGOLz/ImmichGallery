@@ -7,6 +7,7 @@ struct MetadataCropEditor: View {
     @State private var image: CGImage?
     @State private var edits: [MetadataEdit] = []
     @State private var crop = CGRect(x: 0, y: 0, width: 1, height: 1)
+    @State private var initialCrop = CGRect(x: 0, y: 0, width: 1, height: 1)
     @State private var error: String?
     @State private var loaded = false
 
@@ -16,7 +17,7 @@ struct MetadataCropEditor: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Crop").font(.title2)
-            Text("Drag a rectangle on the original image. Existing rotation and mirror edits are preserved.").font(.caption)
+            Text("Drag a rectangle on the unedited preview. Existing rotation and mirror edits are preserved.").font(.caption)
             if let image {
                 let ratio = CGFloat(image.width) / CGFloat(image.height)
                 GeometryReader { geo in
@@ -53,16 +54,16 @@ struct MetadataCropEditor: View {
         .disabled(session.metadata.busy)
         .task {
             do {
-                edits = try await session.client.metadataEdits(asset.id).edits
-                image = await session.pipeline.original(asset.id)
+                edits = try await session.metadata.loadEdits(asset.id, session: session).edits
+                image = await session.pipeline.thumbnail(asset.id, size: .preview, edited: false)
                 if let p = edits.first(where: { $0.action == "crop" })?.parameters, width > 0, height > 0 {
                     crop = CGRect(x: Double(p.x ?? 0) / Double(width), y: Double(p.y ?? 0) / Double(height),
                                   width: Double(p.width ?? width) / Double(width), height: Double(p.height ?? height) / Double(height))
                 }
+                initialCrop = crop
                 if width == 0 || height == 0 { error = "Original dimensions are unavailable for cropping." }
-                if image == nil { error = "Couldn't load the original image." }
+                if image == nil { error = "Couldn't load the unedited preview." }
             } catch {
-                if case ImmichError.http(404, _) = error { session.metadata.unavailableEdits = true }
                 self.error = error.localizedDescription
             }
             loaded = true
@@ -70,6 +71,7 @@ struct MetadataCropEditor: View {
     }
 
     private func save() {
+        guard crop != initialCrop else { dismiss(); return }
         var updated = edits.filter { $0.action != "crop" }
         if crop != CGRect(x: 0, y: 0, width: 1, height: 1) {
             let x = max(0, Int(crop.minX * Double(width)))

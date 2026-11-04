@@ -45,7 +45,7 @@ struct AssetGridHost: View {
                 .allowsHitTesting(model.viewerID == nil)
             if let item = viewerItem {
                 AssetViewer(model: model, item: item, playLive: $playLive, onDelete: requestDelete)
-                    .id("\(item.id)-\(session.metadata.revision)") // Metadata
+                    .id("\(item.id)-\(session.metadata.imageRevision)") // Metadata
                     .transition(.opacity)
             }
         }
@@ -362,7 +362,7 @@ struct ThumbnailCell: View {
                 }
             }
             .contentShape(Rectangle())
-            .task(id: TaskKey(id: asset?.id, size: size, revision: session.metadata.revision)) { await load() }
+            .task(id: TaskKey(id: asset?.id, size: size, revision: session.metadata.imageRevision)) { await load() }
     }
 
     private struct TaskKey: Equatable { let id: String?; let size: ImmichClient.ThumbnailSize; let revision: Int }

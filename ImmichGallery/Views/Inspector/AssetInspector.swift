@@ -25,7 +25,7 @@ struct AssetInspector: View {
         .task(id: "\(assetID ?? "")-\(session.metadata.revision)") {
             guard let assetID else { return }
             failed = false
-            asset = nil
+            if asset?.id != assetID { asset = nil }
             albums = []
             do {
                 asset = try await session.client.asset(assetID)
@@ -49,7 +49,7 @@ struct AssetInspector: View {
                     }
                 }
 
-                MetadataInspectorControls(asset: asset) // Metadata
+                MetadataInspectorControls(asset: asset).id(asset.id) // Metadata
 
                 if let exif, exif.make != nil || exif.model != nil || exif.lensModel != nil {
                     card {

@@ -34,11 +34,11 @@ struct MetadataPreferences: Decodable {
     var ratings: Ratings?
 }
 
-struct MetadataEdit: Codable, Sendable {
+struct MetadataEdit: Codable, Sendable, Equatable {
     var action: String
     var parameters: Parameters
 
-    struct Parameters: Codable, Sendable {
+    struct Parameters: Codable, Sendable, Equatable {
         var angle: Int?
         var axis: String?
         var x: Int?
@@ -58,4 +58,24 @@ extension Exif {
         guard let width = exifImageWidth, let height = exifImageHeight, width > 0, height > 0 else { return nil }
         return ["5", "6", "7", "8"].contains(orientation ?? "") ? (height, width) : (width, height)
     }
+}
+
+extension AssetResponse {
+    func canEditMetadataImage(userID: String?) -> Bool {
+        guard let userID, ownerId == userID, type == .image, livePhotoVideoId == nil,
+              exifInfo?.projectionType != "EQUIRECTANGULAR", exifInfo?.metadataDimensions != nil else { return false }
+        let name = originalFileName.lowercased()
+        return ![".gif", ".svg", ".insp"].contains(where: name.hasSuffix)
+            && !["image/gif", "image/svg+xml"].contains(originalMimeType?.lowercased() ?? "")
+    }
+}
+
+extension ServerVersion {
+    var supportsMetadataEdits: Bool { (major, minor, patch) >= (2, 5, 0) }
+}
+
+/// MapKit can return wrapped longitudes outside the server's accepted range.
+func metadataCoordinate(latitude: Double, longitude: Double) -> (latitude: Double, longitude: Double) {
+    let wrapped = (longitude + 180).truncatingRemainder(dividingBy: 360)
+    return (min(90, max(-90, latitude)), (wrapped < 0 ? wrapped + 360 : wrapped) - 180)
 }

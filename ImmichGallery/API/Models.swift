@@ -99,6 +99,7 @@ enum AssetType: String, Decodable, Sendable {
 }
 
 struct Exif: Decodable, Sendable {
+    var projectionType: String? // Metadata: panoramas cannot be edited.
     var make: String?
     var model: String?
     var lensModel: String?
@@ -130,6 +131,7 @@ struct AssetResponse: Decodable, Sendable, Identifiable {
     let id: String
     let type: AssetType
     let originalFileName: String
+    var ownerId: String? // Metadata: editing requires ownership.
     var originalMimeType: String?
     let fileCreatedAt: String
     let localDateTime: String

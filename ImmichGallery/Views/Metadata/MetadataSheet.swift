@@ -41,10 +41,11 @@ struct MetadataDateEditor: View {
     let ids: [String]
     let asset: AssetResponse?
     @State private var date = Date()
-    @State private var zone = TimeZone.current.identifier
+    @State private var zone = "UTC"
+    @State private var zoneTouched = false
     @State private var relative = false
     @State private var minutes = 0
-    private var timeZone: TimeZone { TimeZone(identifier: zone) ?? .current }
+    private var timeZone: TimeZone { TimeZone(identifier: zone) ?? TimeZone(secondsFromGMT: 0)! }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -60,8 +61,10 @@ struct MetadataDateEditor: View {
                 if ids.count > 1 { Text("All selected items will receive the same date and time.").font(.caption) }
             }
             Picker("Time zone", selection: Binding(get: { zone }, set: changeTimeZone)) {
+                if !TimeZone.knownTimeZoneIdentifiers.contains(zone) { Text(zone).tag(zone) }
                 ForEach(TimeZone.knownTimeZoneIdentifiers, id: \.self) { name in Text(name).tag(name) }
             }
+            if relative && !zoneTouched { Text("Existing time zones will be preserved.").font(.caption) }
             Text("UTC offset: \(timeZone.secondsFromGMT(for: date) / 60) minutes").font(.caption).foregroundStyle(.secondary)
             HStack {
                 Spacer()
@@ -70,7 +73,7 @@ struct MetadataDateEditor: View {
                     let formatter = ISO8601DateFormatter()
                     formatter.timeZone = timeZone
                     let update = relative
-                        ? MetadataUpdate(ids: ids, dateTimeRelative: minutes, timeZone: zone)
+                        ? MetadataUpdate(ids: ids, dateTimeRelative: minutes, timeZone: zoneTouched ? zone : nil)
                         : MetadataUpdate(ids: ids, dateTimeOriginal: formatter.string(from: date), timeZone: zone)
                     Task { if await session.metadata.update(update, session: session) { dismiss() } }
                 }.keyboardShortcut(.defaultAction)
@@ -90,6 +93,7 @@ struct MetadataDateEditor: View {
         let components = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second], from: date)
         calendar.timeZone = new
         if let adjusted = calendar.date(from: components) { date = adjusted }
+        zoneTouched = true
         zone = name
     }
 }
@@ -130,7 +134,12 @@ struct MetadataLocationEditor: View {
                 Map(position: $position) {
                     if let coordinate { Marker("Selected Location", coordinate: coordinate) }
                 }
-                .onTapGesture { point in coordinate = proxy.convert(point, from: .local) }
+                .onTapGesture { point in
+                    if let value = proxy.convert(point, from: .local) {
+                        let normalized = metadataCoordinate(latitude: value.latitude, longitude: value.longitude)
+                        coordinate = .init(latitude: normalized.latitude, longitude: normalized.longitude)
+                    }
+                }
             }.frame(width: 540, height: 330).clipShape(.rect(cornerRadius: 10))
             Text("Click the map to place a pin. Applies to \(ids.count) items.").font(.caption)
             if let coordinate {
@@ -149,7 +158,7 @@ struct MetadataLocationEditor: View {
         }
         .disabled(session.metadata.busy)
         .onAppear {
-            if let lat = asset?.exifInfo?.latitude, let lon = asset?.exifInfo?.longitude {
+            if ids.count == 1, let lat = asset?.exifInfo?.latitude, let lon = asset?.exifInfo?.longitude {
                 coordinate = .init(latitude: lat, longitude: lon)
                 position = .region(.init(center: coordinate!, latitudinalMeters: 5000, longitudinalMeters: 5000))
             }
