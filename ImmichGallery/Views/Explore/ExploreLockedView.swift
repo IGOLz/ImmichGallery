@@ -65,6 +65,7 @@ struct ExploreLockedView: View {
             }
         }
         .task {
+            session.lockFolder = { lock(invalidate: true) }
             guard session.client.exploreSupportsLockedFolder else { return }
             let privateClient = session.client.explorePrivateClient()
             client = privateClient
@@ -72,11 +73,12 @@ struct ExploreLockedView: View {
             catch { self.error = error.localizedDescription }
         }
         .onDisappear {
+            session.lockFolder = {}
             if unlocked { lock(invalidate: true) }
             else { generation = UUID(); if !busy { client?.session.invalidateAndCancel() } }
             client = nil
         }
-        .onChange(of: scenePhase) { _, phase in if phase != .active { lock() } }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didResignActiveNotification)) { _ in lock() }
         .alert("Locked Folder", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) { Button("OK") {} } message: { Text(error ?? "") }
     }
     private func unlock() async {

@@ -4,6 +4,7 @@ import Observation
 @MainActor @Observable
 final class MacIntegrationRouter {
     static let shared = MacIntegrationRouter()
+    weak var app: AppModel?
     var pending: [MacWindowRoute] = []
 }
 
@@ -31,15 +32,19 @@ struct OpenAlbumIntent: AppIntent {
         let client = ImmichClient(serverURL: account.serverURL, apiURL: account.apiURL, credential: account.credential)
         let matches = try await client.albums().filter { $0.albumName.localizedCaseInsensitiveCompare(name) == .orderedSame }
         guard matches.count == 1, let album = matches.first else { throw MacIntentError.albumName }
-        _ = try MacIntentAccount.require()
+        let current = try MacIntentAccount.require()
+        guard current.apiURL == account.apiURL, current.credential == account.credential else { throw MacIntentError.signIn }
         MacIntegrationRouter.shared.pending.append(MacWindowRoute(albumID: album.id))
         return .result()
     }
 }
 
-private enum MacIntentAccount {
+@MainActor private enum MacIntentAccount {
     static func require() throws -> AccountStore.Account {
-        guard let account = AccountStore.load() else { throw MacIntentError.signIn }
+        guard let services = MacIntegrationRouter.shared.app?.services,
+              let account = (try? AccountVault.selectedEntry())?.account,
+              account.apiURL == services.client.apiURL,
+              account.credential == services.client.credential else { throw MacIntentError.signIn }
         return account
     }
 }

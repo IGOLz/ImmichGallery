@@ -18,10 +18,21 @@ final class AppModel {
         if case .signedIn(let services) = phase { services } else { nil }
     }
 
+    @ObservationIgnored private var restoreTask: Task<Void, Never>?
+
+    init() { MacIntegrationRouter.shared.app = self }
+
     private func refreshEntries() throws { entries = try AccountVault.loadEntries() }
 
     func restore() async {
+        if let restoreTask { await restoreTask.value; return }
         guard case .launching = phase else { return }
+        let task = Task { await restoreAccount() }
+        restoreTask = task
+        await task.value
+    }
+
+    private func restoreAccount() async {
         do {
             try refreshEntries()
             let selected = try AccountVault.selectedEntry()
@@ -82,9 +93,7 @@ final class AppModel {
         } catch { accountError = error.localizedDescription; return }
         if case .accessToken = services.client.credential { try? await services.client.logout() }
         guard self.services === services else { return }
-        services.upload.cancelAll() // Upload
-        services.pipeline.removeAll()
-        MacIntegrationRouter.shared.pending.removeAll()
+        endSession(services)
         phase = .signedOut
         currentAccountID = nil
         do { try clearCache(services) } catch { accountError = error.localizedDescription }
@@ -111,12 +120,22 @@ final class AppModel {
         try refreshEntries()
         if currentAccountID == entry.id {
             let old = services
-            old?.pipeline.removeAll()
+            if let old { endSession(old) }
             phase = .signedOut
             currentAccountID = nil
             if let old { try clearCache(old) }
         }
         try removeSavedCache(entry)
+    }
+
+    private func endSession(_ services: AccountServices) {
+        services.bootstrapTask?.cancel()
+        services.notificationTask?.cancel()
+        services.upload.cancelAll()
+        for window in services.windows.allObjects { window.endSession() }
+        services.pipeline.removeAll()
+        MacIntegrationRouter.shared.pending.removeAll()
+        MacQuickLook.shared.dismiss()
     }
 
     private func removeSavedCache(_ entry: AccountVault.Entry) throws {
@@ -158,9 +177,11 @@ final class AppModel {
                 self.currentAccountID = client.apiURL.absoluteString + "|" + user.id
             } catch { self.accountError = error.localizedDescription }
         }
-        self.services?.upload.cancelAll() // Upload: the previous account's queue goes away with its services.
+        if let previous = self.services { endSession(previous) }
+        MacIntegrationRouter.shared.pending.removeAll()
+        MacQuickLook.shared.dismiss()
         phase = .signedIn(services)
-        Task { await services.bootstrap() }
+        services.bootstrapTask = Task { await services.bootstrap() }
     }
 }
 
@@ -216,6 +237,7 @@ final class AccountServices {
         self.user = user
     }
 
+    @ObservationIgnored var bootstrapTask: Task<Void, Never>?
     var notifications: [AccountNotification] = []
     var notificationsAvailable = true
     @ObservationIgnored var notificationTask: Task<Void, Never>?
@@ -239,8 +261,10 @@ final class AccountServices {
         async let version = try? client.serverVersion()
         async let user = try? client.currentUser()
         self.features = await features ?? ServerFeatures()
+        guard !Task.isCancelled else { return }
         self.version = await version
-        if let user = await user { self.user = user; onUserLoaded(user) }
+        if let user = await user, !Task.isCancelled { self.user = user; onUserLoaded(user) }
+        guard !Task.isCancelled else { return }
         preferences = try? await client.accountPreferences()
         await reloadAlbums()
         await sharing.reload() // Sharing
@@ -282,6 +306,9 @@ final class AccountServices {
 @MainActor @Observable
 final class LibrarySession {
     let services: AccountServices
+    @ObservationIgnored var lockFolder: () -> Void = {}
+    @ObservationIgnored var closeViewer: () -> Void = {}
+    func endSession() { lockFolder(); closeViewer() }
     let albumActions = AlbumsActions()
     let metadata: MetadataState
     let sharing: SharingModel

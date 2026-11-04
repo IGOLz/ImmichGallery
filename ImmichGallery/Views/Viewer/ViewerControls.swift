@@ -49,7 +49,11 @@ struct ViewerIntegration: ViewModifier {
                 }
             }
             .onKeyPress(keys: ["c"]) { copyViewerImage($0, state: state) }
-            .onAppear { if state == nil { state = ViewerState(model: model, session: session) } }
+            .onAppear {
+                if state == nil { state = ViewerState(model: model, session: session) }
+                let current = state
+                session.closeViewer = { [weak current] in current?.close() }
+            }
             .onChange(of: model.viewerID) { state?.rotation = 0; state?.elapsed = 0 }
             .onDisappear { state?.close() }
     }
