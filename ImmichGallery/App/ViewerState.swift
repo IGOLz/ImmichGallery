@@ -1,4 +1,5 @@
 import AppKit
+import ImageIO
 import Observation
 import SwiftUI
 
@@ -7,8 +8,8 @@ final class ViewerState: NSObject, NSWindowDelegate {
     let model: AssetGridModel
     let session: LibrarySession
     var rotation = 0
-    var slideshow = false
-    var paused = false
+    var slideshow = false { didSet { updateActivity() } }
+    var paused = false { didSet { updateActivity() } }
     var settingsPresented = false
     var window: NSWindow?
     var preparing = false
@@ -16,6 +17,21 @@ final class ViewerState: NSObject, NSWindowDelegate {
     var sequence: [String] = []
     private var selectionSequence: [String] = []
     private var navigating = false
+    private var pendingStep = 0
+    private var sequenceIndex: [String: Int] = [:]
+    private var activity: NSObjectProtocol?
+    private static var copying = false
+    var playbackGeneration = 0
+    var videoStalledElapsed = 0.0
+
+    private func updateActivity() {
+        if slideshow && !paused && activity == nil {
+            activity = ProcessInfo.processInfo.beginActivity(options: .idleDisplaySleepDisabled, reason: "Playing a slideshow")
+        } else if (!slideshow || paused), let activity {
+            ProcessInfo.processInfo.endActivity(activity)
+            self.activity = nil
+        }
+    }
     var controlsVisible = true
     var interval: Double = UserDefaults.standard.object(forKey: "viewer.interval") as? Double ?? 5 {
         didSet { UserDefaults.standard.set(interval, forKey: "viewer.interval") }
@@ -62,7 +78,7 @@ final class ViewerState: NSObject, NSWindowDelegate {
             window.collectionBehavior = [.fullScreenPrimary]
             window.isReleasedWhenClosed = false
             window.delegate = self
-            window.contentView = NSHostingView(rootView: ViewerPresentation(state: self).environment(session).environment(self))
+            window.contentView = NSHostingView(rootView: ViewerPresentation(state: self).environment(session).environment(\.viewerContext, self))
             self.window = window
             window.center()
             window.makeKeyAndOrderFront(nil)
@@ -71,49 +87,76 @@ final class ViewerState: NSObject, NSWindowDelegate {
     }
 
     private func rebuildSequence() async {
-        guard slideshow else { sequence = []; return }
+        guard slideshow else { sequence = []; sequenceIndex = [:]; return }
         do {
-            sequence = selectionSequence
+            var nextSequence = selectionSequence
             if shuffle {
-                if sequence.isEmpty { sequence = try await model.viewerAllItems().map(\.id) }
-                sequence.shuffle()
+                if nextSequence.isEmpty { nextSequence = try await model.viewerAllItems().map(\.id) }
+                nextSequence.shuffle()
             }
+            guard slideshow else { return }
+            sequence = nextSequence
+            // shortcut: shuffle materializes collection metadata once; use lazy bucket shuffle for very large libraries.
+            sequenceIndex = Dictionary(sequence.enumerated().map { ($0.element, $0.offset) }, uniquingKeysWith: { first, _ in first })
         } catch { model.lastError = error.localizedDescription; session.handle(error) }
     }
 
+    func neighbor(of id: String, delta: Int) async -> AssetItem? {
+        if !sequence.isEmpty, let index = sequenceIndex[id] {
+            let next = sequence[((index + delta) % sequence.count + sequence.count) % sequence.count]
+            return model.item(next)
+        }
+        return await model.neighbor(of: id, delta: delta)
+    }
+
     func step(_ delta: Int) {
+        pendingStep += delta
         guard !navigating else { return }
         navigating = true
         Task {
             defer { navigating = false }
-            guard let id = model.viewerID else { return }
-            let next: String?
-            if !sequence.isEmpty, let index = sequence.firstIndex(of: id) {
-                next = sequence[(index + delta + sequence.count) % sequence.count]
-            } else {
-                next = await model.neighbor(of: id, delta: delta)?.id
+            while pendingStep != 0 {
+                let delta = pendingStep > 0 ? 1 : -1
+                pendingStep -= delta
+                guard let id = model.viewerID else { pendingStep = 0; return }
+                let next = await neighbor(of: id, delta: delta)?.id
+                guard model.viewerID != nil else { pendingStep = 0; return }
+                guard let next else { paused = true; pendingStep = 0; return }
+                model.viewerID = next
+                model.selection = [next]
+                playbackGeneration += 1
+                elapsed = 0
+                videoStalledElapsed = 0
+                rotation = 0
             }
-            guard let next else { paused = true; return }
-            model.viewerID = next
-            model.selection = [next]
-            elapsed = 0
-            rotation = 0
         }
     }
 
     func close() { window?.close() }
     func windowWillClose(_ notification: Notification) {
         window = nil
+        NSCursor.setHiddenUntilMouseMoves(false)
+        if ViewerCommandContext.shared.presentation === self { ViewerCommandContext.shared.presentation = nil }
+        model.viewerID = nil
+        pendingStep = 0
         slideshow = false
         settingsPresented = false
         controlsVisible = true
         sequence = []
+        sequenceIndex = [:]
+    }
+    func windowDidBecomeKey(_ notification: Notification) { ViewerCommandContext.shared.presentation = self }
+    func windowDidResignKey(_ notification: Notification) {
+        if ViewerCommandContext.shared.presentation === self { ViewerCommandContext.shared.presentation = nil }
     }
     func windowDidExitFullScreen(_ notification: Notification) { close() }
 
     func copy(original: Bool = false, asFile: Bool = false) {
-        guard let id = currentID else { return }
+        guard let id = currentID, !Self.copying else { return }
+        Self.copying = true
+        Self.pruneClipboard()
         Task {
+            defer { Self.copying = false }
             do {
                 if asFile {
                     let asset = try await session.client.asset(id)
@@ -129,9 +172,12 @@ final class ViewerState: NSObject, NSWindowDelegate {
                 } else {
                     let image: NSImage
                     if original {
-                        let data = try await session.client.data(for: session.client.originalRequest(id))
-                        guard let decoded = NSImage(data: data) else { throw CocoaError(.fileReadCorruptFile) }
-                        image = decoded
+                        let (file, response) = try await session.client.session.download(for: session.client.originalRequest(id))
+                        defer { try? FileManager.default.removeItem(at: file) }
+                        guard (response as? HTTPURLResponse)?.statusCode == 200,
+                              let source = CGImageSourceCreateWithURL(file as CFURL, nil),
+                              let decoded = CGImageSourceCreateImageAtIndex(source, 0, [kCGImageSourceShouldCacheImmediately: true] as CFDictionary) else { throw CocoaError(.fileReadCorruptFile) }
+                        image = NSImage(cgImage: decoded, size: .zero)
                     } else {
                         guard let preview = await session.pipeline.thumbnail(id, size: .preview) else { throw CocoaError(.fileReadCorruptFile) }
                         image = NSImage(cgImage: preview, size: .zero)
@@ -145,6 +191,15 @@ final class ViewerState: NSObject, NSWindowDelegate {
 
     func showInLibrary() {
         guard let id = currentID else { return }
+        Self.showInLibrary(id: id, model: model, session: session, close: { self.close() })
+    }
+
+    static func pruneClipboard() {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("ViewerClipboard")
+        try? FileManager.default.removeItem(at: directory)
+    }
+
+    static func showInLibrary(id: String, model: AssetGridModel, session: LibrarySession, close: @escaping () -> Void = {}) {
         Task {
             do {
                 let asset = try await session.client.asset(id)
@@ -158,8 +213,9 @@ final class ViewerState: NSObject, NSWindowDelegate {
                     return
                 }
                 close()
+                model.viewerID = nil
                 library.viewerID = nil
-                library.selection = [id]
+                if model !== library || !library.selection.contains(id) { library.selection = [id] }
                 library.viewerScrollTarget = id
                 NotificationCenter.default.post(name: .viewerShowLibrary, object: nil)
             } catch { model.lastError = error.localizedDescription; session.handle(error) }

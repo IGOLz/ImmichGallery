@@ -1,4 +1,26 @@
+import AppKit
 import SwiftUI
+
+extension EnvironmentValues {
+    @Entry var viewerContext: ViewerState? = nil
+}
+
+// NSHostingView windows do not publish scene focus to the app's Window scene.
+@MainActor @Observable
+final class ViewerCommandContext {
+    static let shared = ViewerCommandContext()
+    var presentation: ViewerState?
+}
+
+@MainActor
+private func copyViewerImage(_ press: KeyPress, state: ViewerState?) -> KeyPress.Result {
+    guard press.modifiers == .command, press.characters == "c",
+          !(NSApp.keyWindow?.firstResponder is NSText),
+          !(NSApp.keyWindow?.firstResponder is NSTextField),
+          let state, let id = state.currentID, state.model.item(id)?.isVideo == false else { return .ignored }
+    state.copy()
+    return .handled
+}
 
 extension FocusedValues {
     @Entry var viewerState: ViewerState?
@@ -10,35 +32,41 @@ struct ViewerIntegration: ViewModifier {
     @State private var state: ViewerState?
 
     func body(content: Content) -> some View {
-        Group {
-            if let state {
-                content.environment(state)
-                    .focusedSceneValue(\.viewerState, state)
-                    .toolbar {
+        content
+            .environment(\.viewerContext, state)
+            .focusedSceneValue(\.viewerState, state)
+            .toolbar {
+                if let state {
+                    ToolbarItem {
+                        Button { state.present(slideshow: true) } label: { Label("Slideshow", systemImage: "play.rectangle") }
+                            .disabled(model.totalCount == 0 || state.preparing)
+                    }
+                    if model.viewerID != nil {
                         ToolbarItem {
-                            Button { state.present(slideshow: true) } label: { Label("Slideshow", systemImage: "play.rectangle") }
-                                .disabled(model.totalCount == 0 || state.preparing)
-                        }
-                        ToolbarItem {
-                            if model.viewerID != nil {
-                                Button { state.present(slideshow: false) } label: { Label("Full Screen", systemImage: "arrow.up.left.and.arrow.down.right") }
-                            }
+                            Button { state.present(slideshow: false) } label: { Label("Full Screen", systemImage: "arrow.up.left.and.arrow.down.right") }
                         }
                     }
-                    .onChange(of: model.viewerID) { state.rotation = 0; state.elapsed = 0 }
-                    .onDisappear { state.close() }
-            } else { ProgressView().task { state = ViewerState(model: model, session: session) } }
-        }
+                }
+            }
+            .onKeyPress(keys: ["c"]) { copyViewerImage($0, state: state) }
+            .onAppear { if state == nil { state = ViewerState(model: model, session: session) } }
+            .onChange(of: model.viewerID) { state?.rotation = 0; state?.elapsed = 0 }
+            .onDisappear { state?.close() }
     }
 }
 
 struct ViewerCommands: Commands {
-    @FocusedValue(\.viewerState) private var state
+    @FocusedValue(\.viewerState) private var focusedState
+    @State private var context = ViewerCommandContext.shared
+    private var state: ViewerState? { context.presentation ?? focusedState }
+    private var canRotate: Bool {
+        guard let state, let id = state.model.viewerID else { return false }
+        return state.model.item(id)?.isVideo == false
+    }
 
     var body: some Commands {
         CommandGroup(after: .pasteboard) {
             Button("Copy Image") { state?.copy() }
-                .keyboardShortcut("c", modifiers: .command)
                 .disabled(state?.currentID == nil || state?.model.item(state?.currentID ?? "")?.isVideo == true)
             Button("Copy Original Image") { state?.copy(original: true) }
                 .disabled(state?.currentID == nil || state?.model.item(state?.currentID ?? "")?.isVideo == true)
@@ -47,8 +75,8 @@ struct ViewerCommands: Commands {
         CommandGroup(after: .toolbar) {
             Button("Start Slideshow") { state?.present(slideshow: true) }.disabled(state == nil || state?.model.totalCount == 0)
             Button("Open Full-Screen Viewer") { state?.present(slideshow: false) }.disabled(state?.currentID == nil)
-            Button("Rotate View Left") { state?.rotation -= 90 }.disabled(state?.model.viewerID == nil)
-            Button("Rotate View Right") { state?.rotation += 90 }.disabled(state?.model.viewerID == nil)
+            Button("Rotate View Left") { state?.rotation -= 90 }.disabled(!canRotate)
+            Button("Rotate View Right") { state?.rotation += 90 }.disabled(!canRotate)
             Button("Show in All Photos") { state?.showInLibrary() }.disabled(state?.currentID == nil)
         }
     }
@@ -60,9 +88,8 @@ struct ViewerContextMenu: View {
     let asset: AssetItem
     var body: some View {
         Button("Show in All Photos") {
-            let state = ViewerState(model: model, session: session)
-            model.selection = [asset.id]
-            state.showInLibrary()
+            if !model.selection.contains(asset.id) { model.selection = [asset.id] }
+            ViewerState.showInLibrary(id: asset.id, model: model, session: session)
         }
     }
 }
@@ -106,13 +133,27 @@ struct ViewerPresentation: View {
         .alert("Something Went Wrong", isPresented: Binding(get: { state.model.lastError != nil }, set: { if !$0 { state.model.lastError = nil } })) {
             Button("OK") {}
         } message: { Text(state.model.lastError ?? "") }
-        .onContinuousHover { _ in state.controlsVisible = true; lastInteraction = .now }
+        .onKeyPress(keys: ["c"]) { copyViewerImage($0, state: state) }
+        .onContinuousHover { phase in
+            guard case .active = phase else { return }
+            if !state.controlsVisible { state.controlsVisible = true }
+            if Date().timeIntervalSince(lastInteraction) > 0.25 { lastInteraction = .now }
+        }
         .task {
             while !Task.isCancelled {
                 do { try await Task.sleep(for: .milliseconds(250)) } catch { return }
-                if Date().timeIntervalSince(lastInteraction) > 2.5 && !overControls && !state.settingsPresented { state.controlsVisible = false }
+                if Date().timeIntervalSince(lastInteraction) > 2.5 && !overControls && !state.settingsPresented {
+                    if state.controlsVisible {
+                        state.controlsVisible = false
+                        NSCursor.setHiddenUntilMouseMoves(true)
+                    }
+                }
                 guard state.slideshow, !state.paused, !state.settingsPresented else { continue }
                 let isVideo = state.model.viewerID.flatMap(state.model.item)?.isVideo == true
+                if isVideo {
+                    state.videoStalledElapsed += 0.25
+                    if state.videoStalledElapsed >= 30 { state.step(1); state.videoStalledElapsed = 0; continue }
+                }
                 guard !isVideo || state.limitVideos else { continue }
                 state.elapsed += 0.25
                 if state.elapsed >= state.interval { state.elapsed = 0; state.step(1) }

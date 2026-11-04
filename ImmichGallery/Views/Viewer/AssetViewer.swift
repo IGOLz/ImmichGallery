@@ -9,24 +9,28 @@ struct AssetViewer: View {
     @Binding var playLive: Bool
     let onDelete: ([String]) -> Void
 
-    @Environment(ViewerState.self) private var viewer
+    @Environment(\.viewerContext) private var viewer
     var isPresentation = false
     @FocusState private var isFocused: Bool
 
     var body: some View {
         ZStack {
-            Color.black.opacity(0.92).ignoresSafeArea()
+            if !isPresentation { Color.black.opacity(0.92).ignoresSafeArea() }
 
-            if viewer.window != nil && !isPresentation {
+            if viewer?.window != nil && !isPresentation {
                 Color.black
             } else if item.isVideo {
                 VideoPlayerView(url: session.client.videoURL(item.id), headers: session.client.credential?.headers ?? [:],
-                                playing: !viewer.slideshow || !viewer.paused,
-                                onFinished: videoFinished)
-                    .id(item.id)
-                    .overlay(alignment: .topTrailing) { ViewerVideoOptions().padding().opacity(!isPresentation || viewer.controlsVisible ? 1 : 0) }
+                                playing: viewer?.slideshow != true || viewer?.paused != true,
+                                onFinished: videoFinished,
+                                onProgress: { viewer?.videoStalledElapsed = 0 },
+                                onFailed: { if viewer?.slideshow == true && viewer?.paused != true { viewer?.step(1) } })
+                    .id("\(item.id)-\(viewer?.playbackGeneration ?? 0)")
+                    .overlay(alignment: .topTrailing) { ViewerVideoOptions().padding()
+                        .opacity(!isPresentation || viewer?.controlsVisible != false ? 1 : 0)
+                        .allowsHitTesting(!isPresentation || viewer?.controlsVisible != false) }
             } else {
-                ZoomableImage(item: item, rotation: viewer.rotation)
+                ZoomableImage(item: item, rotation: viewer?.rotation ?? 0)
                     .id(item.id)
                 if playLive, let videoID = item.livePhotoVideoID {
                     VideoPlayerView(
@@ -40,7 +44,7 @@ struct AssetViewer: View {
             }
 
             if !isPresentation {
-            HStack {
+                HStack {
                     navButton("chevron.left", delta: -1)
                     Spacer()
                     navButton("chevron.right", delta: 1)
@@ -53,12 +57,12 @@ struct AssetViewer: View {
         .focusEffectDisabled()
         .onAppear { isFocused = true }
         .onKeyPress(action: handleKey)
-        .onExitCommand { if isPresentation { viewer.close() } else { model.viewerID = nil } }
+        .onExitCommand { if isPresentation { viewer?.close() } else { model.viewerID = nil } }
         .task(id: item.id) { await prefetchNeighbours() }
     }
 
     private var videoFinished: (@MainActor @Sendable () -> Void)? {
-        guard viewer.slideshow else { return nil }
+        guard let viewer, viewer.slideshow else { return nil }
         return { viewer.step(1) }
     }
 
@@ -74,7 +78,7 @@ struct AssetViewer: View {
     }
 
     private func step(_ delta: Int) {
-        if isPresentation { viewer.step(delta); return }
+        if isPresentation { viewer?.step(delta); return }
         Task {
             if let next = await model.neighbor(of: item.id, delta: delta) {
                 model.viewerID = next.id
@@ -85,7 +89,7 @@ struct AssetViewer: View {
 
     private func prefetchNeighbours() async {
         for delta in [1, -1] {
-            if let next = await model.neighbor(of: item.id, delta: delta), !next.isVideo {
+            if let next = await (isPresentation ? viewer?.neighbor(of: item.id, delta: delta) : model.neighbor(of: item.id, delta: delta)), !next.isVideo {
                 _ = await session.pipeline.thumbnail(next.id, size: .preview)
             }
         }
@@ -93,8 +97,12 @@ struct AssetViewer: View {
 
     private func handleKey(_ press: KeyPress) -> KeyPress.Result {
         if isPresentation {
-            if press.key == .escape { viewer.close(); return .handled }
-            if press.key == .space, viewer.slideshow { viewer.paused.toggle(); return .handled }
+            if press.key == .escape { viewer?.close(); return .handled }
+            if press.key == .return { return .handled }
+            if press.key == .space {
+                if viewer?.slideshow == true { viewer?.paused.toggle() }
+                return .handled
+            }
         }
         switch press.key {
         case .leftArrow: step(-1)
@@ -190,5 +198,109 @@ private struct ZoomableImage: View {
         let pipeline = session.pipeline
         image = pipeline.cachedThumbnail(item.id, size: .preview) ?? pipeline.cachedThumbnail(item.id, size: .thumbnail)
         if let preview = await pipeline.thumbnail(item.id, size: .preview) { image = preview }
+    }
+}
+
+/// Authenticated range playback. Sound settings persist across assets and app launches.
+struct VideoPlayerView: NSViewRepresentable {
+    let url: URL
+    let headers: [String: String]
+    var showsControls = true
+    var playing = true
+    var onFinished: (@MainActor @Sendable () -> Void)?
+    var onProgress: (@MainActor @Sendable () -> Void)?
+    var onFailed: (@MainActor @Sendable () -> Void)?
+    @AppStorage("viewer.videoLoop") private var loop = false
+    @AppStorage("viewer.videoSpeed") private var speed = 1.0
+
+    func makeNSView(context: Context) -> AVPlayerView {
+        let view = AVPlayerView()
+        view.controlsStyle = showsControls ? .floating : .none
+        view.allowsPictureInPicturePlayback = showsControls
+        view.showsFullScreenToggleButton = false
+        view.videoGravity = .resizeAspect
+        let item = AVPlayerItem(asset: AVURLAsset(url: url, options: ["AVURLAssetHTTPHeaderFieldsKey": headers]))
+        let player = AVPlayer(playerItem: item)
+        player.isMuted = UserDefaults.standard.bool(forKey: "viewer.videoMuted")
+        player.volume = UserDefaults.standard.object(forKey: "viewer.videoVolume") as? Float ?? 1
+        view.player = player
+        context.coordinator.onFailed = onFailed
+        context.coordinator.observe(player, item: item)
+        updateNSView(view, context: context)
+        return view
+    }
+
+    func updateNSView(_ view: AVPlayerView, context: Context) {
+        let coordinator = context.coordinator
+        coordinator.onFinished = onFinished
+        coordinator.onProgress = onProgress
+        coordinator.onFailed = onFailed
+        coordinator.loop = loop && showsControls
+        if coordinator.playing != playing || coordinator.speed != speed {
+            coordinator.playing = playing
+            coordinator.speed = speed
+            if playing { view.player?.playImmediately(atRate: Float(speed)) } else { view.player?.pause() }
+        }
+    }
+
+    static func dismantleNSView(_ view: AVPlayerView, coordinator: Coordinator) {
+        view.player?.pause()
+        coordinator.stop()
+        view.player = nil
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    @MainActor final class Coordinator {
+        var onFinished: (@MainActor @Sendable () -> Void)?
+        var onProgress: (@MainActor @Sendable () -> Void)?
+        var onFailed: (@MainActor @Sendable () -> Void)?
+        private weak var player: AVPlayer?
+        private var progressToken: Any?
+        private var lastTime = CMTime.zero
+        var loop = false
+        var playing: Bool?
+        var speed = 0.0
+        private var token: NSObjectProtocol?
+        private var observations: [NSKeyValueObservation] = []
+
+        func observe(_ player: AVPlayer, item: AVPlayerItem) {
+            self.player = player
+            progressToken = player.addPeriodicTimeObserver(forInterval: CMTime(seconds: 1, preferredTimescale: 600), queue: .main) { [weak self] time in
+                MainActor.assumeIsolated {
+                    guard let self, time != self.lastTime else { return }
+                    self.lastTime = time
+                    self.onProgress?()
+                }
+            }
+            observations = [
+                item.observe(\.status, options: [.initial, .new]) { [weak self] item, _ in
+                    if item.status == .failed {
+                        Task { @MainActor [weak self] in self?.onFailed?() }
+                    }
+                },
+                player.observe(\.volume, options: [.new]) { player, _ in UserDefaults.standard.set(player.volume, forKey: "viewer.videoVolume") },
+                player.observe(\.isMuted, options: [.new]) { player, _ in UserDefaults.standard.set(player.isMuted, forKey: "viewer.videoMuted") }
+            ]
+            token = NotificationCenter.default.addObserver(forName: AVPlayerItem.didPlayToEndTimeNotification, object: item, queue: .main) { [weak self, weak player] _ in
+                MainActor.assumeIsolated {
+                    guard let self else { return }
+                    if let onFinished = self.onFinished { onFinished() }
+                    else if self.loop {
+                        player?.seek(to: .zero)
+                        player?.playImmediately(atRate: Float(self.speed))
+                    }
+                }
+            }
+        }
+
+        func stop() {
+            if let token { NotificationCenter.default.removeObserver(token) }
+            token = nil
+            observations = []
+            if let progressToken { player?.removeTimeObserver(progressToken) }
+            progressToken = nil
+            player = nil
+        }
     }
 }

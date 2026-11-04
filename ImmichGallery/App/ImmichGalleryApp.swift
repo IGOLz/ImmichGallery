@@ -4,6 +4,8 @@ import SwiftUI
 struct ImmichGalleryApp: App {
     @State private var app = AppModel()
 
+    init() { ViewerState.pruneClipboard() }
+
     var body: some Scene {
         Window("Immich Gallery", id: "main") {
             RootView()
