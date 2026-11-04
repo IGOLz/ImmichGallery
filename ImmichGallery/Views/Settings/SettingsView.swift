@@ -7,7 +7,7 @@ struct SettingsView: View {
 
     var body: some View {
         Form {
-            if let session = app.session {
+            if let session = app.services {
                 Section("Account") {
                     LabeledContent("Name", value: session.user?.name ?? "—")
                     LabeledContent("Email", value: session.user?.email ?? "—")
@@ -58,7 +58,7 @@ struct SettingsView: View {
         .frame(maxWidth: .infinity)
         .fixedSize(horizontal: false, vertical: true)
         .onAppear {
-            cacheSize = Int64(app.session?.client.session.configuration.urlCache?.currentDiskUsage ?? 0)
+            cacheSize = Int64(app.services?.client.session.configuration.urlCache?.currentDiskUsage ?? 0)
         }
     }
 }

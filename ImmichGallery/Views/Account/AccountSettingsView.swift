@@ -3,7 +3,7 @@ import UniformTypeIdentifiers
 import ImageIO
 
 struct AccountSettingsView: View {
-    let session: LibrarySession
+    let session: AccountServices
     @State private var operation = AccountOperation()
     @State private var name = ""
     @State private var importing = false
@@ -100,7 +100,7 @@ struct AccountSettingsTabs: View {
     var body: some View {
         TabView(selection: $tab) {
             SettingsView().tabItem { Label("General", systemImage: "gearshape") }.tag("general")
-            if let session = app.session {
+            if let session = app.services {
                 AccountSettingsView(session: session).id("profile-\(ObjectIdentifier(session))")
                     .tabItem { Label("Account", systemImage: "person.crop.circle") }.tag("account")
                 AccountSecurityView(session: session).id("security-\(ObjectIdentifier(session))")
@@ -147,7 +147,7 @@ struct AccountSwitcherView: View {
                 LoginView()
                 Button("Cancel") { adding = false }.keyboardShortcut(.cancelAction).padding()
             }.frame(width: 500, height: 600).environment(app)
-                .onChange(of: app.session.map(ObjectIdentifier.init)) { _, _ in adding = false }
+                .onChange(of: app.services.map(ObjectIdentifier.init)) { _, _ in adding = false }
         }
     }
 }
@@ -158,7 +158,7 @@ struct AccountMenu: View {
     @State private var adding = false
     var body: some View {
         Menu {
-            Text(app.session?.user?.email ?? "Account")
+            Text(app.services?.user?.email ?? "Account")
             SettingsLink { Text("Account Settings…") }
             ForEach(app.entries) { entry in
                 Button {
@@ -180,7 +180,7 @@ struct AccountMenu: View {
                 LoginView()
                 Button("Cancel") { adding = false }.keyboardShortcut(.cancelAction).padding()
             }.frame(width: 500, height: 600).environment(app)
-                .onChange(of: app.session.map(ObjectIdentifier.init)) { _, _ in adding = false }
+                .onChange(of: app.services.map(ObjectIdentifier.init)) { _, _ in adding = false }
         }
         .alert("Could Not Switch Account", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) {
             Button("OK") { error = nil }

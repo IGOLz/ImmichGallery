@@ -3,11 +3,12 @@ import UniformTypeIdentifiers
 
 struct UploadCommands: Commands {
     let app: AppModel
+    @FocusedValue(\.librarySession) private var session
     var body: some Commands {
         CommandGroup(before: .importExport) {
-            Button("Import…") { app.session?.upload.chooseFiles() }
+            Button("Import…") { session?.upload.chooseFiles() }
                 .keyboardShortcut("i", modifiers: [.command, .shift])
-                .disabled(app.session == nil)
+                .disabled(session == nil)
         }
     }
 }

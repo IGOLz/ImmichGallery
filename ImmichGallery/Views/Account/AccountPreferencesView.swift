@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct AccountPreferencesView: View {
-    let session: LibrarySession
+    let session: AccountServices
     @State private var draft = AccountPreferences()
     @State private var operation = AccountOperation()
     @State private var loaded = false

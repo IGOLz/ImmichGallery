@@ -4,8 +4,8 @@ struct ExploreMemoryScene: Scene {
     let app: AppModel
     var body: some Scene {
         WindowGroup("Memories", id: "explore-memory", for: String.self) { $id in
-            if let session = app.session, let id {
-                ExploreMemoryWindow(id: id).environment(session)
+            if let services = app.services, let id {
+                ExploreMemoryAccountWindow(services: services, id: id).id(ObjectIdentifier(services))
             } else {
                 ContentUnavailableView("Sign In to View Memories", systemImage: "sparkles.rectangle.stack",
                                        description: Text("Sign in from the main library window to continue."))
@@ -39,5 +39,17 @@ private struct ExploreMemoryWindow: View {
                 memory = loaded
             } catch { self.error = error.localizedDescription }
         }
+    }
+}
+
+private struct ExploreMemoryAccountWindow: View {
+    let services: AccountServices
+    let id: String
+    @State private var session: LibrarySession?
+    var body: some View {
+        Group {
+            if let session { ExploreMemoryWindow(id: id).environment(session) }
+            else { ProgressView() }
+        }.task { if session == nil { session = LibrarySession(services: services) } }
     }
 }

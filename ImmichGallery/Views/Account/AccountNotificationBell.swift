@@ -1,12 +1,12 @@
 import SwiftUI
 
 struct AccountNotificationBell: View {
-    let session: LibrarySession
+    let session: AccountServices
     @Environment(\.scenePhase) private var scenePhase
-    @State private var notifications: [AccountNotification] = []
+    private var notifications: [AccountNotification] { session.notifications }
     @State private var showing = false
     @State private var operation = AccountOperation()
-    @State private var available = true
+    private var available: Bool { session.notificationsAvailable }
     private var unread: [AccountNotification] { notifications.filter { $0.readAt == nil } }
 
     var body: some View {
@@ -66,28 +66,11 @@ struct AccountNotificationBell: View {
                 }.frame(width: 500, height: 430).disabled(operation.busy)
                     .task { operation.run { try await reload() } }
             }
-            .task(id: scenePhase) {
-                guard scenePhase == .active else { return }
-                var retryDelay = 60
-                while !Task.isCancelled && available {
-                    do {
-                        try await reload()
-                        retryDelay = 60
-                        try await Task.sleep(for: .seconds(60))
-                    } catch is CancellationError { return }
-                    catch ImmichError.http(404, _) { available = false; return }
-                    catch ImmichError.http(403, _) { available = false; return }
-                    catch {
-                        operation.error = error.localizedDescription
-                        retryDelay = min(retryDelay * 2, 900)
-                        do { try await Task.sleep(for: .seconds(retryDelay)) } catch { return }
-                    }
-                }
-            }
+
         }
     }
 
     private func reload() async throws {
-        notifications = try await session.client.accountNotifications().sorted { $0.createdAt > $1.createdAt }
+        try await session.reloadNotifications()
     }
 }

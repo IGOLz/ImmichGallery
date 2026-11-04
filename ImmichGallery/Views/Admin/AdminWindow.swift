@@ -16,7 +16,7 @@ struct AdminCommands: Commands {
     @Environment(\.openWindow) private var openWindow
     var body: some Commands {
         CommandGroup(after: .appSettings) {
-            if app.session?.user?.isAdmin == true {
+            if app.services?.user?.isAdmin == true {
                 Button("Administration…") { openWindow(id: "admin") }
                     .keyboardShortcut("a", modifiers: [.command, .option])
             }
@@ -29,14 +29,14 @@ struct AdminWindow: View {
     @Environment(\.dismissWindow) private var dismissWindow
     var body: some View {
         Group {
-            if let session = app.session, session.user?.isAdmin == true {
+            if let session = app.services, session.user?.isAdmin == true {
                 AdminView(session: session).id(ObjectIdentifier(session))
             } else {
                 ContentUnavailableView("Administrator Access Required", systemImage: "lock.shield")
             }
         }
         .frame(minWidth: 850, minHeight: 560)
-        .onChange(of: app.session?.user?.isAdmin) { _, value in
+        .onChange(of: app.services?.user?.isAdmin) { _, value in
             if value != true { dismissWindow(id: "admin") }
         }
     }
@@ -48,7 +48,7 @@ private struct AdminView: View {
     @State private var pending: AdminConfirmation?
     @State private var userEditor: AdminUserEditorItem?
     @State private var libraryEditor: AdminLibraryEditorItem?
-    init(session: LibrarySession) { _model = State(initialValue: AdminModel(session: session)) }
+    init(session: AccountServices) { _model = State(initialValue: AdminModel(session: session)) }
 
     var body: some View {
         Group {

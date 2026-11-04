@@ -6,7 +6,7 @@ final class AppModel {
     enum Phase {
         case launching
         case signedOut
-        case signedIn(LibrarySession)
+        case signedIn(AccountServices)
     }
     private(set) var phase: Phase = .launching
     private(set) var entries: [AccountVault.Entry] = []
@@ -14,8 +14,8 @@ final class AppModel {
     private(set) var currentAccountID: String?
     var accountError: String?
 
-    var session: LibrarySession? {
-        if case .signedIn(let session) = phase { session } else { nil }
+    var services: AccountServices? {
+        if case .signedIn(let services) = phase { services } else { nil }
     }
 
     private func refreshEntries() throws { entries = try AccountVault.loadEntries() }
@@ -70,7 +70,7 @@ final class AppModel {
     }
 
     func signOut() async {
-        guard !switching, let session else { return }
+        guard !switching, let services else { return }
         switching = true
         defer { switching = false }
         do {
@@ -80,25 +80,25 @@ final class AppModel {
             UserDefaults.standard.set(true, forKey: "accountVaultMigrated")
             try refreshEntries()
         } catch { accountError = error.localizedDescription; return }
-        if case .accessToken = session.client.credential { try? await session.client.logout() }
-        guard self.session === session else { return }
-        session.upload.cancelAll() // Upload
-        session.pipeline.removeAll()
+        if case .accessToken = services.client.credential { try? await services.client.logout() }
+        guard self.services === services else { return }
+        services.upload.cancelAll() // Upload
+        services.pipeline.removeAll()
         MacIntegrationRouter.shared.pending.removeAll()
         phase = .signedOut
         currentAccountID = nil
-        do { try clearCache(session) } catch { accountError = error.localizedDescription }
+        do { try clearCache(services) } catch { accountError = error.localizedDescription }
     }
 
     func switchAccount(_ entry: AccountVault.Entry) async throws {
         guard !switching, currentAccountID != entry.id else { return }
         switching = true
         defer { switching = false }
-        let previous = session
+        let previous = services
         let account = entry.account
         let client = ImmichClient(serverURL: account.serverURL, apiURL: account.apiURL, credential: account.credential)
         let user = try await client.currentUser()
-        guard session === previous else { return }
+        guard services === previous else { return }
         try AccountVault.select(entry.id)
         try refreshEntries()
         currentAccountID = entry.id
@@ -110,7 +110,7 @@ final class AppModel {
         try AccountVault.remove(entry.id)
         try refreshEntries()
         if currentAccountID == entry.id {
-            let old = session
+            let old = services
             old?.pipeline.removeAll()
             phase = .signedOut
             currentAccountID = nil
@@ -125,53 +125,52 @@ final class AppModel {
         try ImmichClient.removeAccountCache(apiURL: entry.account.apiURL, userID: "offline-" + fallback)
     }
 
-    private func clearCache(_ session: LibrarySession) throws {
-        if let credential = session.client.credential {
+    private func clearCache(_ services: AccountServices) throws {
+        if let credential = services.client.credential {
             let fallback = try JSONEncoder().encode(credential).base64EncodedString()
-            try ImmichClient.removeAccountCache(apiURL: session.client.apiURL, userID: "offline-" + fallback)
+            try ImmichClient.removeAccountCache(apiURL: services.client.apiURL, userID: "offline-" + fallback)
         }
-        try ImmichClient.removeAccountCache(apiURL: session.client.apiURL, userID: session.cacheUserID)
-        if let id = session.user?.id, id != session.cacheUserID {
-            try ImmichClient.removeAccountCache(apiURL: session.client.apiURL, userID: id)
+        try ImmichClient.removeAccountCache(apiURL: services.client.apiURL, userID: services.cacheUserID)
+        if let id = services.user?.id, id != services.cacheUserID {
+            try ImmichClient.removeAccountCache(apiURL: services.client.apiURL, userID: id)
         }
     }
 
     private func start(client: ImmichClient, user: User?, cacheUserID: String) {
         let isolated = client.accountIsolated(userID: cacheUserID)
-        let session = LibrarySession(client: isolated, user: user, cacheUserID: cacheUserID)
+        let services = AccountServices(client: isolated, user: user, cacheUserID: cacheUserID)
         let legacyCache = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("ImageCache", isDirectory: true)
         do {
             if FileManager.default.fileExists(atPath: legacyCache.path) { try FileManager.default.removeItem(at: legacyCache) }
         } catch { accountError = error.localizedDescription }
-        session.onUnauthorized = { [weak self, weak session] in
+        services.onUnauthorized = { [weak self, weak services] in
             Task {
-                guard let self, self.session === session else { return }
+                guard let self, self.services === services else { return }
                 await self.signOut()
             }
         }
-        session.onUserLoaded = { [weak self, weak session] user in
-            guard let self, self.session === session, !self.switching, let credential = client.credential else { return }
+        services.onUserLoaded = { [weak self, weak services] user in
+            guard let self, self.services === services, !self.switching, let credential = client.credential else { return }
             do {
                 try AccountVault.save(account: .init(serverURL: client.serverURL, apiURL: client.apiURL, credential: credential), user: user)
                 try self.refreshEntries()
                 self.currentAccountID = client.apiURL.absoluteString + "|" + user.id
             } catch { self.accountError = error.localizedDescription }
         }
-        self.session?.upload.cancelAll() // Upload: the previous account's queue goes away with its session.
-        phase = .signedIn(session)
-        Task { await session.bootstrap() }
+        self.services?.upload.cancelAll() // Upload: the previous account's queue goes away with its services.
+        phase = .signedIn(services)
+        Task { await services.bootstrap() }
     }
 }
 
 /// Everything that belongs to one signed-in server/user.
 @MainActor @Observable
-final class LibrarySession {
+final class AccountServices {
     let client: ImmichClient
-    let albumActions = AlbumsActions() // Albums
     let sharing: SharingModel // Sharing
     let upload: UploadQueue // Upload
-    let metadata = MetadataState() // Metadata
+    let metadata = MetadataSharedState()
     let pipeline: ImagePipeline
     private(set) var user: User?
     private(set) var features = ServerFeatures()
@@ -201,7 +200,7 @@ final class LibrarySession {
     let cacheUserID: String
     @ObservationIgnored var onUserLoaded: (User) -> Void = { _ in }
     @ObservationIgnored var onUnauthorized: () -> Void = {}
-    @ObservationIgnored private var gridModels: [GridSource: AssetGridModel] = [:]
+    @ObservationIgnored let windows = NSHashTable<LibrarySession>.weakObjects()
 
     init(client: ImmichClient, user: User?, cacheUserID: String) {
         self.cacheUserID = cacheUserID
@@ -215,10 +214,27 @@ final class LibrarySession {
         }
         self.upload.onError = { [weak self] in self?.handle($0) } // Upload
         self.user = user
-        MacWindowInvalidation.register(self)
+    }
+
+    var notifications: [AccountNotification] = []
+    var notificationsAvailable = true
+    @ObservationIgnored var notificationTask: Task<Void, Never>?
+    func reloadNotifications() async throws {
+        notifications = try await client.accountNotifications().sorted { $0.createdAt > $1.createdAt }
+    }
+    func startNotifications() {
+        notificationTask = Task { [weak self] in
+            while !Task.isCancelled {
+                do { try await self?.reloadNotifications() }
+                catch ImmichError.http(404, _), ImmichError.http(403, _) { self?.notificationsAvailable = false; return }
+                catch { self?.handle(error) }
+                do { try await Task.sleep(for: .seconds(60)) } catch { return }
+            }
+        }
     }
 
     func bootstrap() async {
+        startNotifications()
         async let features = try? client.serverFeatures()
         async let version = try? client.serverVersion()
         async let user = try? client.currentUser()
@@ -231,7 +247,12 @@ final class LibrarySession {
         await loadExploreTags()
     }
 
-    func setPreferences(_ value: AccountPreferences) { preferences = value }
+    var preferencesRevision = 0
+    func setPreferences(_ value: AccountPreferences) {
+        preferences = value
+        preferencesRevision += 1
+        Task { await loadExploreTags(refresh: true); await sharing.reload() }
+    }
 
     func refreshAccountUser() async throws { user = try await client.currentUser() }
 
@@ -243,6 +264,48 @@ final class LibrarySession {
         } catch { handle(error) }
     }
 
+    func invalidateGrids() {
+        for window in windows.allObjects { window.invalidateMacWindowGrids() }
+    }
+
+    func removeFromGrids(_ ids: Set<String>) {
+        for window in windows.allObjects { window.removeFromGrids(ids) }
+        MacQuickLook.shared.dismiss()
+    }
+
+    func handle(_ error: Error) {
+        if case ImmichError.unauthorized = error { onUnauthorized() }
+    }
+}
+
+/// Navigation, selection and presentations belong to one window.
+@MainActor @Observable
+final class LibrarySession {
+    let services: AccountServices
+    let albumActions = AlbumsActions()
+    let metadata: MetadataState
+    let sharing: SharingModel
+    @ObservationIgnored private var gridModels: [GridSource: AssetGridModel] = [:]
+    var client: ImmichClient { services.client }
+    var pipeline: ImagePipeline { services.pipeline }
+    var upload: UploadQueue { services.upload }
+    var user: User? { services.user }
+    var features: ServerFeatures { services.features }
+    var version: ServerVersion? { services.version }
+    var albums: [Album] { services.albums }
+    var preferences: AccountPreferences? { services.preferences }
+    var preferencesRevision: Int { services.preferencesRevision }
+    var exploreTags: [ExploreTag] { services.exploreTags }
+    var exploreTagsEnabled: Bool { services.exploreTagsEnabled }
+    var cacheUserID: String { services.cacheUserID }
+    init(services: AccountServices) {
+        self.services = services
+        metadata = MetadataState(shared: services.metadata)
+        sharing = SharingModel(client: services.client, data: services.sharing.data)
+        services.windows.add(self)
+    }
+    func reloadAlbums() async { await services.reloadAlbums() }
+    func loadExploreTags(refresh: Bool = false) async { await services.loadExploreTags(refresh: refresh) }
     /// Grid models are cached per source so switching sidebar items keeps loaded data.
     func gridModel(for source: GridSource) -> AssetGridModel {
         if let model = gridModels[source] { return model }
@@ -273,22 +336,28 @@ final class LibrarySession {
     func invalidateMacWindowGrids() {
         for model in gridModels.values { model.markStale() }
         macGridRevision += 1
-        Task { await reloadAlbums() }
     }
 
     /// Mutations affect cached grids in every window for this account.
     func invalidateGrids(except keep: AssetGridModel? = nil) {
         for model in gridModels.values where model !== keep { model.markStale() }
         macGridRevision += 1
-        MacWindowInvalidation.invalidate(from: self)
+        for window in services.windows.allObjects where window !== self { window.invalidateMacWindowGrids() }
     }
 
     // Explore
     func exploreRemoveFromGrids(_ ids: Set<String>) {
-        for model in gridModels.values { model.exploreRemove(ids) }
+        services.removeFromGrids(ids)
+    }
+
+    func removeFromGrids(_ ids: Set<String>) {
+        for model in gridModels.values {
+            model.exploreRemove(ids)
+            if let id = model.viewerID, ids.contains(id) { model.viewerID = nil }
+        }
     }
 
     func handle(_ error: Error) {
-        if case ImmichError.unauthorized = error { onUnauthorized() }
+        services.handle(error)
     }
 }

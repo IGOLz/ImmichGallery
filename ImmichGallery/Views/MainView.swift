@@ -37,7 +37,7 @@ struct MainView: View {
         }
         .modifier(UploadDropModifier(queue: session.upload)) // Upload
         .toolbar { UploadToolbar(queue: session.upload) } // Upload
-        .toolbar { ToolbarItemGroup { AccountNotificationBell(session: session); AccountMenu() } } // Account
+        .toolbar { ToolbarItemGroup { AccountNotificationBell(session: session.services); AccountMenu() } } // Account
         .modifier(AlbumPresentation()) // Albums
         .onChange(of: session.albumActions.navigationAlbumID) { _, id in
             if let id {
@@ -48,10 +48,11 @@ struct MainView: View {
         .searchable(text: $searchText, placement: .toolbar, prompt: session.features.smartSearch ? "Search photos" : "Search file names")
         .searchSuggestions { SearchFieldSuggestions(text: searchText) }
         .searchFocused($searchFocused)
+        .focusedSceneValue(\.librarySession, session)
         .focusedSceneValue(\.searchActions, SearchActions(
             find: { selection = .search; searchFocused = true },
             filters: { selection = .search; showSearchFilters = true }))
-        .onReceive(NotificationCenter.default.publisher(for: .viewerShowLibrary)) { _ in selection = .library }
+        .onReceive(NotificationCenter.default.publisher(for: .viewerShowLibrary, object: session)) { _ in selection = .library }
         .onSubmit(of: .search) {
             let query = searchText.trimmingCharacters(in: .whitespaces)
             guard !query.isEmpty else { return }

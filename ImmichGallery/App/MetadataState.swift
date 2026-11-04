@@ -11,13 +11,15 @@ final class MetadataState {
     }
     var presentation: Presentation?
     var viewerSnapshot: AssetItem?
-    var revision = 0
-    var imageRevision = 0
-    var gridRevision = 0
-    var imageEligibility: [String: Bool] = [:]
-    var busy = false
-    var error: String?
-    var unavailableEdits = false
+    let shared: MetadataSharedState
+    init(shared: MetadataSharedState) { self.shared = shared }
+    var revision: Int { get { shared.revision } set { shared.revision = newValue } }
+    var imageRevision: Int { get { shared.imageRevision } set { shared.imageRevision = newValue } }
+    var gridRevision: Int { get { shared.gridRevision } set { shared.gridRevision = newValue } }
+    var imageEligibility: [String: Bool] { get { shared.imageEligibility } set { shared.imageEligibility = newValue } }
+    var busy: Bool { get { shared.busy } set { shared.busy = newValue } }
+    var error: String? { get { shared.error } set { shared.error = newValue } }
+    var unavailableEdits: Bool { get { shared.unavailableEdits } set { shared.unavailableEdits = newValue } }
 
     func present(_ kind: Presentation.Kind, ids: [String]) {
         guard !ids.isEmpty, !busy else { return }
@@ -96,7 +98,7 @@ final class MetadataState {
                 let after = try await session.client.asset(id)
                 if after.thumbhash != before.thumbhash { break }
             }
-            session.pipeline.removeAll()
+            session.pipeline.evict(ids: [id])
             imageRevision += 1
             refresh(session, reloadGrid: true)
             return true
@@ -130,4 +132,16 @@ final class MetadataState {
             session.invalidateGrids()
         }
     }
+}
+
+@MainActor @Observable
+final class MetadataSharedState {
+    var revision = 0
+    var imageRevision = 0
+    var gridRevision = 0
+    var imageEligibility: [String: Bool] = [:]
+    var busy = false
+    var error: String?
+    var unavailableEdits = false
+
 }

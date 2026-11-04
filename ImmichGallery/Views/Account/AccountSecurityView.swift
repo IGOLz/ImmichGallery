@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct AccountSecurityView: View {
-    let session: LibrarySession
+    let session: AccountServices
     @State private var operation = AccountOperation()
     @State private var keys: [AccountAPIKey] = []
     @State private var devices: [AccountDevice] = []
@@ -120,7 +120,7 @@ struct AccountSecurityView: View {
 }
 
 private struct AccountKeyEditor: View {
-    let session: LibrarySession
+    let session: AccountServices
     let key: AccountAPIKey?
     let onSave: @MainActor () async throws -> Void
     @Environment(\.dismiss) private var dismiss

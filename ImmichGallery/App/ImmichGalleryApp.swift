@@ -22,7 +22,7 @@ struct ImmichGalleryApp: App {
         .defaultSize(width: 1280, height: 820)
         .windowToolbarStyle(.unified)
         .onChange(of: MacIntegrationRouter.shared.pending, initial: true) { openPendingIntents() }
-        .onChange(of: app.session.map(ObjectIdentifier.init)) { openPendingIntents() }
+        .onChange(of: app.services.map(ObjectIdentifier.init)) { openPendingIntents() }
         .commands { AppCommands(app: app); AdminCommands(app: app); UploadCommands(app: app); ViewerCommands(); MacIntegrationCommands() }
 
         AdminScene(app: app) // Admin
@@ -36,7 +36,7 @@ struct ImmichGalleryApp: App {
     }
 
     private func openPendingIntents() {
-        guard app.session != nil else { return }
+        guard app.services != nil else { return }
         let routes = MacIntegrationRouter.shared.pending
         MacIntegrationRouter.shared.pending.removeAll()
         for route in routes { openWindow(id: "main", value: route) }
@@ -44,42 +44,43 @@ struct ImmichGalleryApp: App {
 }
 
 struct RootView: View {
-    @State private var changingPassword = false
     @Environment(AppModel.self) private var app
-
     var body: some View {
         Group {
             switch app.phase {
-            case .launching:
-                ProgressView().controlSize(.large)
-            case .signedOut:
-                LoginView()
-            case .signedIn(let session):
-                MainView()
-                    .environment(session)
-                    .id(ObjectIdentifier(session))
-            }
-        }
-        .safeAreaInset(edge: .top) {
-            if app.session?.user?.shouldChangePassword == true {
-                HStack {
-                    Text("Your server asks you to change your password.")
-                    Button("Change Password…") { changingPassword = true }
-                }.padding(8).frame(maxWidth: .infinity).background(.bar)
-            }
-        }
-        .sheet(isPresented: $changingPassword) {
-            if let session = app.session {
-                VStack {
-                    AccountSecurityView(session: session)
-                    Button("Done") { changingPassword = false }.padding()
-                }.frame(width: 640, height: 650)
+            case .launching: ProgressView().controlSize(.large)
+            case .signedOut: LoginView()
+            case .signedIn: ProgressView()
             }
         }
         .task { await app.restore() }
-        .alert("Account Error", isPresented: Binding(get: { app.accountError != nil }, set: { if !$0 { app.accountError = nil } })) {
-            Button("OK") { app.accountError = nil }
-        } message: { Text(app.accountError ?? "") }
+    }
+}
+
+struct AccountChrome: ViewModifier {
+    @Environment(AppModel.self) private var app
+    @State private var changingPassword = false
+    func body(content: Content) -> some View {
+        content
+            .safeAreaInset(edge: .top) {
+                if app.services?.user?.shouldChangePassword == true {
+                    HStack {
+                        Text("Your server asks you to change your password.")
+                        Button("Change Password…") { changingPassword = true }
+                    }.padding(8).frame(maxWidth: .infinity).background(.bar)
+                }
+            }
+            .sheet(isPresented: $changingPassword) {
+                if let services = app.services {
+                    VStack {
+                        AccountSecurityView(session: services)
+                        Button("Done") { changingPassword = false }.padding()
+                    }.frame(width: 640, height: 650)
+                }
+            }
+            .alert("Account Error", isPresented: Binding(get: { app.accountError != nil }, set: { if !$0 { app.accountError = nil } })) {
+                Button("OK") { app.accountError = nil }
+            } message: { Text(app.accountError ?? "") }
     }
 }
 
@@ -92,6 +93,7 @@ struct SearchActions {
 
 extension FocusedValues {
     @Entry var searchActions: SearchActions?
+    @Entry var librarySession: LibrarySession?
     @Entry var gridModel: AssetGridModel?
 }
 
@@ -99,25 +101,26 @@ struct AppCommands: Commands {
     let app: AppModel
     @FocusedValue(\.searchActions) private var searchActions
     @FocusedValue(\.gridModel) private var grid
+    @FocusedValue(\.librarySession) private var session
     @AppStorage("gridThumbnailSize") private var thumbnailSize = GridMetrics.defaultSize
     @AppStorage("showInspector") private var showInspector = false
 
     var body: some Commands {
         CommandGroup(after: .appSettings) {
-            if app.session != nil {
+            if session != nil {
                 Button("Sign Out…") { Task { await app.signOut() } }
             }
         }
 
         CommandGroup(after: .newItem) {
-            Button("New Album…") { app.session?.albumActions.newAlbum() }
+            Button("New Album…") { session?.albumActions.newAlbum() }
                 .keyboardShortcut("n", modifiers: [.command, .option])
-                .disabled(app.session == nil)
+                .disabled(session == nil)
         } // Albums
 
         CommandGroup(after: .importExport) {
             Button("Export Unmodified Original…") {
-                if let grid { Exporter.exportOriginals(grid.selectedItems.map(\.id), session: app.session) }
+                if let grid { Exporter.exportOriginals(grid.selectedItems.map(\.id), session: session) }
             }
             .keyboardShortcut("e", modifiers: [.command, .shift])
             .disabled(grid?.selection.isEmpty ?? true)
@@ -145,10 +148,9 @@ struct AppCommands: Commands {
                 .keyboardShortcut("-", modifiers: .command)
             Divider()
             Button("Refresh") {
-                if let session = app.session {
-                    session.pipeline.removeAll()
+                if let session = session {
                     session.metadata.revision += 1
-                    session.metadata.imageRevision += 1
+                    session.invalidateGrids()
                 }
                 if let grid { Task { await grid.reload() } }
             }
@@ -161,7 +163,7 @@ struct AppCommands: Commands {
         }
 
         CommandMenu("Image") {
-            if let session = app.session {
+            if let session = session {
                 let metadataIDs = grid?.viewerID.map { [$0] } ?? Array(grid?.selection ?? [])
                 MetadataMenuItems(ids: metadataIDs, canEditImage: true, menuBarShortcuts: true)
                     .environment(session)
@@ -169,7 +171,7 @@ struct AppCommands: Commands {
                 Divider()
             }
             let ids = grid?.selectedItems.map(\.id) ?? []
-            if let session = app.session { AlbumSelectionMenu(session: session, model: grid, ids: ids) } // Albums
+            if let session = session { AlbumSelectionMenu(session: session, model: grid, ids: ids) } // Albums
             Button("Move to Locked Folder") { if let grid { Task { await grid.moveToLockedFolder(ids) } } }
                 .disabled(ids.isEmpty || grid?.source == .trash || grid?.source.isPartner == true) // Explore
             // "." and ⌘⌫ are handled by the grid/viewer so they don't steal keys from text fields.

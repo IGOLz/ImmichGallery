@@ -217,7 +217,7 @@ final class ViewerState: NSObject, NSWindowDelegate {
                 library.viewerID = nil
                 if model !== library || !library.selection.contains(id) { library.selection = [id] }
                 library.viewerScrollTarget = id
-                NotificationCenter.default.post(name: .viewerShowLibrary, object: nil)
+                NotificationCenter.default.post(name: .viewerShowLibrary, object: session)
             } catch { model.lastError = error.localizedDescription; session.handle(error) }
         }
     }

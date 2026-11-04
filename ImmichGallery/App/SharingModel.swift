@@ -5,16 +5,16 @@ import Observation
 final class SharingModel {
     let client: ImmichClient
     var presentation: SharingPresentation?
-    var links: [SharedLink] = []
-    var receivedPartners: [SharingPartner] = []
-    var outgoingPartners: [SharingPartner] = []
-    var linksAvailable = true
-    var partnersAvailable = true
-    var error: String?
-    var backgroundError: String?
-    var busy = false
-
-    init(client: ImmichClient) { self.client = client }
+    let data: SharingData
+    init(client: ImmichClient, data: SharingData = SharingData()) { self.client = client; self.data = data }
+    var links: [SharedLink] { get { data.links } set { data.links = newValue } }
+    var receivedPartners: [SharingPartner] { get { data.receivedPartners } set { data.receivedPartners = newValue } }
+    var outgoingPartners: [SharingPartner] { get { data.outgoingPartners } set { data.outgoingPartners = newValue } }
+    var linksAvailable: Bool { get { data.linksAvailable } set { data.linksAvailable = newValue } }
+    var partnersAvailable: Bool { get { data.partnersAvailable } set { data.partnersAvailable = newValue } }
+    var error: String? { get { data.error } set { data.error = newValue } }
+    var backgroundError: String? { get { data.backgroundError } set { data.backgroundError = newValue } }
+    var busy: Bool { get { data.busy } set { data.busy = newValue } }
 
     func reload() async {
         var linksAvailable = self.linksAvailable
@@ -53,4 +53,17 @@ final class SharingModel {
         do { try await action(); await reload(); return true }
         catch { self.error = error.localizedDescription; return false }
     }
+}
+
+@MainActor @Observable
+final class SharingData {
+    var links: [SharedLink] = []
+    var receivedPartners: [SharingPartner] = []
+    var outgoingPartners: [SharingPartner] = []
+    var linksAvailable = true
+    var partnersAvailable = true
+    var error: String?
+    var backgroundError: String?
+    var busy = false
+
 }

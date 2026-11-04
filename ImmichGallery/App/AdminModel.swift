@@ -16,7 +16,7 @@ final class AdminModel {
             }
         }
     }
-    let session: LibrarySession
+    let session: AccountServices
     var section: Section = .overview
     var unavailable: Set<Section> = []
     var authorized = true
@@ -35,7 +35,7 @@ final class AdminModel {
     var featureFlags: AdminValue?
     var notice: String?
 
-    init(session: LibrarySession) {
+    init(session: AccountServices) {
         self.session = session
         let configuration = URLSessionConfiguration.ephemeral
         configuration.urlCache = nil

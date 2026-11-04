@@ -10,42 +10,29 @@ struct MacWindowRoute: Codable, Hashable {
 struct MacWindowRoot: View {
     let app: AppModel
     let route: MacWindowRoute?
-    @State private var session: LibrarySession?
-    @State private var sharedID: ObjectIdentifier?
-
-    init(app: AppModel, route: MacWindowRoute?) {
-        self.app = app
-        self.route = route
-        _session = State(initialValue: app.session.map(Self.independentSession))
-        _sharedID = State(initialValue: app.session.map(ObjectIdentifier.init))
-    }
-
-    private static func independentSession(_ shared: LibrarySession) -> LibrarySession {
-        let session = LibrarySession(client: shared.client, user: shared.user, cacheUserID: shared.cacheUserID)
-        session.onUnauthorized = shared.onUnauthorized
-        return session
-    }
-
     var body: some View {
         Group {
-            if app.session != nil {
-                if let session, sharedID == app.session.map(ObjectIdentifier.init) {
-                    MainView(initialAlbumID: route?.albumID, initialSearch: route?.query)
-                        .environment(session)
-                        .id(ObjectIdentifier(session))
-                } else { ProgressView() }
+            if let services = app.services {
+                MacSignedInWindow(services: services, route: route)
+                    .id(ObjectIdentifier(services))
             } else { RootView() }
         }
+        .modifier(AccountChrome())
         .background(MacWindowConfiguration(asTab: route?.asTab ?? false))
-        .onChange(of: app.session.map(ObjectIdentifier.init), initial: true) {
-            let current = app.session.map(ObjectIdentifier.init)
-            if sharedID != current {
-                session = app.session.map(Self.independentSession)
-                sharedID = current
-            }
-            if let session { Task { await session.bootstrap() } }
-            else { MacQuickLook.shared.dismiss() }
+    }
+}
+
+struct MacSignedInWindow: View {
+    let services: AccountServices
+    let route: MacWindowRoute?
+    @State private var session: LibrarySession?
+    var body: some View {
+        Group {
+            if let session {
+                MainView(initialAlbumID: route?.albumID, initialSearch: route?.query).environment(session)
+            } else { ProgressView() }
         }
+        .task { if session == nil { session = LibrarySession(services: services) } }
     }
 }
 
@@ -88,17 +75,6 @@ struct MacIntegrationCommands: Commands {
         }
         CommandGroup(after: .windowArrangement) {
             Button("Show Tab Bar") { NSApp.keyWindow?.toggleTabBar(nil) }
-        }
-    }
-}
-
-@MainActor
-enum MacWindowInvalidation {
-    private static let sessions = NSHashTable<LibrarySession>.weakObjects()
-    static func register(_ session: LibrarySession) { sessions.add(session) }
-    static func invalidate(from source: LibrarySession) {
-        for session in sessions.allObjects where session !== source && session.client.apiURL == source.client.apiURL && session.client.credential == source.client.credential {
-            session.invalidateMacWindowGrids()
         }
     }
 }
