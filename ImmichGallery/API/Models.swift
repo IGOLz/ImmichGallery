@@ -49,6 +49,7 @@ struct User: Decodable, Sendable, Identifiable {
     let id: String
     let email: String
     let name: String
+    var isAdmin: Bool? // Admin: absent on older servers means no admin access.
     var profileImagePath: String?
     var quotaUsageInBytes: Int64?
     var quotaSizeInBytes: Int64?
