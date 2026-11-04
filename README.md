@@ -1,79 +1,184 @@
-# ImmichGallery
-Independent open-source macOS photo gallery client for Immich. Early development.
+<p align="center">
+  <a href="https://github.com/IGOLz/ImmichGallery/releases/latest"><img src="https://img.shields.io/github/v/release/IGOLz/ImmichGallery?include_prereleases&style=for-the-badge&label=Release&color=E8475F&labelColor=ececec" alt="Latest release"></a>
+  <img src="https://img.shields.io/badge/macOS-26%2B-blue?style=for-the-badge&logo=apple&logoColor=000000&color=3F51B5&labelColor=ececec" alt="macOS 26 or later">
+  <img src="https://img.shields.io/badge/Swift-6-orange?style=for-the-badge&logo=swift&logoColor=000000&color=F05138&labelColor=ececec" alt="Swift 6">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue?style=for-the-badge&color=3F51B5&labelColor=ececec" alt="License: MIT"></a>
+</p>
 
-A native SwiftUI app for macOS that browses your [Immich](https://immich.app) library with an Apple Photos–style interface.
-Not affiliated with the Immich project.
+<p align="center">
+  <img src=".github/assets/icon.png" width="128" alt="Immich Gallery icon">
+</p>
+<h1 align="center">Immich Gallery</h1>
+<h3 align="center">A native macOS app for your <a href="https://immich.app">Immich</a> library, with an Apple Photos–style interface</h3>
+<br/>
+
+<p align="center">
+  <img src=".github/assets/library.webp" alt="Immich Gallery showing the library timeline">
+</p>
+
+<p align="center">
+  <a href="https://github.com/IGOLz/ImmichGallery/releases/latest"><b>Download</b></a> ·
+  <a href="#features">Features</a> ·
+  <a href="#screenshots">Screenshots</a> ·
+  <a href="#try-it-with-the-demo">Demo</a> ·
+  <a href="#build-from-source">Build</a> ·
+  <a href="#contributing">Contributing</a>
+</p>
+
+> [!NOTE]
+> Immich Gallery is an independent open-source project and is **not affiliated with the Immich project**. It is a client: you need an Immich server (your own, or the public demo). Find Immich itself at [immich.app](https://immich.app).
+
+> [!WARNING]
+> This is an early preview. It can edit, move and delete photos on your server, so expect rough edges, and always follow a [3-2-1 backup plan](https://www.backblaze.com/blog/the-3-2-1-backup-strategy/) for your photos and videos.
+
+## Why
+
+Immich has a great web app and mobile apps, but on the Mac you live in a browser tab. Immich Gallery is written in SwiftUI from scratch to feel like it belongs on macOS: a sidebar, a real toolbar, keyboard shortcuts, several windows and tabs, Quick Look, drag and drop to and from the Finder, the share sheet, Shortcuts, and native full screen.
+
+## Install
+
+1. Download **ImmichGallery-x.y.z.dmg** from the [latest release](https://github.com/IGOLz/ImmichGallery/releases/latest).
+2. Open it and drag **Immich Gallery** to Applications.
+3. Sign in with your server address and your email and password, or an API key.
+
+The app is signed with a Developer ID and notarized by Apple, so it opens without Gatekeeper warnings.
+
+**Requirements:** macOS 26 or later, and an Immich server v2.0 or later (tested with v3.3).
+
+## Try it with the demo
+
+No server yet? Use Immich's public demo. Enter `https://demo.immich.app` as the server, then:
+
+| Email           | Password |
+| --------------- | -------- |
+| demo@immich.app | demo     |
+
+The demo is shared with everyone and doesn't accept uploads.
 
 ## Features
 
-**Library and viewer**
-- Sign in with email & password (session token) or an API key; server discovery via `/.well-known/immich`, the same way the official mobile app does it
-- Library timeline grouped by month, with ThumbHash placeholders and lazy per-month loading (`/timeline/buckets` + `/timeline/bucket`)
-- Favorites, Videos, Archive, Recently Deleted (with Empty Trash / Restore All), Albums, People
-- Viewer: arrow-key navigation, pinch/double-click zoom (loads the original when you zoom in), video playback with loop/speed/volume memory, Live Photos, native full screen, slideshow (interval, shuffle, fade), copy image (⌘C), temporary rotation, Show in All Photos
-- Info inspector (⌘I): camera, exposure, size, location map, people, albums
-- Favorite (`.`), archive, delete/restore (⌘⌫), Export Unmodified Original (⇧⌘E), ZIP download of a selection or an album
+| Feature                                                          | Immich Gallery |
+| :--------------------------------------------------------------- | :------------: |
+| Timeline grouped by month, with ThumbHash placeholders           | ✅ |
+| Favorites, Videos, Archive, Recently Deleted                     | ✅ |
+| Viewer with zoom, video, Live Photos, slideshow and full screen  | ✅ |
+| Info inspector: camera, exposure, location map, people, albums   | ✅ |
+| Upload files and folders, with duplicate detection               | ✅ |
+| Download originals, or a selection or album as a ZIP             | ✅ |
+| Albums: create, edit, cover, sort, share with users              | ✅ |
+| Album comments and likes                                         | ✅ |
+| Edit date, time zone, location, description and rating           | ✅ |
+| Non-destructive rotate and crop                                  | ✅ |
+| People: rename, merge, hide, birthday, assign faces              | ✅ |
+| Smart (CLIP), file name, description and OCR search              | ✅ |
+| Search filters: people, place, camera, date, type, rating        | ✅ |
+| Global map with clusters, places, memories                      | ✅ |
+| Tags and folder view                                             | ✅ |
+| Locked Folder (PIN)                                              | ✅ |
+| Stacks, duplicates, large files                                  | ✅ |
+| Public shared links and partner sharing                          | ✅ |
+| Several accounts and servers                                     | ✅ |
+| API keys, sessions, notifications, preferences                   | ✅ |
+| Administration: stats, jobs, users, external libraries           | ✅ |
+| Several windows and tabs, Quick Look, drag and drop              | ✅ |
+| Shortcuts actions and the macOS share sheet                      | ✅ |
+| English and Italian                                              | ✅ |
+| OAuth sign-in                                                    | Via API key |
+| Automatic background backup                                      | ❌ |
+| 360° photos                                                      | ❌ |
+| Offline library                                                  | ❌ |
 
-**Organize and edit**
-- Import (⇧⌘I) of files and folders, or drag & drop onto the window or an album; duplicate check by SHA-1, background queue with progress, cancel and retry
-- Albums: create (⌥⌘N, also from a selection), rename, description, cover, sort order, add/remove photos (also by dragging onto the sidebar), delete; share with users (editor/viewer), comments and likes
-- Metadata: date and time (single or bulk shift, with time zones), location from a map, description, star rating, non-destructive rotate (⌥⌘R / ⇧⌥⌘R) and crop
-- People: person pages, rename, birthday, hide, favorite, merge, featured photo; face boxes in the viewer, assign or remove faces
-- Stacks, duplicate review, large files, assigning a location to photos that have none
+<details>
+<summary><b>Keyboard shortcuts</b></summary>
 
-**Discover and share**
-- Advanced search (⌘F, filters ⌥⌘F): smart, file name, description and OCR modes; people, place, camera, date, type and rating filters; recent searches
-- Explore: map with clusters, places, memories, tags, folders, PIN-protected Locked Folder
-- Public shared links (expiry, password, download/upload permissions), partner sharing, macOS share sheet
+| Action                         | Shortcut |
+| :----------------------------- | :------- |
+| Search                         | ⌘F |
+| Search filters                 | ⌥⌘F |
+| Info inspector                 | ⌘I |
+| Favorite                       | . |
+| Archive                        | ⌃⌘A |
+| Delete / restore               | ⌘⌫ |
+| Bigger / smaller thumbnails    | ⌘+ / ⌘− |
+| Refresh                        | ⌘R |
+| Import                         | ⇧⌘I |
+| Export unmodified original     | ⇧⌘E |
+| New album                      | ⌥⌘N |
+| Rotate left / right            | ⌥⌘R / ⇧⌥⌘R |
+| Copy image                     | ⌘C |
+| Quick Look                     | Space |
+| New window / new tab           | ⌘N / ⌘T |
+| Administration (admins)        | ⌥⌘A |
 
-**Account and administration**
-- Several accounts and servers with an account switcher; profile, password, API keys, sessions, notifications, server-side preferences
-- Administration window for admins (⌥⌘A): statistics, jobs, users, external libraries, read-only server settings
+</details>
 
-**macOS**
-- Drag photos to the Finder or other apps, Quick Look with the space bar, several windows and tabs (⌘N, ⌘T), Shortcuts actions (Search Photos, Open Album), optional notifications when an export finishes
-- English and Italian interface
+## Screenshots
 
-Credentials are stored in the Keychain, and images are cached on disk per account. Notes on each area are in `docs/`.
+<table>
+  <tr>
+    <td width="50%"><img src=".github/assets/viewer.webp" alt="Photo viewer with the info inspector"><p align="center"><sub>Viewer and info inspector</sub></p></td>
+    <td width="50%"><img src=".github/assets/map.webp" alt="Map with photo clusters"><p align="center"><sub>Map</sub></p></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src=".github/assets/search.webp" alt="Smart search results"><p align="center"><sub>Smart search</sub></p></td>
+    <td width="50%"><img src=".github/assets/places.webp" alt="Places grid"><p align="center"><sub>Places</sub></p></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src=".github/assets/albums.webp" alt="Albums grid"><p align="center"><sub>Albums</sub></p></td>
+    <td width="50%"><img src=".github/assets/library.webp" alt="Library timeline"><p align="center"><sub>Library</sub></p></td>
+  </tr>
+</table>
 
-## Requirements
+<sub>Screenshots use the photos from Immich's public demo server.</sub>
 
-- macOS 26 or later
-- Xcode 26 or later
-- An Immich server, v2.0 or later (tested against v3.3)
+## Privacy
 
-## Build
+Immich Gallery talks only to the servers you sign in to. There is no analytics, no tracking and no third-party service. Credentials are stored in the macOS Keychain, and thumbnails are cached on disk separately for each account.
+
+## Build from source
+
+You need Xcode 26 or later.
 
 ```sh
+git clone https://github.com/IGOLz/ImmichGallery.git
+cd ImmichGallery
 open ImmichGallery.xcodeproj         # then ⌘R
-# or
+```
+
+Or from the command line:
+
+```sh
 xcodebuild -project ImmichGallery.xcodeproj -scheme ImmichGallery -configuration Release -derivedDataPath build/DerivedData build
 open build/DerivedData/Build/Products/Release/ImmichGallery.app
 ```
 
-The project uses Xcode's folder-synced groups. Any file you add under `ImmichGallery/` is picked up automatically.
-Debug builds are signed ad hoc ("Sign to Run Locally"). To sign with your own identity, set a team in *Signing & Capabilities*.
-With ad-hoc signing, macOS may ask for Keychain access again after each rebuild.
+Debug builds are signed ad hoc ("Sign to Run Locally"), so macOS may ask for Keychain access again after each rebuild. To sign with your own identity, set a team in *Signing & Capabilities*. The project uses Xcode's folder-synced groups: any file you add under `ImmichGallery/` is picked up automatically.
 
-To try it without your own server, use the public demo at `demo.immich.app` (`demo@immich.app` / `demo`).
-
-## Project layout
+<details>
+<summary><b>Project layout</b></summary>
 
 ```
 ImmichGallery/
   API/        ImmichClient (REST + discovery) and one extension + DTO file per feature
-  App/        App entry & menus, AccountServices (per account) and LibrarySession (per window), grid model, feature state
+  App/        App entry & menus, AccountServices (per account) and LibrarySession (per window), feature state
   Support/    Image pipeline, ThumbHash decoder, Keychain, formatters, export, notifications
-  Views/      One folder per feature: Login, Grid, Viewer, Inspector, Albums, People, Search, Explore, Sharing, Upload, Metadata, Assets, Account, Admin, MacIntegration, Settings
+  Views/      One folder per feature: Login, Grid, Viewer, Inspector, Albums, People, Search, Explore,
+              Sharing, Upload, Metadata, Assets, Account, Admin, MacIntegration, Settings
   Localizable.xcstrings   English and Italian strings
 Config/       Info.plist (ATS for http LAN servers), entitlements (sandbox)
 docs/         Notes on each feature area and on the multi-window architecture
-scripts/, Tests/          Offline check scripts (`python3 scripts/check-integration.py`, `python3 scripts/check-mac-localization.py`)
+scripts/      Offline checks and the release script
+Tests/        Offline check programs used by the scripts
 ```
 
-## Releasing
+The app targets the Immich v3.3 API ([OpenAPI spec](https://github.com/immich-app/immich/blob/main/open-api/immich-openapi-specs.json)) and stays compatible with servers from v2.0.
 
-`scripts/release.sh` archives the app with your Developer ID certificate, notarizes and staples it, and writes a DMG and a zip to `build/release/`:
+</details>
+
+<details>
+<summary><b>Releasing</b></summary>
+
+`scripts/release.sh` archives the app with your Developer ID certificate, notarizes and staples it, and writes a DMG and a zip to `build/release/`. Bump `MARKETING_VERSION` in the project first.
 
 ```sh
 NOTARY_PROFILE=my-profile scripts/release.sh
@@ -81,4 +186,26 @@ NOTARY_PROFILE=my-profile scripts/release.sh
 NOTARY_KEY=~/.appstoreconnect/private_keys/AuthKey_XXXX.p8 NOTARY_KEY_ID=XXXX NOTARY_ISSUER=<issuer-id> scripts/release.sh
 ```
 
-Bump `MARKETING_VERSION` in the project before releasing.
+</details>
+
+## Contributing
+
+Bug reports, ideas and pull requests are welcome: open an [issue](https://github.com/IGOLz/ImmichGallery/issues) or a PR. Before sending a PR, please run the offline checks:
+
+```sh
+python3 scripts/check-integration.py
+python3 scripts/check-mac-localization.py   # after a Debug build into build/DerivedData
+```
+
+New user-facing strings go in `ImmichGallery/Localizable.xcstrings`, with an Italian translation. Translations into other languages are very welcome.
+
+Please never test write actions (uploads, edits, deletes) against someone else's server; use your own instance or the demo for read-only checks.
+
+## Acknowledgements
+
+- [Immich](https://github.com/immich-app/immich), the self-hosted photo and video server this app is built for. Please consider [supporting the project](https://immich.app/support).
+- [ThumbHash](https://github.com/evanw/thumbhash) by Evan Wallace, for the image placeholders.
+
+## License
+
+Immich Gallery is released under the [MIT License](LICENSE). Immich is a trademark of its respective owners; this project is not endorsed by or affiliated with them.
