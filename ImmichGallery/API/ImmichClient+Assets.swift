@@ -27,7 +27,7 @@ extension ImmichClient {
             Group(duplicateId: group.id, keepAssetIds: group.assets.map(\.id).filter { keep.contains($0) },
                   trashAssetIds: group.assets.map(\.id).filter { !keep.contains($0) })
         ]))
-        if results.contains(where: { !$0.success }) { throw ImmichError.http(409, "The duplicate group could not be resolved. Reload and try again.") }
+        if results.contains(where: { !$0.success }) { throw ImmichError.http(409, String(localized: "The duplicate group could not be resolved. Reload and try again.")) }
     }
 
     // Deprecated since v3.2.0 in favor of searchAssets; retained for the v3.3.5 web utility contract.
@@ -38,7 +38,7 @@ extension ImmichClient {
 
     func assetsSetLocation(_ ids: [String], latitude: Double, longitude: Double) async throws {
         guard latitude.isFinite, longitude.isFinite, (-90...90).contains(latitude), (-180...180).contains(longitude) else {
-            throw ImmichError.http(400, "Enter latitude from -90 to 90 and longitude from -180 to 180.")
+            throw ImmichError.http(400, String(localized: "Enter latitude from -90 to 90 and longitude from -180 to 180."))
         }
         struct Body: Encodable { let ids: [String]; let latitude: Double; let longitude: Double }
         try await send("PUT", "assets", body: Body(ids: ids, latitude: latitude, longitude: longitude))

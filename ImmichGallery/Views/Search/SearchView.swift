@@ -16,7 +16,7 @@ struct SearchView: View {
             HStack {
                 Picker("Search mode", selection: $query.mode) {
                     ForEach(SearchMode.allCases.filter { ($0 != .context || session.features.smartSearch) && ($0 != .ocr || session.features.ocr) }) { mode in
-                        Text(mode.rawValue).tag(mode)
+                        Text(String(localized: mode.title)).tag(mode)
                     }
                 }
                 .frame(width: 230)

@@ -82,7 +82,7 @@ struct AssetsDuplicatesView: View {
         do {
             groups = try await session.client.assetsDuplicates()
             for group in groups where keep[group.id] == nil { keep[group.id] = Set(group.suggestedKeepAssetIds ?? group.assets.prefix(1).map(\.id)) }
-        } catch ImmichError.http(404, _) { error = "Duplicates are unavailable on this server." }
+        } catch ImmichError.http(404, _) { error = String(localized: "Duplicates are unavailable on this server.") }
         catch { session.handle(error); self.error = error.localizedDescription }
     }
 }

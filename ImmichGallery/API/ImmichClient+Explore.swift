@@ -42,7 +42,7 @@ extension ImmichClient {
     func exploreDeleteTag(_ id: String) async throws { try await send("DELETE", "tags/\(id)") }
     func exploreTagAssets(_ ids: [String], tag: String, remove: Bool) async throws {
         let result: [ExploreBulkResult] = try await send(remove ? "DELETE" : "PUT", "tags/\(tag)/assets", body: ExploreIDs(ids: ids))
-        if result.contains(where: { !$0.isAccepted(removing: remove) }) { throw ImmichError.http(400, "Some items could not be updated. Refresh and try again.") }
+        if result.contains(where: { !$0.isAccepted(removing: remove) }) { throw ImmichError.http(400, String(localized: "Some items could not be updated. Refresh and try again.")) }
     }
     func exploreMemories(page: Int) async throws -> [ExploreMemory] {
         try await get("memories", query: ["for": String(Date().ISO8601Format().prefix(10)), "page": String(page), "size": "100", "isTrashed": "false", "isUpcoming": "false"])
@@ -54,11 +54,11 @@ extension ImmichClient {
     func exploreDeleteMemory(_ id: String) async throws { try await send("DELETE", "memories/\(id)") }
     func exploreRemoveMemoryAsset(_ memory: String, asset: String) async throws {
         let result: [ExploreBulkResult] = try await send("DELETE", "memories/\(memory)/assets", body: ExploreIDs(ids: [asset]))
-        guard result.allSatisfy(\.success) else { throw ImmichError.http(400, "The photo could not be removed from this memory.") }
+        guard result.allSatisfy(\.success) else { throw ImmichError.http(400, String(localized: "The photo could not be removed from this memory.")) }
     }
     func exploreAuth() async throws -> ExploreAuthStatus { try await get("auth/status") }
     func exploreUnlock(_ pin: String, setup: Bool) async throws {
-        guard exploreSupportsLockedFolder else { throw ImmichError.http(400, "Locked Folder requires a session-token login.") }
+        guard exploreSupportsLockedFolder else { throw ImmichError.http(400, String(localized: "Locked Folder requires a session-token login.")) }
         struct Body: Encodable { let pinCode: String }
         if setup { try await send("POST", "auth/pin-code", body: Body(pinCode: pin)) }
         try await send("POST", "auth/session/unlock", body: Body(pinCode: pin))

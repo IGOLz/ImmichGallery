@@ -30,7 +30,7 @@ struct AccountSecurityView: View {
                             password = ""; newPassword = ""; confirmPassword = ""
                             if let refreshed = try? await session.client.accountDevices() { devices = refreshed }
                             try? await session.refreshAccountUser()
-                            operation.message = "Password changed."
+                            operation.message = String(localized: "Password changed.")
                         }
                     }.disabled(password.isEmpty || newPassword.count < 8 || newPassword != confirmPassword)
                     Text("Use at least 8 characters.").font(.caption).foregroundStyle(.secondary)

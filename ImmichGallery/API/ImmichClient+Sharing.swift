@@ -31,7 +31,7 @@ extension ImmichClient {
         struct Body: Encodable { let assetIds: [String] }
         let results: [SharingAssetResult] = try await send(adding ? "PUT" : "DELETE", "shared-links/\(id)/assets", body: Body(assetIds: assetIDs))
         let failures = results.filter { !$0.success && $0.error != "duplicate" }
-        if !failures.isEmpty { throw ImmichError.http(400, "\(failures.count) photos couldn't be updated in the link.") }
+        if !failures.isEmpty { throw ImmichError.http(400, String(localized: "\(failures.count) photos couldn't be updated in the link.")) }
     }
     func sharingPartners(direction: String) async throws -> [SharingPartner] {
         try await get("partners", query: ["direction": direction])

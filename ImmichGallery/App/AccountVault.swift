@@ -32,14 +32,14 @@ enum AccountVault {
     private static func write(_ contents: Contents, removing: Bool = false) throws {
         let previous = try read()
         guard removing || !contents.entries.isEmpty || previous.entries.isEmpty else {
-            throw ImmichError.http(400, "Refusing to overwrite saved accounts with an empty list.")
+            throw ImmichError.http(400, String(localized: "Refusing to overwrite saved accounts with an empty list."))
         }
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.sortedKeys]
         let data = try encoder.encode(contents)
         let verified = try JSONDecoder().decode(Contents.self, from: data)
         guard try encoder.encode(verified) == data else {
-            throw ImmichError.http(400, "Could not verify saved accounts.")
+            throw ImmichError.http(400, String(localized: "Could not verify saved accounts."))
         }
         let attributes: [String: Any] = [kSecValueData as String: data,
             kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlock,
@@ -79,7 +79,7 @@ enum AccountVault {
     static func select(_ id: String) throws {
         var contents = try read()
         guard contents.entries.contains(where: { $0.id == id }) else {
-            throw ImmichError.http(400, "This account is no longer saved.")
+            throw ImmichError.http(400, String(localized: "This account is no longer saved."))
         }
         contents.selected = id
         try write(contents)

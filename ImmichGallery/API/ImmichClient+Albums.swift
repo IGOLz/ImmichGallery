@@ -32,7 +32,7 @@ extension ImmichClient {
         let results: [AlbumAssetResult] = try await send(removing ? "DELETE" : "PUT", "albums/\(id)/assets", body: Body(ids: ids))
         let failures = results.filter { !$0.success && $0.error != "duplicate" }
         if !failures.isEmpty {
-            throw ImmichError.http(400, "\(failures.count) items could not be \(removing ? "removed" : "added"): \(failures.compactMap(\.error).joined(separator: ", ")).")
+            throw ImmichError.http(400, removing ? String(localized: "\(failures.count) items could not be removed: \(failures.compactMap(\.error).joined(separator: ", ")).") : String(localized: "\(failures.count) items could not be added: \(failures.compactMap(\.error).joined(separator: ", "))."))
         }
     }
 

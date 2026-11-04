@@ -2,6 +2,16 @@ import SwiftUI
 
 enum ExplorePage: String, CaseIterable, Hashable {
     case map = "Map", places = "Places", memories = "Memories", tags = "Tags", folders = "Folders", locked = "Locked Folder"
+    var title: LocalizedStringResource {
+        switch self {
+        case .map: "Map"
+        case .places: "Places"
+        case .memories: "Memories"
+        case .tags: "Tags"
+        case .folders: "Folders"
+        case .locked: "Locked Folder"
+        }
+    }
     var icon: String {
         switch self {
         case .map: "map"
@@ -21,7 +31,7 @@ struct ExploreSidebar: View {
     var body: some View {
         Section("Explore") {
             ForEach(ExplorePage.allCases, id: \.self) { page in
-                if enabled(page) { Label(page.rawValue, systemImage: page.icon).tag(SidebarItem.explore(page)) }
+                if enabled(page) { Label(String(localized: page.title), systemImage: page.icon).tag(SidebarItem.explore(page)) }
             }
         }
         .task {
@@ -53,7 +63,7 @@ struct ExploreView: View {
             case .folders: ExploreFoldersView()
             case .locked: ExploreLockedView()
             }
-        }.navigationTitle(page.rawValue)
+        }.navigationTitle(String(localized: page.title))
     }
 }
 

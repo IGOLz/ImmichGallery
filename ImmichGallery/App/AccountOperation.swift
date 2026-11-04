@@ -16,7 +16,7 @@ final class AccountOperation {
         Task {
             defer { busy = false }
             do { try await work() }
-            catch ImmichError.http(404, _) where probe { unavailable = true; error = "This feature is unavailable on this server." }
+            catch ImmichError.http(404, _) where probe { unavailable = true; error = String(localized: "This feature is unavailable on this server.") }
             catch { self.error = error.localizedDescription }
         }
     }

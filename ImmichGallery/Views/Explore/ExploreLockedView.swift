@@ -95,7 +95,7 @@ struct ExploreLockedView: View {
             guard attempt == generation, scenePhase == .active else { try? await client.exploreLock(); return }
             status = try await client.exploreAuth()
             guard attempt == generation, scenePhase == .active else { try? await client.exploreLock(); return }
-            guard status?.isElevated == true else { throw ImmichError.http(403, "The server did not unlock this session.") }
+            guard status?.isElevated == true else { throw ImmichError.http(403, String(localized: "The server did not unlock this session.")) }
             didUnlock = true
             unlocked = true; page = 1
             let expiry = status?.pinExpiresAt.flatMap(ImmichDate.parse) ?? Date().addingTimeInterval(15 * 60)
@@ -105,7 +105,7 @@ struct ExploreLockedView: View {
                     try await Task.sleep(for: .seconds(max(0, expiry.timeIntervalSinceNow)))
                     guard !Task.isCancelled else { return }
                     lock()
-                    error = "Locked Folder access expired. Unlock again to continue."
+                    error = String(localized: "Locked Folder access expired. Unlock again to continue.")
                 } catch {}
             }
             await load()
@@ -136,7 +136,7 @@ struct ExploreLockedView: View {
         guard let client else { return }
         Task {
             do { try await client.exploreLock() }
-            catch { self.error = "Media was cleared locally, but the server session could not be locked: \(error.localizedDescription)" }
+            catch { self.error = String(localized: "Media was cleared locally, but the server session could not be locked: \(error.localizedDescription)") }
             if invalidate { client.session.invalidateAndCancel() }
         }
     }
@@ -144,7 +144,7 @@ struct ExploreLockedView: View {
         switch failure {
         case ImmichError.unauthorized, ImmichError.http(401, _), ImmichError.http(403, _):
             lock()
-            error = "Locked Folder access expired. Unlock again to continue."
+            error = String(localized: "Locked Folder access expired. Unlock again to continue.")
         default: error = failure.localizedDescription
         }
     }

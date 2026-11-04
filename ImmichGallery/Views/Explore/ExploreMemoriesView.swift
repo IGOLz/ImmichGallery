@@ -31,7 +31,7 @@ struct ExploreMemoriesView: View {
         .task {
             do {
                 let preferences = try await session.client.explorePreferences()
-                guard preferences.memories?.enabled == true else { error = "Memories are disabled in Immich Account Settings."; hasMore = false; return }
+                guard preferences.memories?.enabled == true else { error = String(localized: "Memories are disabled in Immich Account Settings."); hasMore = false; return }
                 duration = max(1, preferences.memories?.duration ?? 5)
                 await load()
             } catch { self.error = error.localizedDescription }

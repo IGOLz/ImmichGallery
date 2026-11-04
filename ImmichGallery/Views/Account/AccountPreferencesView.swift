@@ -65,7 +65,7 @@ struct AccountPreferencesView: View {
                     operation.run {
                         session.setPreferences(try await session.client.updateAccountPreferences(draft))
                         draft = session.preferences ?? draft
-                        operation.message = "Preferences saved."
+                        operation.message = String(localized: "Preferences saved.")
                     }
                 }
                 Text("These preferences are stored on your Immich server. Web sidebar options affect the web client.").font(.caption).foregroundStyle(.secondary)

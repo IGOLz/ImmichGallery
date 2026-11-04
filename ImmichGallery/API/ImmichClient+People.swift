@@ -20,7 +20,7 @@ extension ImmichClient {
             results = try await send("POST", "people/\(id)/merge", body: Body(ids: ids))
         }
         if let failed = results.first(where: { !$0.success }) {
-            throw ImmichError.http(400, failed.errorMessage ?? failed.error ?? "Couldn't merge people.")
+            throw ImmichError.http(400, failed.errorMessage ?? failed.error ?? String(localized: "Couldn't merge people."))
         }
     }
     func faces(assetID: String) async throws -> [PeopleFace] { try await get("faces", query: ["id": assetID]) }

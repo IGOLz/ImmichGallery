@@ -41,12 +41,12 @@ final class MetadataState {
             }
             let skipped = update.ids.count - owned.ids.count
             guard !owned.ids.isEmpty else {
-                error = "Only assets you own can be updated. No items were changed."
+                error = String(localized: "Only assets you own can be updated. No items were changed.")
                 return false
             }
             try await session.client.updateMetadata(owned)
             refresh(session, reloadGrid: update.dateTimeOriginal != nil || update.dateTimeRelative != nil)
-            if skipped > 0 { error = "Updated \(owned.ids.count) items. Skipped \(skipped) items you do not own." }
+            if skipped > 0 { error = String(localized: "Updated \(owned.ids.count) items. Skipped \(skipped) items you do not own.") }
             return true
         } catch is CancellationError {
             return false
@@ -84,7 +84,7 @@ final class MetadataState {
         do {
             let before = try await session.client.asset(id)
             guard before.canEditMetadataImage(userID: session.user?.id) else {
-                error = "This asset cannot be edited. Only owned, non-panorama still images with dimensions are supported."
+                error = String(localized: "This asset cannot be edited. Only owned, non-panorama still images with dimensions are supported.")
                 return false
             }
             let existing = try await loadEdits(id, session: session).edits
