@@ -43,3 +43,10 @@ struct AssetsBulkResult: Decodable, Sendable {
     let success: Bool
     let error: String?
 }
+
+// Coordinate fields accept either decimal separator, without grouping separators.
+enum AssetsCoordinates {
+    static func parse(_ text: String) -> Double? {
+        Double(text.trimmingCharacters(in: .whitespacesAndNewlines).replacingOccurrences(of: ",", with: "."))
+    }
+}

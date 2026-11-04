@@ -14,6 +14,7 @@ struct ServerVersion: Decodable, Sendable, CustomStringConvertible {
 }
 
 struct ServerFeatures: Decodable, Sendable {
+    var duplicateDetection: Bool?
     var smartSearch = false
     var facialRecognition = false
     var map = false
@@ -25,6 +26,7 @@ struct ServerFeatures: Decodable, Sendable {
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
+        duplicateDetection = try c.decodeIfPresent(Bool.self, forKey: .duplicateDetection)
         smartSearch = try c.decodeIfPresent(Bool.self, forKey: .smartSearch) ?? false
         facialRecognition = try c.decodeIfPresent(Bool.self, forKey: .facialRecognition) ?? false
         map = try c.decodeIfPresent(Bool.self, forKey: .map) ?? false
@@ -34,7 +36,7 @@ struct ServerFeatures: Decodable, Sendable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case smartSearch, facialRecognition, map, trash, passwordLogin, oauth
+        case duplicateDetection, smartSearch, facialRecognition, map, trash, passwordLogin, oauth
     }
 }
 
@@ -89,6 +91,7 @@ struct TimeBucketAssets: Decodable, Sendable {
     let duration: [MediaDuration?]
     let fileCreatedAt: [String]
     let livePhotoVideoId: [String?]
+    var ownerId: [String]?
     var stack: [[String]?]?
     var city: [String?]?
     var country: [String?]?
@@ -127,6 +130,7 @@ struct AssetPerson: Decodable, Sendable, Identifiable {
 
 struct AssetResponse: Decodable, Sendable, Identifiable {
     let id: String
+    var ownerId: String?
     let type: AssetType
     let originalFileName: String
     var originalMimeType: String?

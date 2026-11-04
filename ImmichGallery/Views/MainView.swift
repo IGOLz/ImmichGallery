@@ -71,7 +71,7 @@ struct MainView: View {
             AssetGridContainer(source: .album(id), title: Text(verbatim: session.albums.first { $0.id == id }?.albumName ?? ""))
         case .duplicates: AssetsDuplicatesView()
         case .largeFiles: AssetGridContainer(source: .largeFiles, title: Text("Large Files"))
-        case .geolocation: AssetGridContainer(source: .library, title: Text("Assign Location"))
+        case .geolocation: AssetGridContainer(source: .geolocation, title: Text("Assign Location"))
         case .search:
             AssetGridContainer(source: .search(submittedSearch), title: Text("Search"))
                 .navigationSubtitle("“\(submittedSearch)”")

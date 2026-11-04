@@ -2,16 +2,11 @@ import SwiftUI
 
 struct AssetsSidebarItems: View {
     @Environment(LibrarySession.self) private var session
-    @State private var duplicates = false
     var body: some View {
         Group {
-            if duplicates { Label("Duplicates", systemImage: "square.on.square").tag(SidebarItem.duplicates) }
+            if session.features.duplicateDetection == true { Label("Duplicates", systemImage: "square.on.square").tag(SidebarItem.duplicates) }
             Label("Large Files", systemImage: "externaldrive").tag(SidebarItem.largeFiles)
             Label("Assign Location", systemImage: "mappin.and.ellipse").tag(SidebarItem.geolocation)
-        }
-        .task {
-            let capabilities: AssetsCapabilities? = try? await session.client.get("server/features")
-            duplicates = capabilities?.duplicateDetection == true
         }
     }
 }
@@ -26,7 +21,7 @@ struct AssetsContextMenu: View {
             Button("Stack Selection") {
                 Task {
                     do {
-                        _ = try await session.client.assetsCreateStack(ids.sorted())
+                        _ = try await session.client.assetsCreateStack(ids)
                         session.invalidateGrids()
                         await model.reload()
                     } catch { session.handle(error); model.lastError = error.localizedDescription }
@@ -43,6 +38,12 @@ struct AssetsGridUtilities: ViewModifier {
     @State private var busy = false
     @State private var trashDays: Int?
     @State private var location = false
+    private var supportsLocation: Bool {
+        switch model.source {
+        case .library, .favorites, .videos, .archive, .largeFiles, .geolocation, .person: true
+        case .album, .search, .trash: false
+        }
+    }
     func body(content: Content) -> some View {
         content
             .toolbar {
@@ -58,7 +59,9 @@ struct AssetsGridUtilities: ViewModifier {
                             if case .album(let id) = model.source {
                                 Button("Download Album as ZIP…") { AssetsDownloader.start(album: id, session: session) }
                             }
-                            Button("Assign Location…") { location = true }.disabled(model.selection.isEmpty)
+                            if supportsLocation {
+                                Button("Assign Location…") { location = true }.disabled(model.selection.isEmpty)
+                            }
                         }
                     } label: { Label("Asset Utilities", systemImage: "ellipsis.circle") }
                     .disabled(busy)
@@ -99,17 +102,27 @@ struct AssetsLocationSheet: View {
     @State private var longitude = ""
     @State private var saving = false
     @State private var error: String?
+    private var ownedIDs: [String] {
+        guard let userID = session.user?.id else { return [] }
+        return ids.filter { model.item($0)?.ownerId == userID }
+    }
     private var coordinates: (Double, Double)? {
-        guard let lat = Double(latitude), let lon = Double(longitude), lat.isFinite, lon.isFinite,
+        guard let lat = AssetsCoordinates.parse(latitude), let lon = AssetsCoordinates.parse(longitude), lat.isFinite, lon.isFinite,
               (-90...90).contains(lat), (-180...180).contains(lon) else { return nil }
         return (lat, lon)
     }
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Assign Location").font(.title2)
-            Text("Replace the location of \(ids.count) selected items.")
+            Text("Replace the location of \(ownedIDs.count) selected items.")
+            if ownedIDs.count != ids.count {
+                Text("\(ids.count - ownedIDs.count) items skipped because ownership could not be confirmed as yours.").foregroundStyle(.secondary)
+            }
             TextField("Latitude (-90 to 90)", text: $latitude)
             TextField("Longitude (-180 to 180)", text: $longitude)
+            if coordinates == nil {
+                Text("Enter latitude from -90 to 90 and longitude from -180 to 180. Use a decimal point or comma.").font(.caption).foregroundStyle(.secondary)
+            }
             if let error { Text(error).foregroundStyle(.red) }
             HStack {
                 Button("Cancel") { dismiss() }.keyboardShortcut(.cancelAction)
@@ -120,13 +133,13 @@ struct AssetsLocationSheet: View {
                     Task {
                         defer { saving = false }
                         do {
-                            try await session.client.assetsSetLocation(ids, latitude: lat, longitude: lon)
+                            try await session.client.assetsSetLocation(ownedIDs, latitude: lat, longitude: lon)
                             session.invalidateGrids()
                             await model.reload()
                             dismiss()
                         } catch { session.handle(error); self.error = error.localizedDescription }
                     }
-                }.keyboardShortcut(.defaultAction).disabled(coordinates == nil || saving)
+                }.keyboardShortcut(.defaultAction).disabled(coordinates == nil || ownedIDs.isEmpty || saving)
             }
         }.padding(24).frame(width: 400).disabled(saving)
     }

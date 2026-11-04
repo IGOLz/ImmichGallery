@@ -30,7 +30,11 @@ extension ImmichClient {
         if results.contains(where: { !$0.success }) { throw ImmichError.http(409, "The duplicate group could not be resolved. Reload and try again.") }
     }
 
-    func assetsLargeFiles() async throws -> [AssetResponse] { try await send("POST", "search/large-assets", body: ["minFileSize": 0]) }
+    // Deprecated since v3.2.0 in favor of searchAssets; retained for the v3.3.5 web utility contract.
+    func assetsLargeFiles() async throws -> [AssetResponse] {
+        let data = try await data(for: request("search/large-assets", method: "POST", query: ["minFileSize": "0"]))
+        return try JSONDecoder().decode([AssetResponse].self, from: data)
+    }
 
     func assetsSetLocation(_ ids: [String], latitude: Double, longitude: Double) async throws {
         guard latitude.isFinite, longitude.isFinite, (-90...90).contains(latitude), (-180...180).contains(longitude) else {
@@ -45,8 +49,8 @@ extension ImmichClient {
         return try await send("POST", "download/info", body: Body(assetIds: ids, albumId: album, archiveSize: archiveSize))
     }
 
-    func assetsArchiveRequest(_ ids: [String]) throws -> URLRequest {
-        struct Body: Encodable { let assetIds: [String] }
-        return try request("download/archive", method: "POST", body: Body(assetIds: ids))
+    func assetsArchiveRequest(_ ids: [String], archiveName: String) throws -> URLRequest {
+        struct Body: Encodable { let assetIds: [String]; let archiveName: String }
+        return try request("download/archive", method: "POST", body: Body(assetIds: ids, archiveName: archiveName))
     }
 }

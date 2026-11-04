@@ -2,21 +2,28 @@ import SwiftUI
 
 struct AssetsStackButton: View {
     @Environment(LibrarySession.self) private var session
-    let assetID: String
+    let item: AssetItem
     let model: AssetGridModel
     @State private var stack: AssetsStackSummary?
     @State private var presented = false
+    @State private var loading = false
     var body: some View {
-        Group {
-            if let stack {
-                Button { presented = true } label: { Label("Browse Stack (\(stack.assetCount))", systemImage: "square.stack.3d.up") }
-                    .buttonStyle(.bordered).padding()
-                    .sheet(isPresented: $presented) { AssetsStackBrowser(stackID: stack.id, model: model) }
-            }
-        }.task(id: assetID) {
-            stack = nil
-            do { stack = try await session.client.asset(assetID).stack }
-            catch { session.handle(error) }
+        if let count = item.stackCount {
+            Button {
+                loading = true
+                Task {
+                    defer { loading = false }
+                    do {
+                        stack = try await session.client.asset(item.id).stack
+                        presented = stack != nil
+                    } catch { session.handle(error); model.lastError = error.localizedDescription }
+                }
+            } label: { Label("Browse Stack (\(count))", systemImage: "square.stack.3d.up") }
+                .disabled(loading)
+                .buttonStyle(.bordered).padding()
+                .sheet(isPresented: $presented) {
+                    if let stack { AssetsStackBrowser(stackID: stack.id, model: model) }
+                }
         }
     }
 }
@@ -56,6 +63,7 @@ struct AssetsStackBrowser: View {
                     Button("Set Primary") { perform { _ = try await session.client.assetsSetPrimary(stack: stackID, asset: asset.id) } }
                         .disabled(asset.id == stack.primaryAssetId)
                     Button("Remove from Stack") { perform { try await session.client.assetsRemoveFromStack(stackID, asset: asset.id) } }
+                        .disabled(asset.id == stack.primaryAssetId)
                     Button("Unstack…") { unstack = true }
                 }.disabled(busy)
             } else if error == nil { ProgressView() }
@@ -91,14 +99,22 @@ struct AssetsStackBrowser: View {
 struct AssetsPreview: View {
     @Environment(LibrarySession.self) private var session
     let asset: AssetResponse
+    var clickToPlay = false
+    @State private var playing = false
     @State private var image: CGImage?
     var body: some View {
         Group {
-            if asset.type == .video {
-                VideoPlayerView(url: session.client.videoURL(asset.id), headers: session.client.credential?.headers ?? [:])
+            if asset.type == .video && (!clickToPlay || playing) {
+                VideoPlayerView(url: session.client.videoURL(asset.id), headers: session.client.credential?.headers ?? [:]).id(asset.id)
             } else if let image {
                 Image(decorative: image, scale: 1).resizable().scaledToFit()
             } else { ProgressView() }
-        }.task(id: asset.id) { image = nil; image = await session.pipeline.thumbnail(asset.id, size: .preview) }
+        }
+        .overlay {
+            if clickToPlay && asset.type == .video && !playing {
+                Button { playing = true } label: { Label("Play Video", systemImage: "play.circle.fill") }.buttonStyle(.borderedProminent)
+            }
+        }
+        .task(id: asset.id) { playing = false; image = nil; image = await session.pipeline.thumbnail(asset.id, size: .preview) }
     }
 }

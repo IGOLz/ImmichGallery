@@ -5,7 +5,7 @@ import Observation
 /// What a grid shows.
 enum GridSource: Hashable {
     case library, favorites, videos, archive, trash
-    case largeFiles // Assets
+    case largeFiles, geolocation // Assets
     case album(String)
     case person(String)
     case search(String)
@@ -13,6 +13,7 @@ enum GridSource: Hashable {
     var timelineQuery: TimelineQuery? {
         switch self {
         case .library: TimelineQuery(withPartners: true)
+        case .geolocation: TimelineQuery(withPartners: false)
         case .favorites: TimelineQuery(visibility: nil, isFavorite: true)
         case .archive: TimelineQuery(visibility: "archive")
         case .trash: TimelineQuery(visibility: nil, isTrashed: true)
@@ -26,6 +27,7 @@ enum GridSource: Hashable {
 /// Lightweight asset used by grids and the viewer.
 struct AssetItem: Identifiable, Hashable, Sendable {
     let id: String
+    let ownerId: String?
     let isVideo: Bool
     var isFavorite: Bool
     var isTrashed: Bool
@@ -39,6 +41,7 @@ struct AssetItem: Identifiable, Hashable, Sendable {
 
     init(_ r: AssetResponse) {
         id = r.id
+        ownerId = r.ownerId
         isVideo = r.type == .video
         isFavorite = r.isFavorite
         isTrashed = r.isTrashed
@@ -54,15 +57,16 @@ struct AssetItem: Identifiable, Hashable, Sendable {
     static func from(_ c: TimeBucketAssets) -> [AssetItem] {
         c.id.indices.map { i in
             AssetItem(
-                id: c.id[i], isVideo: !c.isImage[i], isFavorite: c.isFavorite[i], isTrashed: c.isTrashed[i],
+                id: c.id[i], ownerId: c.ownerId.flatMap { $0.indices.contains(i) ? $0[i] : nil }, isVideo: !c.isImage[i], isFavorite: c.isFavorite[i], isTrashed: c.isTrashed[i],
                 thumbhash: c.thumbhash[i], ratio: c.ratio[i] ?? 1, durationMS: c.duration[i]?.milliseconds,
                 date: ImmichDate.parse(c.fileCreatedAt[i]), livePhotoVideoID: c.livePhotoVideoId[i],
                 stackCount: c.stack?[i].flatMap { $0.count > 1 ? Int($0[1]) : nil })
         }
     }
 
-    private init(id: String, isVideo: Bool, isFavorite: Bool, isTrashed: Bool, thumbhash: String?, ratio: Double,
+    private init(id: String, ownerId: String?, isVideo: Bool, isFavorite: Bool, isTrashed: Bool, thumbhash: String?, ratio: Double,
                  durationMS: Int?, date: Date?, livePhotoVideoID: String?, stackCount: Int?) {
+        self.ownerId = ownerId
         self.id = id; self.isVideo = isVideo; self.isFavorite = isFavorite; self.isTrashed = isTrashed
         self.thumbhash = thumbhash; self.ratio = ratio; self.durationMS = durationMS; self.date = date
         self.livePhotoVideoID = livePhotoVideoID; self.stackCount = stackCount
@@ -189,7 +193,7 @@ final class AssetGridModel {
             do {
                 let columns = try await session.client.timeBucket(id, query)
                 guard let i = sections.firstIndex(where: { $0.id == id }) else { return }
-                let assets = AssetItem.from(columns)
+                let assets = AssetItem.from(columns).filter { source != .geolocation || (session.user?.id != nil && $0.ownerId == session.user?.id) }
                 sections[i].assets = assets
                 sections[i].count = assets.count
                 rebuildIndex()

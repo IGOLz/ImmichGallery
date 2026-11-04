@@ -24,7 +24,7 @@ struct AssetsDuplicatesView: View {
                                     HStack(alignment: .top, spacing: 16) {
                                         ForEach(group.assets) { asset in
                                             VStack(alignment: .leading, spacing: 8) {
-                                                AssetsPreview(asset: asset).frame(width: 280, height: 240)
+                                                AssetsPreview(asset: asset, clickToPlay: true).id(asset.id).frame(width: 280, height: 240)
                                                 Text(asset.originalFileName).lineLimit(1)
                                                 Text(asset.exifInfo?.fileSizeInByte.map { ByteCountFormatter.string(fromByteCount: $0, countStyle: .file) } ?? "Size unavailable")
                                                     .foregroundStyle(.secondary)
@@ -37,8 +37,8 @@ struct AssetsDuplicatesView: View {
                                     }
                                 }
                                 HStack {
-                                    Button("Keep Selected, Trash Others…") { dismissGroup = false; pending = group }
-                                        .disabled(keep[group.id, default: []].isEmpty || keep[group.id]?.count == group.assets.count || !session.features.trash)
+                                    Button(session.features.trash ? "Keep Selected, Trash Others…" : "Keep Selected, Delete Others…") { dismissGroup = false; pending = group }
+                                        .disabled(keep[group.id, default: []].isEmpty || keep[group.id]?.count == group.assets.count)
                                     Button("Dismiss Group…") { dismissGroup = true; pending = group }
                                 }
                             }
@@ -52,10 +52,10 @@ struct AssetsDuplicatesView: View {
         .disabled(busy)
         .toolbar { ToolbarItem { Button("Reload", systemImage: "arrow.clockwise") { Task { await load() } } } }
         .task { await load() }
-        .confirmationDialog(dismissGroup ? "Dismiss this duplicate group?" : "Move unselected items to Recently Deleted?",
+        .confirmationDialog(dismissGroup ? "Dismiss this duplicate group?" : (session.features.trash ? "Move unselected items to Recently Deleted?" : "Permanently delete unselected items?"),
                             isPresented: Binding(get: { pending != nil }, set: { if !$0 { pending = nil } }), titleVisibility: .visible) {
             if let group = pending {
-                Button(dismissGroup ? "Dismiss Group" : "Trash Others", role: dismissGroup ? nil : .destructive) {
+                Button(dismissGroup ? "Dismiss Group" : (session.features.trash ? "Trash Others" : "Delete Permanently"), role: dismissGroup ? nil : .destructive) {
                     let dismissing = dismissGroup
                     busy = true
                     Task {
@@ -65,23 +65,23 @@ struct AssetsDuplicatesView: View {
                             else { try await session.client.assetsResolveDuplicate(group, keep: keep[group.id, default: []]) }
                             session.invalidateGrids()
                             await session.reloadAlbums()
-                            await load()
+                            groups.removeAll { $0.id == group.id }
+                            keep[group.id] = nil
                         } catch { session.handle(error); self.error = error.localizedDescription }
                     }
                 }
             }
-        } message: { Text(dismissGroup ? "All items remain in your library and will no longer be suggested as this duplicate group." : "Selected items stay in your library. The other items are moved to Recently Deleted.") }
+        } message: { Text(dismissGroup ? "All items remain in your library and will no longer be suggested as this duplicate group." : (session.features.trash ? "Selected items stay in your library. The other items are moved to Recently Deleted." : "Selected items stay in your library. The other items are permanently deleted. This cannot be undone.")) }
         .alert("Duplicates", isPresented: Binding(get: { error != nil && !groups.isEmpty }, set: { if !$0 { error = nil } })) {
             Button("OK") { error = nil }
         } message: { Text(error ?? "") }
     }
     private func load() async {
-        loading = true
         error = nil
         defer { loading = false }
         do {
             groups = try await session.client.assetsDuplicates()
-            for group in groups { keep[group.id] = Set(group.suggestedKeepAssetIds ?? group.assets.prefix(1).map(\.id)) }
+            for group in groups where keep[group.id] == nil { keep[group.id] = Set(group.suggestedKeepAssetIds ?? group.assets.prefix(1).map(\.id)) }
         } catch ImmichError.http(404, _) { error = "Duplicates are unavailable on this server." }
         catch { session.handle(error); self.error = error.localizedDescription }
     }

@@ -13,6 +13,12 @@ final class AssetsDownloadProgress: NSObject, URLSessionDownloadDelegate, Sendab
 }
 
 @MainActor
+private final class AssetsDownloadCancellation: NSObject {
+    var task: Task<Void, Never>?
+    @objc func cancel() { task?.cancel() }
+}
+
+@MainActor
 enum AssetsDownloader {
     static func start(ids: [String]? = nil, album: String? = nil, session: LibrarySession) {
         guard album != nil || ids?.isEmpty == false else { return }
@@ -23,7 +29,7 @@ enum AssetsDownloader {
         picker.prompt = "Download ZIP"
         guard picker.runModal() == .OK, let folder = picker.url else { return }
         let scoped = folder.startAccessingSecurityScopedResource()
-        let progress = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 400, height: 130),
+        let progress = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 400, height: 150),
                                styleMask: [.titled], backing: .buffered, defer: false)
         progress.isReleasedWhenClosed = false
         progress.title = "Downloading ZIP"
@@ -34,37 +40,58 @@ enum AssetsDownloader {
         bar.startAnimation(nil)
         progress.contentView?.addSubview(label)
         progress.contentView?.addSubview(bar)
+        let cancellation = AssetsDownloadCancellation()
+        let cancel = NSButton(title: "Cancel", target: cancellation, action: #selector(AssetsDownloadCancellation.cancel))
+        cancel.frame = NSRect(x: 280, y: 15, width: 100, height: 30)
+        progress.contentView?.addSubview(cancel)
         progress.center()
         progress.makeKeyAndOrderFront(nil)
-        Task {
-            defer { progress.close(); if scoped { folder.stopAccessingSecurityScopedResource() } }
+        cancellation.task = Task {
+            defer { cancellation.task = nil; progress.close(); if scoped { folder.stopAccessingSecurityScopedResource() } }
             var saved: [URL] = []
             do {
                 let preferences: AssetsPreferences? = try? await session.client.get("users/me/preferences")
                 let info = try await session.client.assetsDownloadInfo(ids: ids, album: album, archiveSize: preferences?.download.archiveSize)
+                let timestamp = Date.now.formatted(.iso8601).replacingOccurrences(of: ":", with: "-")
+                let baseName = album == nil ? "Immich-Selection" : "Immich-Album"
+                var completedBytes: Int64 = 0
                 for (index, archive) in info.archives.enumerated() {
+                    try Task.checkCancellation()
                     let part = "Part \(index + 1) of \(info.archives.count)"
                     label.stringValue = part
-                    let delegate = AssetsDownloadProgress { written, expected in
+                    let previousBytes = completedBytes
+                    let delegate = AssetsDownloadProgress { written, _ in
                         Task { @MainActor in
-                            bar.isIndeterminate = expected <= 0
-                            if expected > 0 { bar.doubleValue = Double(written) / Double(expected) * 100 }
-                            label.stringValue = "\(part) · \(ByteCountFormatter.string(fromByteCount: written, countStyle: .file))"
+                            bar.isIndeterminate = info.totalSize <= 0
+                            if info.totalSize > 0 { bar.doubleValue = min(100, Double(previousBytes + written) / Double(info.totalSize) * 100) }
+                            label.stringValue = "\(part) · \(ByteCountFormatter.string(fromByteCount: previousBytes + written, countStyle: .file)) of \(ByteCountFormatter.string(fromByteCount: info.totalSize, countStyle: .file))"
                         }
                     }
-                    let (temp, response) = try await session.client.session.download(for: session.client.assetsArchiveRequest(archive.assetIds), delegate: delegate)
+                    let (temp, response) = try await session.client.session.download(for: session.client.assetsArchiveRequest(archive.assetIds, archiveName: "\(baseName)-\(timestamp)-\(index + 1)"), delegate: delegate)
                     defer { try? FileManager.default.removeItem(at: temp) }
+                    try Task.checkCancellation()
                     guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
                         throw ImmichError.http((response as? HTTPURLResponse)?.statusCode ?? 500, "The archive could not be downloaded.")
                     }
-                    // A unique name avoids replacing an existing export.
-                    let name = "Immich-\(UUID().uuidString.prefix(8))-\(index + 1).zip"
-                    let destination = folder.appendingPathComponent(name)
+                    let suggested = response.suggestedFilename.map { URL(fileURLWithPath: $0).lastPathComponent }
+                    let name = suggested.flatMap { $0.lowercased().hasSuffix(".zip") ? $0 : nil } ?? "\(baseName)-\(timestamp)-\(index + 1).zip"
+                    var destination = folder.appendingPathComponent(name)
+                    var suffix = 2
+                    while FileManager.default.fileExists(atPath: destination.path) {
+                        destination = folder.appendingPathComponent("\(String(name.dropLast(4))) (\(suffix)).zip")
+                        suffix += 1
+                    }
                     try FileManager.default.moveItem(at: temp, to: destination)
                     saved.append(destination)
+                    completedBytes += archive.size
                 }
                 NSWorkspace.shared.activateFileViewerSelecting(saved)
             } catch {
+                if Task.isCancelled || error.isCancellation {
+                    // URLSession removes its unfinished temporary file; completed parts are also removed on cancel.
+                    for file in saved { try? FileManager.default.removeItem(at: file) }
+                    return
+                }
                 session.handle(error)
                 let alert = NSAlert()
                 alert.messageText = "Download Failed"
