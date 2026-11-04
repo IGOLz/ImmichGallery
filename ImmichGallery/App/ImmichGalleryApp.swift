@@ -12,7 +12,9 @@ struct ImmichGalleryApp: App {
         }
         .defaultSize(width: 1280, height: 820)
         .windowToolbarStyle(.unified)
-        .commands { AppCommands(app: app) }
+        .commands { AppCommands(app: app); AdminCommands(app: app) }
+
+        AdminScene(app: app) // Admin
 
         Settings {
             AccountSettingsTabs() // Account
