@@ -4,6 +4,7 @@ struct AlbumDetailView: View {
     @Environment(LibrarySession.self) private var session
     @Environment(\.dismiss) private var dismiss
     let id: String
+    var onClose: (() -> Void)?
     @State private var album: AlbumDetails?
     @State private var error: String?
     @State private var editing = false
@@ -65,7 +66,7 @@ struct AlbumDetailView: View {
             } else { ProgressView() }
         }
         .task(id: id) { await load() }
-        .onChange(of: session.albumActions.revision) {
+        .onChange(of: session.albumActions.revisions[id, default: 0]) {
             guard !removed else { return }
             Task { await load(); await model.reload() }
         }
@@ -137,9 +138,9 @@ struct AlbumDetailView: View {
                 if leaving { try await session.client.removeAlbumUser(id, userID: "me") }
                 else { try await session.client.deleteAlbum(id) }
                 removed = true
-                session.invalidateGrids()
+                session.discardAlbumGrid(id)
                 await session.reloadAlbums()
-                dismiss()
+                if let onClose { onClose() } else { dismiss() }
             } catch { session.handle(error); self.error = error.localizedDescription }
         }
     }

@@ -108,6 +108,15 @@ final class LibrarySession {
         return model
     }
 
+    func invalidateAlbumGrid(_ id: String) {
+        gridModels[.album(id)]?.markStale()
+    }
+
+    func discardAlbumGrid(_ id: String) {
+        gridModels.removeValue(forKey: .album(id))
+        albumActions.details.removeValue(forKey: id)
+    }
+
     /// Mutations in one view (favorite, delete…) can affect other cached grids.
     func invalidateGrids(except keep: AssetGridModel? = nil) {
         for model in gridModels.values where model !== keep { model.markStale() }

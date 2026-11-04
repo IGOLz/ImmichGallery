@@ -25,6 +25,12 @@ struct MainView: View {
             .id(selection)
         }
         .modifier(AlbumPresentation()) // Albums
+        .onChange(of: session.albumActions.navigationAlbumID) { _, id in
+            if let id {
+                selection = .album(id)
+                session.albumActions.navigationAlbumID = nil
+            }
+        }
         .searchable(text: $searchText, placement: .toolbar, prompt: session.features.smartSearch ? "Search photos" : "Search file names")
         .searchFocused($searchFocused)
         .background {
@@ -68,7 +74,7 @@ struct MainView: View {
         case .albums:
             AlbumsView()
         case .album(let id):
-            AlbumDetailView(id: id) // Albums
+            AlbumDetailView(id: id, onClose: { selection = .albums }) // Albums
         case .search:
             AssetGridContainer(source: .search(submittedSearch), title: Text("Search"))
                 .navigationSubtitle("“\(submittedSearch)”")

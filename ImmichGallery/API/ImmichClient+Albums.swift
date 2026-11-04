@@ -3,6 +3,7 @@ import Foundation
 extension ImmichClient {
     func albumCollections(legacy: Bool) async throws -> [Album] {
         let all = try await albums()
+        guard legacy else { return all }
         let shared: [Album]
         do { shared = try await sharedAlbums(legacy: legacy) }
         catch ImmichError.http(404, _) { shared = [] }
@@ -15,9 +16,9 @@ extension ImmichClient {
         try await get("albums", query: [legacy ? "shared" : "isShared": "true"])
     }
 
-    func createAlbum(name: String, assetIDs: [String]) async throws -> AlbumDetails {
-        struct Body: Encodable { let albumName: String; let assetIds: [String] }
-        return try await send("POST", "albums", body: Body(albumName: name, assetIds: assetIDs))
+    func createAlbum(name: String, description: String? = nil, assetIDs: [String]) async throws -> AlbumDetails {
+        struct Body: Encodable { let albumName: String; let description: String?; let assetIds: [String] }
+        return try await send("POST", "albums", body: Body(albumName: name, description: description == "" ? nil : description, assetIds: assetIDs))
     }
 
     func updateAlbum(_ id: String, _ update: AlbumUpdate) async throws -> AlbumDetails {

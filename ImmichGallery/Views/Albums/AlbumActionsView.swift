@@ -7,11 +7,11 @@ struct AlbumSelectionMenu: View {
 
     var body: some View {
         Menu("Add to Album") {
-            Button("New Album with Selection…") { session.albumActions.newAlbum(ids: ids) }
+            Button("New Album with Selection…") { session.albumActions.newAlbum(ids: ids, model: model) }
             Divider()
-            ForEach(session.albums) { album in
+            ForEach(session.albums.filter { $0.canEdit(session.user?.id) }) { album in
                 Button(album.albumName) {
-                    session.albumActions.perform(session: session) {
+                    session.albumActions.perform(session: session, albumID: album.id) {
                         try await session.client.changeAlbumAssets(album.id, ids: ids)
                     }
                 }
@@ -20,7 +20,7 @@ struct AlbumSelectionMenu: View {
         .disabled(ids.isEmpty || model?.source == .trash)
         if let id = model?.source.albumID {
             Button("Remove from Album") {
-                session.albumActions.perform(session: session) {
+                session.albumActions.perform(session: session, albumID: id) {
                     try await session.client.changeAlbumAssets(id, ids: ids, removing: true)
                     model?.selection.subtract(ids)
                 }
@@ -28,7 +28,7 @@ struct AlbumSelectionMenu: View {
             .disabled(ids.isEmpty || session.albumActions.details[id]?.canEdit(session.user?.id) != true)
             Button("Use as Album Cover") {
                 guard let assetID = ids.first else { return }
-                session.albumActions.perform(session: session) {
+                session.albumActions.perform(session: session, albumID: id, reloadTimeline: false) {
                     _ = try await session.client.updateAlbum(id, AlbumUpdate(albumThumbnailAssetId: assetID))
                 }
             }
@@ -44,9 +44,10 @@ struct AlbumPresentation: ViewModifier {
         @Bindable var actions = session.albumActions
         content
             .sheet(isPresented: $actions.creating) {
-                AlbumNameSheet(title: "New Album", name: "", description: nil) { name, _ in
-                    _ = try await session.client.createAlbum(name: name, assetIDs: actions.initialAssetIDs)
+                AlbumNameSheet(title: "New Album", name: "", description: "") { name, description in
+                    let album = try await session.client.createAlbum(name: name, description: description, assetIDs: actions.initialAssetIDs)
                     await session.reloadAlbums()
+                    actions.didCreate(album.id)
                 }
             }
             .alert("Album Error", isPresented: Binding(get: { actions.error != nil }, set: { if !$0 { actions.error = nil } })) {
@@ -102,10 +103,11 @@ struct AlbumSidebarSections: View {
                 ForEach(session.albums.filter { $0.shared == shared }) { album in
                     Label(album.albumName, systemImage: shared ? "person.2.crop.square.stack" : "rectangle.stack")
                         .tag(SidebarItem.album(album.id))
-                        .dropDestination(for: String.self) { values, _ in
-                            let ids = values.flatMap { $0.components(separatedBy: "\n") }
-                            guard !ids.isEmpty, ids.allSatisfy({ UUID(uuidString: $0) != nil }) else { return false }
-                            session.albumActions.perform(session: session) {
+                        .dropDestination(for: AlbumAssetTransfer.self) { values, _ in
+                            let ids = values.flatMap(\.ids)
+                            guard album.canEdit(session.user?.id),
+                                  !ids.isEmpty, ids.allSatisfy({ UUID(uuidString: $0) != nil }) else { return false }
+                            session.albumActions.perform(session: session, albumID: album.id) {
                                 try await session.client.changeAlbumAssets(album.id, ids: ids)
                             }
                             return true

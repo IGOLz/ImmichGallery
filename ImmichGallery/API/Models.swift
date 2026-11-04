@@ -156,6 +156,16 @@ struct Album: Decodable, Sendable, Identifiable, Hashable {
     var lastModifiedAssetTimestamp: String?
     var updatedAt: String?
 
+    var albumUsers: [AlbumMember]?
+    var owner: User?
+    var ownerId: String?
+
+    func canEdit(_ userID: String?) -> Bool {
+        guard let userID else { return false }
+        return (owner?.id ?? ownerId) == userID
+            || albumUsers?.contains(where: { $0.id == userID && ["owner", "editor"].contains($0.role) }) == true
+    }
+
     static func == (a: Album, b: Album) -> Bool {
         a.id == b.id && a.albumName == b.albumName && a.assetCount == b.assetCount
             && a.albumThumbnailAssetId == b.albumThumbnailAssetId

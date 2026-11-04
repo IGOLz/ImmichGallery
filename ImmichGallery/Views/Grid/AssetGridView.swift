@@ -239,12 +239,18 @@ struct AssetGridView: View {
 
     private func cell(_ s: Int, _ i: Int) -> some View {
         let asset = model.asset(s, i)
-        return ThumbnailCell(
+        let thumbnail = ThumbnailCell(
             asset: asset,
             isSelected: asset.map { model.selection.contains($0.id) } ?? false,
             size: thumbnailRequestSize
         )
-        .draggable((asset.map { model.selection.contains($0.id) ? Array(model.selection) : [$0.id] } ?? []).joined(separator: "\n")) // Albums
+        return Group {
+            if let asset {
+                thumbnail.draggable(AlbumAssetTransfer(ids: model.selection.contains(asset.id) ? Array(model.selection) : [asset.id]))
+            } else {
+                thumbnail
+            }
+        }
         .onAppear { model.cellAppeared(section: s, item: i) }
         .onTapGesture(count: 2) { if let asset { model.open(asset.id) } }
         .simultaneousGesture(TapGesture().onEnded { if let asset { model.click(asset.id) } })
