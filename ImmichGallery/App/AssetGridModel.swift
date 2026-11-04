@@ -82,6 +82,7 @@ final class AssetGridModel {
     let source: GridSource
     @ObservationIgnored private weak var session: LibrarySession?
 
+    var albumOrder = "desc" // Albums
     private(set) var sections: [GridSection] = []
     private(set) var state: LoadState = .idle
     var selection: Set<String> = []
@@ -141,7 +142,9 @@ final class AssetGridModel {
         if sections.isEmpty { state = .loading }
         do {
             if let query = source.timelineQuery {
-                let buckets = try await session.client.timeBuckets(query)
+                let buckets = try await source.albumID != nil
+                    ? session.client.albumTimeBuckets(query, order: albumOrder)
+                    : session.client.timeBuckets(query)
                 sections = buckets.map {
                     GridSection(id: $0.timeBucket, title: ImmichDate.monthTitle($0.timeBucket), count: $0.count)
                 }
@@ -187,7 +190,9 @@ final class AssetGridModel {
         let task = Task { [weak self] in
             guard let self, let session, let query = source.timelineQuery else { return }
             do {
-                let columns = try await session.client.timeBucket(id, query)
+                let columns = try await source.albumID != nil
+                    ? session.client.albumTimeBucket(id, query, order: albumOrder)
+                    : session.client.timeBucket(id, query)
                 guard let i = sections.firstIndex(where: { $0.id == id }) else { return }
                 let assets = AssetItem.from(columns)
                 sections[i].assets = assets

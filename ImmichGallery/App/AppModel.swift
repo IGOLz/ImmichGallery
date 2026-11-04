@@ -165,6 +165,7 @@ final class AppModel {
 @MainActor @Observable
 final class LibrarySession {
     let client: ImmichClient
+    let albumActions = AlbumsActions() // Albums
     let pipeline: ImagePipeline
     private(set) var user: User?
     private(set) var features = ServerFeatures()
@@ -201,7 +202,7 @@ final class LibrarySession {
 
     func reloadAlbums() async {
         do {
-            albums = try await client.albums().sorted {
+            albums = try await client.albumCollections(legacy: (version?.major ?? 3) < 3).sorted { // Albums
                 ($0.lastModifiedAssetTimestamp ?? "") > ($1.lastModifiedAssetTimestamp ?? "")
             }
         } catch { handle(error) }
@@ -221,6 +222,15 @@ final class LibrarySession {
         let model = AssetGridModel(source: source, session: self)
         gridModels[source] = model
         return model
+    }
+
+    func invalidateAlbumGrid(_ id: String) {
+        gridModels[.album(id)]?.markStale()
+    }
+
+    func discardAlbumGrid(_ id: String) {
+        gridModels.removeValue(forKey: .album(id))
+        albumActions.details.removeValue(forKey: id)
     }
 
     /// Mutations in one view (favorite, delete…) can affect other cached grids.

@@ -239,11 +239,18 @@ struct AssetGridView: View {
 
     private func cell(_ s: Int, _ i: Int) -> some View {
         let asset = model.asset(s, i)
-        return ThumbnailCell(
+        let thumbnail = ThumbnailCell(
             asset: asset,
             isSelected: asset.map { model.selection.contains($0.id) } ?? false,
             size: thumbnailRequestSize
         )
+        return Group {
+            if let asset {
+                thumbnail.draggable(AlbumAssetTransfer(ids: model.selection.contains(asset.id) ? Array(model.selection) : [asset.id]))
+            } else {
+                thumbnail
+            }
+        }
         .onAppear { model.cellAppeared(section: s, item: i) }
         .onTapGesture(count: 2) { if let asset { model.open(asset.id) } }
         .simultaneousGesture(TapGesture().onEnded { if let asset { model.click(asset.id) } })
@@ -261,6 +268,7 @@ struct AssetGridView: View {
             Button("Restore") { Task { await model.restore(ids) } }
             Button("Delete Permanently…", role: .destructive) { onDelete(ids) }
         } else {
+            AlbumSelectionMenu(session: session, model: model, ids: ids) // Albums
             Button(asset.isFavorite ? "Unfavorite" : "Favorite") { Task { await model.setFavorite(ids, !asset.isFavorite) } }
             Button("Export Unmodified Original…") { Exporter.exportOriginals(ids, session: session) }
             Divider()

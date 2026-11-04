@@ -25,6 +25,13 @@ struct MainView: View {
             .id(selection)
         }
         .toolbar { ToolbarItemGroup { AccountNotificationBell(session: session); AccountMenu() } } // Account
+        .modifier(AlbumPresentation()) // Albums
+        .onChange(of: session.albumActions.navigationAlbumID) { _, id in
+            if let id {
+                selection = .album(id)
+                session.albumActions.navigationAlbumID = nil
+            }
+        }
         .searchable(text: $searchText, placement: .toolbar, prompt: session.features.smartSearch ? "Search photos" : "Search file names")
         .searchSuggestions { SearchFieldSuggestions(text: searchText) }
         .searchFocused($searchFocused)
@@ -63,7 +70,7 @@ struct MainView: View {
         case .albums:
             AlbumsView()
         case .album(let id):
-            AssetGridContainer(source: .album(id), title: Text(verbatim: session.albums.first { $0.id == id }?.albumName ?? ""))
+            AlbumDetailView(id: id, onClose: { selection = .albums }) // Albums
         case .search:
             SearchView(text: submittedSearch, chooseText: { searchText = $0; submittedSearch = $0 }, showFilters: $showSearchFilters)
         }
@@ -94,18 +101,7 @@ struct SidebarView: View {
                     Label("Recently Deleted", systemImage: "trash").tag(SidebarItem.trash)
                 }
             }
-            if !session.albums.isEmpty {
-                Section("Albums") {
-                    ForEach(session.albums) { album in
-                        Label {
-                            Text(album.albumName)
-                        } icon: {
-                            Image(systemName: album.shared ? "person.2.crop.square.stack" : "rectangle.stack")
-                        }
-                        .tag(SidebarItem.album(album.id))
-                    }
-                }
-            }
+            AlbumSidebarSections() // Albums
         }
         .listStyle(.sidebar)
     }
