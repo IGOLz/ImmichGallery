@@ -9,17 +9,24 @@ struct AssetViewer: View {
     @Binding var playLive: Bool
     let onDelete: ([String]) -> Void
 
+    @Environment(ViewerState.self) private var viewer
+    var isPresentation = false
     @FocusState private var isFocused: Bool
 
     var body: some View {
         ZStack {
             Color.black.opacity(0.92).ignoresSafeArea()
 
-            if item.isVideo {
-                VideoPlayerView(url: session.client.videoURL(item.id), headers: session.client.credential?.headers ?? [:])
+            if viewer.window != nil && !isPresentation {
+                Color.black
+            } else if item.isVideo {
+                VideoPlayerView(url: session.client.videoURL(item.id), headers: session.client.credential?.headers ?? [:],
+                                playing: !viewer.slideshow || !viewer.paused,
+                                onFinished: videoFinished)
                     .id(item.id)
+                    .overlay(alignment: .topTrailing) { ViewerVideoOptions().padding().opacity(!isPresentation || viewer.controlsVisible ? 1 : 0) }
             } else {
-                ZoomableImage(item: item)
+                ZoomableImage(item: item, rotation: viewer.rotation)
                     .id(item.id)
                 if playLive, let videoID = item.livePhotoVideoID {
                     VideoPlayerView(
@@ -32,20 +39,27 @@ struct AssetViewer: View {
                 }
             }
 
+            if !isPresentation {
             HStack {
-                navButton("chevron.left", delta: -1)
-                Spacer()
-                navButton("chevron.right", delta: 1)
+                    navButton("chevron.left", delta: -1)
+                    Spacer()
+                    navButton("chevron.right", delta: 1)
+                }
+                .padding(.horizontal, 16)
             }
-            .padding(.horizontal, 16)
         }
         .focusable()
         .focused($isFocused)
         .focusEffectDisabled()
         .onAppear { isFocused = true }
         .onKeyPress(action: handleKey)
-        .onExitCommand { model.viewerID = nil }
+        .onExitCommand { if isPresentation { viewer.close() } else { model.viewerID = nil } }
         .task(id: item.id) { await prefetchNeighbours() }
+    }
+
+    private var videoFinished: (@MainActor @Sendable () -> Void)? {
+        guard viewer.slideshow else { return nil }
+        return { viewer.step(1) }
     }
 
     private func navButton(_ symbol: String, delta: Int) -> some View {
@@ -60,6 +74,7 @@ struct AssetViewer: View {
     }
 
     private func step(_ delta: Int) {
+        if isPresentation { viewer.step(delta); return }
         Task {
             if let next = await model.neighbor(of: item.id, delta: delta) {
                 model.viewerID = next.id
@@ -77,6 +92,10 @@ struct AssetViewer: View {
     }
 
     private func handleKey(_ press: KeyPress) -> KeyPress.Result {
+        if isPresentation {
+            if press.key == .escape { viewer.close(); return .handled }
+            if press.key == .space, viewer.slideshow { viewer.paused.toggle(); return .handled }
+        }
         switch press.key {
         case .leftArrow: step(-1)
         case .rightArrow: step(1)
@@ -97,6 +116,7 @@ struct AssetViewer: View {
 private struct ZoomableImage: View {
     @Environment(LibrarySession.self) private var session
     let item: AssetItem
+    let rotation: Int
 
     @State private var image: CGImage?
     @State private var hasOriginal = false
@@ -107,6 +127,7 @@ private struct ZoomableImage: View {
 
     var body: some View {
         GeometryReader { geo in
+            let swapsAxes = abs(rotation % 180) == 90
             ZStack {
                 if let image {
                     Image(decorative: image, scale: 1)
@@ -120,6 +141,8 @@ private struct ZoomableImage: View {
                     ProgressView().controlSize(.large)
                 }
             }
+            .frame(width: swapsAxes ? geo.size.height : geo.size.width, height: swapsAxes ? geo.size.width : geo.size.height)
+            .rotationEffect(.degrees(Double(rotation)))
             .frame(width: geo.size.width, height: geo.size.height)
             .scaleEffect(scale * gestureScale)
             .offset(offset)
@@ -167,57 +190,5 @@ private struct ZoomableImage: View {
         let pipeline = session.pipeline
         image = pipeline.cachedThumbnail(item.id, size: .preview) ?? pipeline.cachedThumbnail(item.id, size: .thumbnail)
         if let preview = await pipeline.thumbnail(item.id, size: .preview) { image = preview }
-    }
-}
-
-/// AVPlayerView wrapper. Immich needs auth headers on media requests, which AVURLAsset supports
-/// via `AVURLAssetHTTPHeaderFieldsKey`; range requests are supported by `/video/playback`.
-struct VideoPlayerView: NSViewRepresentable {
-    let url: URL
-    let headers: [String: String]
-    var showsControls = true
-    var onFinished: (@MainActor @Sendable () -> Void)?
-
-    func makeNSView(context: Context) -> AVPlayerView {
-        let view = AVPlayerView()
-        view.controlsStyle = showsControls ? .floating : .none
-        view.allowsPictureInPicturePlayback = showsControls
-        view.showsFullScreenToggleButton = showsControls
-        view.videoGravity = .resizeAspect
-
-        let asset = AVURLAsset(url: url, options: ["AVURLAssetHTTPHeaderFieldsKey": headers])
-        let item = AVPlayerItem(asset: asset)
-        let player = AVPlayer(playerItem: item)
-        view.player = player
-        context.coordinator.observe(item, onFinished: onFinished)
-        player.play()
-        return view
-    }
-
-    func updateNSView(_ view: AVPlayerView, context: Context) {}
-
-    static func dismantleNSView(_ view: AVPlayerView, coordinator: Coordinator) {
-        view.player?.pause()
-        view.player = nil
-        coordinator.stop()
-    }
-
-    func makeCoordinator() -> Coordinator { Coordinator() }
-
-    final class Coordinator {
-        private var token: NSObjectProtocol?
-
-        func observe(_ item: AVPlayerItem, onFinished: (@MainActor @Sendable () -> Void)?) {
-            guard let onFinished else { return }
-            token = NotificationCenter.default.addObserver(
-                forName: AVPlayerItem.didPlayToEndTimeNotification, object: item, queue: .main
-            ) { _ in
-                MainActor.assumeIsolated { onFinished() }
-            }
-        }
-
-        func stop() {
-            if let token { NotificationCenter.default.removeObserver(token) }
-        }
     }
 }

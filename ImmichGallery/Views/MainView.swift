@@ -34,6 +34,7 @@ struct MainView: View {
                 .allowsHitTesting(false)
                 .accessibilityHidden(true)
         }
+        .onReceive(NotificationCenter.default.publisher(for: .viewerShowLibrary)) { _ in selection = .library }
         .onSubmit(of: .search) {
             let query = searchText.trimmingCharacters(in: .whitespaces)
             guard !query.isEmpty else { return }

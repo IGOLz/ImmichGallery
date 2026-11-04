@@ -12,7 +12,7 @@ struct ImmichGalleryApp: App {
         }
         .defaultSize(width: 1280, height: 820)
         .windowToolbarStyle(.unified)
-        .commands { AppCommands(app: app) }
+        .commands { AppCommands(app: app); ViewerCommands() }
 
         Settings {
             SettingsView()
