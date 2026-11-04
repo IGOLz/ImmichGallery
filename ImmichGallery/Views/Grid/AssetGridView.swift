@@ -54,7 +54,7 @@ struct AssetGridHost: View {
             AssetInspector(assetID: inspectedID)
                 .inspectorColumnWidth(min: 260, ideal: 300, max: 420)
         }
-        .task { await model.loadIfNeeded() }
+        .task(id: session.macGridRevision) { await model.loadIfNeeded() }
         .focusedSceneValue(\.gridModel, model)
         .confirmationDialog(deleteTitle, isPresented: Binding(get: { pendingDelete != nil }, set: { if !$0 { pendingDelete = nil } })) {
             Button(model.source == .trash ? "Delete Permanently" : "Delete", role: .destructive) {
@@ -218,7 +218,7 @@ struct AssetGridView: View {
             }
             .padding(.bottom, 20)
         }
-        .dragContainer(for: OriginalTransfer.self) { (ids: [String]) in ids.map { OriginalTransfer(id: $0, isVideo: model.item($0)?.isVideo ?? false, client: session.client) } }
+        .macOriginalDragContainer(model: model, client: session.client)
         .dragContainerSelection(Array(model.selection))
         .fastWheelScrolling()
         .background {
@@ -270,7 +270,7 @@ struct AssetGridView: View {
             if model.source == .archive {
                 Button("Unarchive") { Task { await model.setArchived(ids, false) } }
             } else {
-                Button("Archive") { Task { await model.setArchived(ids, true) } }
+                Button(String(localized: "Archive Selected Photos")) { Task { await model.setArchived(ids, true) } }
             }
             Button("Delete…", role: .destructive) { onDelete(ids) }
         }
@@ -281,7 +281,7 @@ struct AssetGridView: View {
         switch press.key {
         case .space:
             guard !ids.isEmpty else { return .ignored }
-            MacQuickLook.shared.toggle(ids, session: session) { model.lastError = $0 }
+            MacQuickLook.shared.toggle(model.macOrderedSelection, session: session) { model.lastError = $0 }
         case .return:
             guard let first = model.selectedItems.first else { return .ignored }
             model.open(first.id)

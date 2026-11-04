@@ -18,6 +18,7 @@ struct AssetViewer: View {
             if item.isVideo {
                 VideoPlayerView(url: session.client.videoURL(item.id), headers: session.client.credential?.headers ?? [:])
                     .id(item.id)
+                    .draggable(OriginalTransfer(id: item.id, isVideo: true, client: session.client))
             } else {
                 ZoomableImage(item: item)
                     .id(item.id)
@@ -39,7 +40,6 @@ struct AssetViewer: View {
             }
             .padding(.horizontal, 16)
         }
-        .draggable(OriginalTransfer(id: item.id, isVideo: item.isVideo, client: session.client))
         .focusable()
         .focused($isFocused)
         .focusEffectDisabled()
@@ -114,6 +114,8 @@ private struct ZoomableImage: View {
                         .resizable()
                         .interpolation(.high)
                         .scaledToFit()
+                        .draggable(OriginalTransfer.self, item: scale * gestureScale <= 1
+                                   ? OriginalTransfer(id: item.id, client: session.client) : nil)
                 } else if let hash = item.thumbhash, let placeholder = ThumbHash.image(base64: hash) {
                     Image(decorative: placeholder, scale: 1)
                         .resizable()
@@ -126,7 +128,7 @@ private struct ZoomableImage: View {
             .offset(offset)
             .contentShape(Rectangle())
             .gesture(magnify)
-            .simultaneousGesture(pan(in: geo.size))
+            .simultaneousGesture(pan(in: geo.size), isEnabled: scale * gestureScale > 1)
             .onTapGesture(count: 2) {
                 withAnimation(.snappy) {
                     if scale > 1 { scale = 1; offset = .zero } else { scale = 2.5 }

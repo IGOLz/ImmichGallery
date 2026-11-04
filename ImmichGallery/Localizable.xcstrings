@@ -26,37 +26,237 @@
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld file esportati; %lld non riusciti."
+            "value": "%#@exported@; %#@failed@."
+          },
+          "substitutions": {
+            "exported": {
+              "argNum": 1,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg file esportato"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg file esportati"
+                    }
+                  }
+                }
+              }
+            },
+            "failed": {
+              "argNum": 2,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg non riuscito"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg non riusciti"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%#@exported@; %#@failed@."
+          },
+          "substitutions": {
+            "exported": {
+              "argNum": 1,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg file exported"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg files exported"
+                    }
+                  }
+                }
+              }
+            },
+            "failed": {
+              "argNum": 2,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg failed"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg failed"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
     },
     "%lld items": {
       "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld item"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld items"
+                }
+              }
+            }
+          }
+        },
         "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld elementi"
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld elemento"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld elementi"
+                }
+              }
+            }
           }
         }
       }
     },
     "%lld items couldn't be exported.": {
       "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld item couldn't be exported."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld items couldn't be exported."
+                }
+              }
+            }
+          }
+        },
         "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Impossibile esportare %lld elementi."
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Impossibile esportare %lld elemento."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Impossibile esportare %lld elementi."
+                }
+              }
+            }
           }
         }
       }
     },
     "%lld of %lld selected": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%#@selection@"
+          },
+          "substitutions": {
+            "selection": {
+              "argNum": 1,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg of %2$lld selected"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg of %2$lld selected"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld di %lld selezionati"
+            "value": "%#@selection@"
+          },
+          "substitutions": {
+            "selection": {
+              "argNum": 1,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg di %2$lld selezionato"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg di %2$lld selezionati"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -183,10 +383,40 @@
     },
     "Choose a folder for %lld original files.": {
       "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Choose a folder for %lld original file."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Choose a folder for %lld original files."
+                }
+              }
+            }
+          }
+        },
         "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Scegli una cartella per %lld file originali."
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Scegli una cartella per %lld file originale."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Scegli una cartella per %lld file originali."
+                }
+              }
+            }
           }
         }
       }
@@ -283,10 +513,40 @@
     },
     "Delete %lld items?": {
       "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Delete %lld item?"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Delete %lld items?"
+                }
+              }
+            }
+          }
+        },
         "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Eliminare %lld elementi?"
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Eliminare %lld elemento?"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Eliminare %lld elementi?"
+                }
+              }
+            }
           }
         }
       }
@@ -736,7 +996,7 @@
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Apri in un nuovo pannello"
+            "value": "Apri in una nuova scheda"
           }
         }
       }
@@ -773,10 +1033,40 @@
     },
     "Permanently delete %lld items?": {
       "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Permanently delete %lld item?"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Permanently delete %lld items?"
+                }
+              }
+            }
+          }
+        },
         "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Eliminare definitivamente %lld elementi?"
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Eliminare definitivamente %lld elemento?"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Eliminare definitivamente %lld elementi?"
+                }
+              }
+            }
           }
         }
       }
@@ -1217,6 +1507,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nuova finestra"
+          }
+        }
+      }
+    },
+    "Archive Selected Photos": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archivia"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archive"
+          }
+        }
+      }
+    },
+    "New Tab": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nuova scheda"
+          }
+        }
+      }
+    },
+    "Show Tab Bar": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostra barra delle schede"
+          }
+        }
+      }
+    },
+    "Enable notifications for Immich Gallery in System Settings → Notifications.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abilita le notifiche per Immich Gallery in Impostazioni di Sistema → Notifiche."
           }
         }
       }

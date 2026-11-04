@@ -1,51 +1,38 @@
 # Native macOS integrations
 
-Implemented for macOS 26 with no added dependencies or targets.
+Implemented for macOS 26 without new dependencies or targets.
 
-- Grid multi-selection and viewer drag export use SwiftUI Transferable file representations. Originals download only when the destination requests files. Images and movies advertise their respective content types. Each transfer gets a private temporary directory, preserves the original filename, and strips server-supplied path components. Transfers older than 24 hours expire on a later transfer.
-- Space in the grid downloads selected originals and opens QLPreviewPanel. The controller participates in the AppKit responder chain, supports multiple files, reports errors through the existing grid alert, and deletes preview files when control ends. Return and double-click retain the in-app viewer.
-- A typed WindowGroup and explicit Command-N New Window command create independent LibrarySession/grid/selection/navigation state. Album context menus in the sidebar and album collection open windows or AppKit tabs. Credentials remain shared through the existing app model. Each window refreshes its own library state; mutations do not immediately invalidate grids in other windows.
-- Search Photos and Open Album App Intents are exposed through AppShortcutsProvider. Search uses the existing smart-search/filename fallback. Open Album matches an exact case-insensitive name, rejects missing or ambiguous matches, and uses the existing Keychain account. Intents open separate windows and never put credentials in a route. Search invoked while signed out remains pending until sign-in.
-- SystemNotifier.requestPermission() and SystemNotifier.completed(title:body:) provide a reusable notification API. Settings has an opt-in completion-notification switch. The existing original exporter sends completion counts while the app is inactive and avoids bringing Finder forward during background completion. Denied permission or disabled notifications are silent.
-- Localizable.xcstrings covers existing app UI and new integrations in Italian. AppShortcuts.xcstrings translates invocation phrases. InfoPlist.xcstrings translates the local-network usage explanation. The only project-file change adds `it` to knownRegions.
+- Drag promises download originals on demand. Downloads use the response's suggested filename, strip path components, map HTTP 401 to the session-expired error, and clean up failed moves. Receivers may access the original temporary file in place, avoiding the previous forced second copy. Files expire after ten minutes; cleanup runs on startup, every minute, and termination. Preview files have a separate directory and remain leased while Quick Look uses them. Cleanup also handles the previous cache layout.
+- Space previews selected items in grid order, with a maximum of 20 originals. Quick Look opens when the first original arrives and adds the others as they finish. Space during downloads cancels them. The originating window is captured before downloading. Return and double-click still open the viewer.
+- Each window initializes its LibrarySession synchronously. Login/restoration uses RootView; signed-in windows never render the shared library while initializing. Bootstrap runs separately. Mutations invalidate cached grids across windows for the same account, and visible grids reload. Navigation and selection are per window; inspector visibility and thumbnail size remain shared preferences.
+- Album menus offer new windows and tabs. Scene windows get a common tabbing identifier; tab routes use native preferred tabbing rather than polling arbitrary NSApp windows. Command-T and Show Tab Bar are available.
+- Search Photos and Open Album require a saved account through the small MacIntentAccount helper. Routes form a queue handled by the app's scene even when no library window exists. Sign-out clears the queue. Intent routing does not wait for bootstrap.
+- Export completion always reveals saved files in Finder, including while the app is inactive. SystemNotifier is also available for opt-in background notifications. Denied notification permission shows a System Settings hint.
+- Italian strings include explicit singular/plural forms in English and Italian, including separate substitutions for exported and failed counts. Archive's sidebar noun remains "Archivio"; its action uses "Archivia". Tabs use "scheda". Reviewed library, favorites, info, export, archive and recently deleted terminology.
 
-## Sources checked
+## Transfer type and viewer gestures
 
-Fetched the v3.3.5 OpenAPI spec once from https://raw.githubusercontent.com/immich-app/immich/v3.3.5/open-api/immich-openapi-specs.json . Checked GET /assets/{id}, GET /assets/{id}/original, GET /albums, POST /search/metadata, POST /search/smart, their referenced AssetResponseDto/AlbumResponseDto/SearchResponseDto schemas, authentication and permissions. These endpoints are stable in v2 and v3; no new server-specific endpoint or DTO is required. Download failures, including missing originals and permission errors, propagate instead of creating an error-body file. Existing search uses server/features to choose smart search versus metadata search.
+The installed CoreTransferable SDK requires a static exportedContentType in FileRepresentation. Grid timeline DTOs provide no original filename or MIME type, so a truthful per-item UTType cannot be derived before the drag without additional metadata requests. Promises now advertise generic file data, preserving the actual filename/extension from Content-Disposition, instead of advertising all RAW/HEIC files as image or all videos as movie. Receivers requiring an exact pre-advertised UTType still need a future metadata-backed NSFilePromiseProvider implementation. No speculative type is assigned.
 
-Cross-checked https://api.immich.app/endpoints/assets/downloadAsset and https://immich.app/docs . Read tagged official web/src/lib/utils/asset-utils.ts for download and filename handling. No upload/sync behavior was added, so mobile upload code was not needed.
+The viewer's drag source is attached to the displayed image, not its container or navigation controls. It is disabled above 1× zoom; the pan gesture is enabled only when zoomed. Videos retain their own drag source. Gesture behavior still needs manual UI verification.
 
-Read Apple's documentation for FileRepresentation, dragContainer(for:in:_:), QLPreviewPanel including responder-chain ownership, WindowGroup, AppShortcutsProvider, and UNUserNotificationCenter. Checked API signatures against the installed macOS SDK and built for the project's macOS 26 deployment target. dragContainer supports macOS 26.
+## Verification for review fixes
 
-## Verification
+The required Debug command was run without launching the app:
 
-The required Debug xcodebuild command succeeded with zero warnings. Build log is local and ignored at build/MacIntegration/build.log.
+```
+xcodebuild -project ImmichGallery.xcodeproj -scheme ImmichGallery -configuration Debug -derivedDataPath build/DerivedData build
+```
 
-scripts/verify-mac-integration.swift compiles with the real API client/DTOs and checks the public demo. Verified server 3.3.5, decoded 236 albums, metadata search, asset details, smart search, and downloaded a 1,779,462-byte original. Removed the temporary original and logged out the test session. No server library data or settings were changed.
+Build succeeded with no warnings. Local logs and binaries remain ignored under build/.
 
-python3 scripts/check-mac-localization.py checks the compiler's stringsdata against the Italian catalogs and verifies format/shortcut placeholders. Passed for all 123 extracted strings. The catalog also includes the dynamically selected Email & Password method label, which the compiler does not extract automatically.
+- `python3 scripts/check-mac-localization.py`: checks extracted strings, catalog coverage and format placeholders, including plural substitutions.
+- `swift scripts/check-mac-plurals.swift`: reads compiled localization resources, checks singular/plural output with different selected/total and exported/failed counts, and distinguishes archive noun/verb. It does not run the app executable.
+- `scripts/check-mac-transfer-cache.swift`: compiled against the real API extension and checks fresh/expired drag files, leased previews, release and legacy cleanup in an isolated temporary directory. No network or Keychain access.
+- Inspected Debug's generated `Metadata.appintents/extract.actionsdata`: both SearchPhotosIntent and OpenAlbumIntent, their parameters and both shortcuts are present with this Xcode toolchain. The reported Release-only extraction issue does not reproduce; no ENABLE_DEBUG_DYLIB or project-file change is needed.
 
-Launched this checkout's built app with Italian language arguments and confirmed its process. Native UI inspection failed with `Computer Use server error -10005: timeoutReached`. Other feature agents had their own app instances running; no other instance was stopped or used. End-to-end Finder drop, Quick Look rendering, tab attachment, Shortcuts execution and notification delivery remain manual verification items. Ad-hoc signing/Keychain permission and system notification authorization can affect those checks.
+No live server was contacted, no Keychain item was read, and no app was launched during this review-fix pass. Finder drops, Quick Look rendering, native tab attachment, no-window Shortcuts routing and notifications remain manual checks for the parent's single merged app. Do not launch individual worktree builds: they share the app bundle ID and saved account.
 
 ## Deliberate omissions
 
-No widget extension: robust delivery needs a separate extension target, App Group, credential-sharing design and suitable signing. A menu bar extra is optional and adds little without background sync. Neither was added. Shortcuts includes Search Photos and Open Album; unattended export is omitted because selecting a sandbox-authorized destination needs a separate output contract.
-
-## Shared-file changes
-
-- App/ImmichGalleryApp.swift: replace the single Window with a typed WindowGroup, install MacWindowRoot and MacIntegrationCommands.
-- Views/MainView.swift: initializer for album/search routes; add album sidebar context-menu actions.
-- Views/Grid/AssetGridView.swift: multi-item drag container, draggable cells, separate Space Quick Look from Return viewer handling.
-- Views/Viewer/AssetViewer.swift: add the current original as a drag source.
-- Views/Albums/AlbumsView.swift: add album context-menu actions.
-- Views/Settings/SettingsView.swift: insert MacNotificationPreference.
-- Support/Exporter.swift: call SystemNotifier on completion and reveal exported files only while foregrounded.
-- ImmichGallery.xcodeproj/project.pbxproj: add Italian knownRegions entry only.
-
-No changes to README.md, shared API/DTO files, AppModel.swift or AssetGridModel.swift.
-
-## UI-run stop instruction
-
-The parent subsequently clarified that all worktree builds share the bundle identifier and Keychain, so startup may restore the user's real account at https://immich.igol.dev. No further UI runs are permitted for this category. A process check found no remaining instance belonging to this checkout or carrying the `-AppleLanguages (it)` arguments used for the launch.
-
-The launch executed existing account-restoration code, which attempts to read saved credentials and can automatically issue startup GET requests for the account, server capabilities/version, albums and timeline. The UI inspection timed out before any interaction. Actual startup request destinations/results were not observed, so user-server activity cannot truthfully be reported as "none". No manual UI interaction or write request to the user's server was performed. Direct API verification used only the public demo and its explicitly supplied demo credentials. Do not launch this branch again; final UI verification belongs to the parent's single merged app.
+Widgets require another target, an App Group and a credential/signing design, so they remain omitted. A menu bar extra and unattended export intent remain outside this change. No project settings were changed by the review fixes.

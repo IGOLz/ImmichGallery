@@ -24,13 +24,22 @@ enum SystemNotifier {
 
 struct MacNotificationPreference: View {
     @AppStorage("completionNotifications") private var enabled = false
+    @State private var permissionDenied = false
     var body: some View {
         Section("Notifications") {
             Toggle("Notify When Background Work Finishes", isOn: Binding(get: { enabled }, set: { value in
                 if value {
-                    Task { enabled = await SystemNotifier.requestPermission() }
+                    Task {
+                        enabled = await SystemNotifier.requestPermission()
+                        permissionDenied = !enabled
+                    }
                 } else { enabled = false }
             }))
+            if permissionDenied {
+                Text("Enable notifications for Immich Gallery in System Settings → Notifications.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
         }
     }
 }

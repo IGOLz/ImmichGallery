@@ -4,7 +4,7 @@ import Observation
 @MainActor @Observable
 final class MacIntegrationRouter {
     static let shared = MacIntegrationRouter()
-    var pending: MacWindowRoute?
+    var pending: [MacWindowRoute] = []
 }
 
 struct SearchPhotosIntent: AppIntent {
@@ -14,7 +14,8 @@ struct SearchPhotosIntent: AppIntent {
     @Parameter(title: "Search") var query: String
 
     @MainActor func perform() async throws -> some IntentResult {
-        MacIntegrationRouter.shared.pending = MacWindowRoute(query: query)
+        _ = try MacIntentAccount.require()
+        MacIntegrationRouter.shared.pending.append(MacWindowRoute(query: query))
         return .result()
     }
 }
@@ -26,12 +27,20 @@ struct OpenAlbumIntent: AppIntent {
     @Parameter(title: "Album Name") var name: String
 
     @MainActor func perform() async throws -> some IntentResult {
-        guard let account = AccountStore.load() else { throw MacIntentError.signIn }
+        let account = try MacIntentAccount.require()
         let client = ImmichClient(serverURL: account.serverURL, apiURL: account.apiURL, credential: account.credential)
         let matches = try await client.albums().filter { $0.albumName.localizedCaseInsensitiveCompare(name) == .orderedSame }
         guard matches.count == 1, let album = matches.first else { throw MacIntentError.albumName }
-        MacIntegrationRouter.shared.pending = MacWindowRoute(albumID: album.id)
+        _ = try MacIntentAccount.require()
+        MacIntegrationRouter.shared.pending.append(MacWindowRoute(albumID: album.id))
         return .result()
+    }
+}
+
+private enum MacIntentAccount {
+    static func require() throws -> AccountStore.Account {
+        guard let account = AccountStore.load() else { throw MacIntentError.signIn }
+        return account
     }
 }
 
