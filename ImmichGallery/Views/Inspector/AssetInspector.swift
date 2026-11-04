@@ -8,6 +8,7 @@ struct AssetInspector: View {
     @State private var asset: AssetResponse?
     @State private var albums: [Album] = []
     @State private var failed = false
+    @State private var peopleRevision = 0 // People
 
     var body: some View {
         Group {
@@ -22,16 +23,27 @@ struct AssetInspector: View {
                 ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: .peopleChanged)) { _ in peopleRevision += 1 }
         .task(id: assetID) {
-            guard let assetID else { return }
             failed = false
             asset = nil
             albums = []
+            guard let assetID else { return }
             do {
-                asset = try await session.client.asset(assetID)
-                albums = (try? await session.client.albums(containing: assetID)) ?? []
+                let loaded = try await session.client.asset(assetID)
+                try Task.checkCancellation()
+                asset = loaded
+                let loadedAlbums = (try? await session.client.albums(containing: assetID)) ?? []
+                try Task.checkCancellation()
+                albums = loadedAlbums
             } catch {
                 if !Task.isCancelled { failed = true }
+            }
+        }
+        .task(id: "\(assetID ?? "")-\(peopleRevision)") {
+            guard peopleRevision > 0, let assetID else { return }
+            if let loaded = try? await session.client.asset(assetID), !Task.isCancelled, self.assetID == assetID {
+                asset = loaded
             }
         }
     }
@@ -104,10 +116,8 @@ struct AssetInspector: View {
                     }
                 }
 
-                if let people = asset.people?.filter({ !$0.name.isEmpty }), !people.isEmpty {
-                    section("People") {
-                        FlowText(people.map(\.name), symbol: "person.crop.circle")
-                    }
+                section("People") {
+                    InspectorPeopleList(people: asset.people ?? [])
                 }
 
                 if !albums.isEmpty {

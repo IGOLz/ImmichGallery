@@ -146,6 +146,7 @@ struct AssetResponse: Decodable, Sendable, Identifiable {
     var height: Int?
     var exifInfo: Exif?
     var people: [AssetPerson]?
+    var isEdited: Bool? // People: face coordinates include server edits.
 }
 
 struct Album: Decodable, Sendable, Identifiable, Hashable {
@@ -183,6 +184,7 @@ struct Person: Decodable, Sendable, Identifiable, Hashable {
     let name: String
     var isHidden: Bool
     var isFavorite: Bool?
+    var birthDate: String? // People
 }
 
 struct PeopleResponse: Decodable, Sendable {
