@@ -142,6 +142,7 @@ struct AssetResponse: Decodable, Sendable, Identifiable {
     var height: Int?
     var exifInfo: Exif?
     var people: [AssetPerson]?
+    var stack: AssetsStackSummary?
 }
 
 struct Album: Decodable, Sendable, Identifiable, Hashable {

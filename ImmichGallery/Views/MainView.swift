@@ -4,6 +4,7 @@ enum SidebarItem: Hashable {
     case library, favorites, videos, people, albums, archive, trash
     case album(String)
     case search
+    case duplicates, largeFiles, geolocation // Assets
 }
 
 struct MainView: View {
@@ -68,6 +69,9 @@ struct MainView: View {
             AlbumsView()
         case .album(let id):
             AssetGridContainer(source: .album(id), title: Text(verbatim: session.albums.first { $0.id == id }?.albumName ?? ""))
+        case .duplicates: AssetsDuplicatesView()
+        case .largeFiles: AssetGridContainer(source: .largeFiles, title: Text("Large Files"))
+        case .geolocation: AssetGridContainer(source: .library, title: Text("Assign Location"))
         case .search:
             AssetGridContainer(source: .search(submittedSearch), title: Text("Search"))
                 .navigationSubtitle("“\(submittedSearch)”")
@@ -93,6 +97,7 @@ struct SidebarView: View {
                 }
             }
             Section("Utilities") {
+                AssetsSidebarItems()
                 Label("Archive", systemImage: "archivebox").tag(SidebarItem.archive)
                 if session.features.trash {
                     Label("Recently Deleted", systemImage: "trash").tag(SidebarItem.trash)

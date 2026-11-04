@@ -5,6 +5,7 @@ import Observation
 /// What a grid shows.
 enum GridSource: Hashable {
     case library, favorites, videos, archive, trash
+    case largeFiles // Assets
     case album(String)
     case person(String)
     case search(String)
@@ -17,7 +18,7 @@ enum GridSource: Hashable {
         case .trash: TimelineQuery(visibility: nil, isTrashed: true)
         case .album(let id): TimelineQuery(visibility: nil, albumId: id)
         case .person(let id): TimelineQuery(personId: id)
-        case .videos, .search: nil
+        case .videos, .search, .largeFiles: nil
         }
     }
 }
@@ -34,6 +35,7 @@ struct AssetItem: Identifiable, Hashable, Sendable {
     let date: Date?
     let livePhotoVideoID: String?
     let stackCount: Int?
+    var fileSizeInBytes: Int64? = nil
 
     init(_ r: AssetResponse) {
         id = r.id
@@ -45,7 +47,8 @@ struct AssetItem: Identifiable, Hashable, Sendable {
         durationMS = r.duration?.milliseconds
         date = ImmichDate.parse(r.localDateTime)
         livePhotoVideoID = r.livePhotoVideoId
-        stackCount = nil
+        stackCount = r.stack?.assetCount
+        fileSizeInBytes = r.exifInfo?.fileSizeInByte
     }
 
     static func from(_ c: TimeBucketAssets) -> [AssetItem] {
@@ -102,7 +105,7 @@ final class AssetGridModel {
     var totalCount: Int { sections.reduce(0) { $0 + $1.count } }
     var isPaged: Bool { source.timelineQuery == nil }
     var showsSectionHeaders: Bool {
-        if case .search = source { false } else { true }
+        if case .search = source { false } else { source != .largeFiles }
     }
 
     func asset(_ section: Int, _ item: Int) -> AssetItem? {
@@ -212,6 +215,11 @@ final class AssetGridModel {
         guard let session, let page = nextPage else { return }
         let result: SearchResponse.Assets
         switch source {
+        case .largeFiles:
+            let assets = try await session.client.assetsLargeFiles()
+            nextPage = nil
+            append(assets.map(AssetItem.init))
+            return
         case .search(let text):
             if session.features.smartSearch {
                 result = try await session.client.smartSearch(text, page: page.page ?? 1)

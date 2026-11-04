@@ -39,6 +39,7 @@ struct AssetViewer: View {
             }
             .padding(.horizontal, 16)
         }
+        .overlay(alignment: .bottom) { AssetsStackButton(assetID: item.id, model: model) }
         .focusable()
         .focused($isFocused)
         .focusEffectDisabled()
