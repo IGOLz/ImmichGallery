@@ -1,4 +1,5 @@
 import Foundation
+import Darwin
 import CryptoKit
 import UniformTypeIdentifiers
 
@@ -15,7 +16,7 @@ extension ImmichClient {
         struct Body: Encodable { let ids: [String] }
         let results: [UploadAlbumResult] = try await send("PUT", "albums/\(albumID)/assets", body: Body(ids: [assetID]))
         guard let result = results.first, result.success || result.error == "duplicate" else {
-            throw ImmichError.http(400, results.first?.errorMessage ?? "Could not add the imported item to the album.")
+            throw ImmichError.http(400, results.first?.errorMessage ?? String(localized: "Could not add the imported item to the album."))
         }
     }
 
@@ -31,7 +32,15 @@ extension ImmichClient {
         request.timeoutInterval = 3600
         request.setValue("multipart/form-data; boundary=\(multipart.boundary)", forHTTPHeaderField: "Content-Type")
         request.setValue(checksum, forHTTPHeaderField: "x-immich-checksum")
-        let (data, response) = try await session.upload(for: request, fromFile: multipart.file, delegate: UploadProgress(progress))
+        // A dedicated configuration also covers URLSession's request-level idle timeout.
+        let configuration = session.configuration
+        configuration.timeoutIntervalForRequest = 3600
+        configuration.timeoutIntervalForResource = 7 * 24 * 3600
+        let uploadSession = URLSession(configuration: configuration)
+        defer { uploadSession.finishTasksAndInvalidate() }
+        let size = try multipart.file.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
+        progress(0, Int64(size))
+        let (data, response) = try await uploadSession.upload(for: request, fromFile: multipart.file, delegate: UploadProgress(progress))
         guard let http = response as? HTTPURLResponse else { throw URLError(.badServerResponse) }
         guard (200..<300).contains(http.statusCode) else {
             if http.statusCode == 401 { throw ImmichError.unauthorized(nil) }
@@ -42,12 +51,19 @@ extension ImmichClient {
     }
 }
 
-private final class UploadProgress: NSObject, URLSessionTaskDelegate, Sendable {
+private final class UploadProgress: NSObject, URLSessionTaskDelegate, @unchecked Sendable {
+    private let lock = NSLock()
+    private var lastUpdate = ProcessInfo.processInfo.systemUptime
     let update: @Sendable (Int64, Int64) -> Void
     init(_ update: @escaping @Sendable (Int64, Int64) -> Void) { self.update = update }
     func urlSession(_ session: URLSession, task: URLSessionTask, didSendBodyData bytesSent: Int64,
                     totalBytesSent: Int64, totalBytesExpectedToSend: Int64) {
-        update(totalBytesSent, totalBytesExpectedToSend)
+        let now = ProcessInfo.processInfo.systemUptime
+        lock.lock()
+        let emit = now - lastUpdate >= 0.1
+        if emit { lastUpdate = now }
+        lock.unlock()
+        if emit { update(totalBytesSent, totalBytesExpectedToSend) }
     }
 }
 
@@ -56,20 +72,34 @@ struct UploadMultipart: Sendable {
     let file: URL
     let boundary: String
 
+    /// Only remove our own bodies whose owner process has exited, including crashed copies.
+    static func sweepStale(in directory: URL = FileManager.default.temporaryDirectory) {
+        let prefix = "ImmichGallery-upload-"
+        for file in (try? FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)) ?? [] {
+            let name = file.lastPathComponent
+            guard name.hasPrefix(prefix),
+                  let pid = Int32(name.dropFirst(prefix.count).split(separator: "-").first ?? ""), pid > 0,
+                  kill(pid, 0) == -1, errno == ESRCH else { continue }
+            try? FileManager.default.removeItem(at: file)
+        }
+    }
+
     static func checksum(_ file: URL) throws -> String {
         let input = try FileHandle(forReadingFrom: file)
         defer { try? input.close() }
         var hash = Insecure.SHA1()
-        while let chunk = try input.read(upToCount: 1 << 20), !chunk.isEmpty {
+        while try autoreleasepool(invoking: { () throws -> Bool in
             try Task.checkCancellation()
+            guard let chunk = try input.read(upToCount: 1 << 20), !chunk.isEmpty else { return false }
             hash.update(data: chunk)
-        }
+            return true
+        }) {}
         return Data(hash.finalize()).base64EncodedString()
     }
 
     static func make(_ source: URL, legacy: Bool) throws -> UploadMultipart {
         let boundary = "ImmichGallery-\(UUID().uuidString)"
-        let file = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let file = FileManager.default.temporaryDirectory.appendingPathComponent("ImmichGallery-upload-\(getpid())-\(UUID().uuidString)")
         guard FileManager.default.createFile(atPath: file.path, contents: nil, attributes: [.posixPermissions: 0o600]) else {
             throw CocoaError(.fileWriteUnknown)
         }
@@ -97,10 +127,12 @@ struct UploadMultipart: Sendable {
             try write("--\(boundary)\r\nContent-Disposition: form-data; name=\"assetData\"; filename=\"\(name)\"\r\nContent-Type: \(mime)\r\n\r\n")
             let input = try FileHandle(forReadingFrom: source)
             defer { try? input.close() }
-            while let chunk = try input.read(upToCount: 1 << 20), !chunk.isEmpty {
+            while try autoreleasepool(invoking: { () throws -> Bool in
                 try Task.checkCancellation()
+                guard let chunk = try input.read(upToCount: 1 << 20), !chunk.isEmpty else { return false }
                 try output.write(contentsOf: chunk)
-            }
+                return true
+            }) {}
             try write("\r\n--\(boundary)--\r\n")
             return UploadMultipart(file: file, boundary: boundary)
         } catch {

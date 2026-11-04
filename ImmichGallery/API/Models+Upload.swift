@@ -10,6 +10,7 @@ struct UploadMediaTypes: Decodable, Sendable {
 struct UploadResponse: Decodable, Sendable {
     let id: String
     let status: String
+    var isTrashed: Bool? = nil
 }
 
 struct UploadCheckResponse: Decodable, Sendable {

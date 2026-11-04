@@ -85,6 +85,7 @@ final class LibrarySession {
             self?.invalidateGrids()
             Task { await self?.reloadAlbums() }
         }
+        self.upload.onError = { [weak self] in self?.handle($0) } // Upload
         self.user = user
     }
 

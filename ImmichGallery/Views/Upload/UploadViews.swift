@@ -14,10 +14,9 @@ struct UploadCommands: Commands {
 
 struct UploadToolbar: ToolbarContent {
     @Bindable var queue: UploadQueue
-    @State private var showing = false
     var body: some ToolbarContent {
         ToolbarItem {
-            Button { showing.toggle() } label: {
+            Button { queue.showingProgress.toggle() } label: {
                 if queue.isRunning {
                     ProgressView(value: Double(queue.completed), total: Double(max(1, queue.items.count)))
                         .progressViewStyle(.circular).controlSize(.small)
@@ -27,7 +26,7 @@ struct UploadToolbar: ToolbarContent {
                 }
             }
             .help("Import photos and videos")
-            .popover(isPresented: $showing) { UploadProgressView(queue: queue) }
+            .popover(isPresented: $queue.showingProgress) { UploadProgressView(queue: queue) }
         }
     }
 }
@@ -43,6 +42,8 @@ private struct UploadProgressView: View {
             }
             if queue.discovering { ProgressView("Scanning files…") }
             if let error = queue.lastError { Text(error).foregroundStyle(.red).textSelection(.enabled) }
+            if queue.unreadableCount > 0 { Text("\(queue.unreadableCount) items could not be read").foregroundStyle(.orange) }
+            if queue.unsupportedCount > 0 { Text("\(queue.unsupportedCount) unsupported files ignored").foregroundStyle(.secondary) }
             if queue.items.isEmpty {
                 Text("Choose files or drop photos, videos, or folders onto the window. Drop onto an album to import there.")
                     .foregroundStyle(.secondary)
@@ -53,7 +54,8 @@ private struct UploadProgressView: View {
                         ForEach(queue.items) { item in
                             VStack(alignment: .leading, spacing: 3) {
                                 Text(item.url.lastPathComponent).lineLimit(1).help(item.url.path)
-                                Text(item.state.rawValue).font(.caption).foregroundStyle(.secondary)
+                                Text(item.state.title).font(.caption).foregroundStyle(.secondary)
+                                if item.response?.isTrashed == true { Text("(in Recently Deleted)").font(.caption).foregroundStyle(.secondary) }
                                 if item.state == .uploading {
                                     ProgressView(value: Double(item.sent), total: Double(max(1, item.total)))
                                     Text("\(ByteCountFormatter.string(fromByteCount: item.sent, countStyle: .file)) of \(ByteCountFormatter.string(fromByteCount: item.total, countStyle: .file))")
@@ -68,7 +70,7 @@ private struct UploadProgressView: View {
                     if queue.isRunning { Button("Cancel All", role: .cancel) { queue.cancelAll() } }
                     else {
                         Button("Retry Failed") { queue.retryFailed() }
-                            .disabled(!queue.items.contains { $0.state == .failed || $0.state == .cancelled })
+                            .disabled(queue.failed + queue.cancelled == 0)
                         Spacer()
                         Button("Clear") { queue.clear() }
                     }
@@ -96,7 +98,7 @@ struct UploadDropModifier: ViewModifier {
                         if let url, url.isFileURL { urls.append(url) }
                     }
                     if !urls.isEmpty { queue.enqueue(urls, albumID: albumID) }
-                    else { queue.lastError = "The dropped files could not be read. Try Import… instead." }
+                    else { queue.lastError = String(localized: "The dropped files could not be read. Try Import… instead.") }
                 }
                 return !providers.isEmpty
             }

@@ -108,8 +108,8 @@ struct SidebarView: View {
                         } icon: {
                             Image(systemName: album.shared ? "person.2.crop.square.stack" : "rectangle.stack")
                         }
-                        .tag(SidebarItem.album(album.id))
                         .modifier(UploadDropModifier(queue: session.upload, albumID: album.id)) // Upload
+                        .tag(SidebarItem.album(album.id))
                     }
                 }
             }
