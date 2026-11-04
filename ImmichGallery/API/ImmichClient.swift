@@ -47,13 +47,11 @@ final class ImmichClient: Sendable {
         return "ImmichGallery/\(version) (macOS \(os.majorVersion).\(os.minorVersion))"
     }()
 
-    /// Shared session with a large on-disk cache. Immich sends
-    /// `Cache-Control: private, max-age=…` + ETags for thumbnails, so URLCache does the right thing.
+    /// Bootstrap session. Media caching begins only after choosing an account identity.
     static let sharedSession: URLSession = {
         let config = URLSessionConfiguration.default
-        let cacheDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("ImageCache", isDirectory: true)
-        config.urlCache = URLCache(memoryCapacity: 64 << 20, diskCapacity: 4 << 30, directory: cacheDir)
+        // Authentication and bootstrap requests do not need a persistent media cache.
+        config.urlCache = nil
         config.httpAdditionalHeaders = ["User-Agent": userAgent]
         config.httpMaximumConnectionsPerHost = 8
         config.timeoutIntervalForRequest = 30
