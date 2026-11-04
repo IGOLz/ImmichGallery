@@ -5,14 +5,14 @@ struct ImmichGalleryApp: App {
     @State private var app = AppModel()
 
     var body: some Scene {
-        Window("Immich Gallery", id: "main") {
-            RootView()
+        WindowGroup("Immich Gallery", id: "main", for: MacWindowRoute.self) { route in
+            MacWindowRoot(route: route.wrappedValue)
                 .environment(app)
                 .frame(minWidth: 760, minHeight: 480)
         }
         .defaultSize(width: 1280, height: 820)
         .windowToolbarStyle(.unified)
-        .commands { AppCommands(app: app) }
+        .commands { AppCommands(app: app); MacIntegrationCommands() }
 
         Settings {
             SettingsView()

@@ -14,6 +14,12 @@ struct MainView: View {
     @State private var lastNonSearchSelection: SidebarItem = .library
     @FocusState private var searchFocused: Bool
 
+    init(initialAlbumID: String? = nil, initialSearch: String? = nil) {
+        _selection = State(initialValue: initialAlbumID.map(SidebarItem.album) ?? (initialSearch == nil ? .library : .search))
+        _searchText = State(initialValue: initialSearch ?? "")
+        _submittedSearch = State(initialValue: initialSearch ?? "")
+    }
+
     var body: some View {
         NavigationSplitView {
             SidebarView(selection: $selection)
@@ -107,6 +113,7 @@ struct SidebarView: View {
                             Image(systemName: album.shared ? "person.2.crop.square.stack" : "rectangle.stack")
                         }
                         .tag(SidebarItem.album(album.id))
+                        .contextMenu { MacAlbumWindowMenu(albumID: album.id) }
                     }
                 }
             }

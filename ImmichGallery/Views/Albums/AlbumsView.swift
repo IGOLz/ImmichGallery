@@ -14,6 +14,7 @@ struct AlbumsView: View {
                         ForEach(session.albums) { album in
                             NavigationLink(value: album) { AlbumCell(album: album) }
                                 .buttonStyle(.plain)
+                                .contextMenu { MacAlbumWindowMenu(albumID: album.id) }
                         }
                     }
                     .padding(20)

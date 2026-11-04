@@ -1,0 +1,26 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "Search photos in ${applicationName}": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cerca foto in ${applicationName}"
+          }
+        }
+      }
+    },
+    "Open album in ${applicationName}": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apri album in ${applicationName}"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

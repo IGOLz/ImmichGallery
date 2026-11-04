@@ -218,6 +218,8 @@ struct AssetGridView: View {
             }
             .padding(.bottom, 20)
         }
+        .dragContainer(for: OriginalTransfer.self) { (ids: [String]) in ids.map { OriginalTransfer(id: $0, isVideo: model.item($0)?.isVideo ?? false, client: session.client) } }
+        .dragContainerSelection(Array(model.selection))
         .fastWheelScrolling()
         .background {
             // Clicking empty space clears the selection, like Photos.
@@ -244,6 +246,7 @@ struct AssetGridView: View {
             isSelected: asset.map { model.selection.contains($0.id) } ?? false,
             size: thumbnailRequestSize
         )
+        .draggable(OriginalTransfer.self, item: asset.map { OriginalTransfer(id: $0.id, isVideo: $0.isVideo, client: session.client) })
         .onAppear { model.cellAppeared(section: s, item: i) }
         .onTapGesture(count: 2) { if let asset { model.open(asset.id) } }
         .simultaneousGesture(TapGesture().onEnded { if let asset { model.click(asset.id) } })
@@ -276,7 +279,10 @@ struct AssetGridView: View {
     private func handleKey(_ press: KeyPress) -> KeyPress.Result {
         let ids = Array(model.selection)
         switch press.key {
-        case .space, .return:
+        case .space:
+            guard !ids.isEmpty else { return .ignored }
+            MacQuickLook.shared.toggle(ids, session: session) { model.lastError = $0 }
+        case .return:
             guard let first = model.selectedItems.first else { return .ignored }
             model.open(first.id)
         case .delete, .deleteForward:

@@ -1,0 +1,22 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "NSLocalNetworkUsageDescription": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Immich Gallery connects to your Immich server, which may be on your local network."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Immich Gallery si connette al tuo server Immich, che potrebbe trovarsi nella rete locale."
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

@@ -39,6 +39,7 @@ struct AssetViewer: View {
             }
             .padding(.horizontal, 16)
         }
+        .draggable(OriginalTransfer(id: item.id, isVideo: item.isVideo, client: session.client))
         .focusable()
         .focused($isFocused)
         .focusEffectDisabled()
