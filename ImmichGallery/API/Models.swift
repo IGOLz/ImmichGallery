@@ -169,6 +169,7 @@ struct Person: Decodable, Sendable, Identifiable, Hashable {
     let name: String
     var isHidden: Bool
     var isFavorite: Bool?
+    var birthDate: String? // People
 }
 
 struct PeopleResponse: Decodable, Sendable {

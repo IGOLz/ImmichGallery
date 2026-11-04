@@ -8,6 +8,7 @@ struct AssetInspector: View {
     @State private var asset: AssetResponse?
     @State private var albums: [Album] = []
     @State private var failed = false
+    @State private var peopleRevision = 0 // People
 
     var body: some View {
         Group {
@@ -22,7 +23,8 @@ struct AssetInspector: View {
                 ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-        .task(id: assetID) {
+        .onReceive(NotificationCenter.default.publisher(for: .peopleChanged)) { _ in peopleRevision += 1 }
+        .task(id: "\(assetID ?? "")-\(peopleRevision)") {
             guard let assetID else { return }
             failed = false
             asset = nil
@@ -104,9 +106,9 @@ struct AssetInspector: View {
                     }
                 }
 
-                if let people = asset.people?.filter({ !$0.name.isEmpty }), !people.isEmpty {
+                if let people = asset.people, !people.isEmpty {
                     section("People") {
-                        FlowText(people.map(\.name), symbol: "person.crop.circle")
+                        InspectorPeopleList(people: people)
                     }
                 }
 
