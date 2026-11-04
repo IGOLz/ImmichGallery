@@ -12,6 +12,11 @@
 set -euo pipefail
 cd "${0:A:h}/.."
 
+# Machine-local signing configuration, intentionally excluded from version control.
+if [[ -f .release.env ]]; then
+  source .release.env
+fi
+
 APP=ImmichGallery
 OUT=build/release
 ARCHIVE=build/$APP.xcarchive

@@ -73,6 +73,14 @@ final class PagingProtocol: URLProtocol, @unchecked Sendable {
         defer { client.session.invalidateAndCancel() }
         let user = User(id: "owner", email: "", name: "")
         let services = AccountServices(client: client, user: user, cacheUserID: "test")
+        let passwordUser = User(id: "password-test", email: "", name: "", shouldChangePassword: true, isAdmin: false)
+        for credential: Credential? in [.accessToken("test"), .apiKey("test"), nil] {
+            let passwordClient = ImmichClient(serverURL: url, apiURL: url, credential: credential, session: client.session)
+            let passwordServices = AccountServices(client: passwordClient, user: passwordUser, cacheUserID: "password-test")
+            assert(passwordServices.requiresPasswordChange == (credential == .accessToken("test")))
+            let unknownUserServices = AccountServices(client: passwordClient, user: nil, cacheUserID: "password-test")
+            assert(!unknownUserServices.requiresPasswordChange)
+        }
         let session = LibrarySession(services: services)
         let secondWindow = LibrarySession(services: services)
         assert(session.pipeline === secondWindow.pipeline && session.upload === secondWindow.upload)

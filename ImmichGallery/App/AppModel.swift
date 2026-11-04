@@ -295,6 +295,11 @@ final class AccountServices {
 
     func refreshAccountUser() async throws { user = try await client.currentUser() }
 
+    var requiresPasswordChange: Bool {
+        guard case .accessToken = client.credential else { return false }
+        return user?.requiresPasswordChange(passwordLoginEnabled: features.passwordLogin) == true
+    }
+
     func reloadAlbums() async {
         do {
             albums = try await client.albumCollections(legacy: (version?.major ?? 3) < 3).sorted { // Albums

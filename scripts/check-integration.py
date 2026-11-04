@@ -14,6 +14,7 @@ models = [f'ImmichGallery/API/{s}.swift' for s in ['Models', 'Models+Albums', 'M
 app = lambda s: f'ImmichGallery/App/{s}.swift'
 support = lambda s: f'ImmichGallery/Support/{s}.swift'
 cases = {
+    'password-banner': api + ['Tests/PasswordBannerChecks.swift'],
     'metadata-state': models + ['ImmichGallery/API/Models+Metadata.swift', app('MetadataState'), 'scripts/verify-metadata-state.swift'],
     'admin-refresh': models + ['ImmichGallery/API/Models+Admin.swift', 'ImmichGallery/API/ImmichClient+Admin.swift', app('AdminModel'), 'scripts/check-admin-refresh.swift'],
     'paging-and-services': api + [app(s) for s in ['AppModel', 'AssetGridModel', 'AlbumsActions', 'MetadataState', 'SharingModel', 'UploadQueue']] + [support('ImagePipeline'), support('Formatters'), 'scripts/check-search-paging.swift'],

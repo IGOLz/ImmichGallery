@@ -58,6 +58,11 @@ struct User: Decodable, Sendable, Identifiable {
     var profileImagePath: String?
     var quotaUsageInBytes: Int64?
     var quotaSizeInBytes: Int64?
+
+    func requiresPasswordChange(passwordLoginEnabled: Bool) -> Bool {
+        // Immich's web login exempts administrators even when the stored flag is true.
+        passwordLoginEnabled && isAdmin != true && shouldChangePassword == true
+    }
 }
 
 struct TimeBucket: Decodable, Sendable {

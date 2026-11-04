@@ -180,6 +180,16 @@ The app targets the Immich v3.3 API ([OpenAPI spec](https://github.com/immich-ap
 
 `scripts/release.sh` archives the app with your Developer ID certificate, notarizes and staples it, and writes a DMG and a zip to `build/release/`. Bump `MARKETING_VERSION` in the project first.
 
+For repeat releases on the same Mac, save the notarization configuration in `.release.env` at the repository root. The script loads it automatically; Git ignores it. Store only the key path and identifiers there, keeping the private key outside the repository. Use shell defaults so environment overrides still work:
+
+```sh
+: "${NOTARY_KEY:=$HOME/.appstoreconnect/private_keys/AuthKey_YOUR_KEY_ID.p8}"
+: "${NOTARY_KEY_ID:=YOUR_KEY_ID}"
+: "${NOTARY_ISSUER:=YOUR_ISSUER_ID}"
+```
+
+Alternatively, set `NOTARY_PROFILE` to an existing notarytool Keychain profile. Once configured, run `scripts/release.sh` directly. Also increment `CURRENT_PROJECT_VERSION`, run the offline checks and localization check, and publish the DMG and ZIP with their SHA-256 checksums from `build/release/SHA256SUMS.txt`.
+
 ```sh
 NOTARY_PROFILE=my-profile scripts/release.sh
 # or, with an App Store Connect API key:

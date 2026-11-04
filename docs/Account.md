@@ -66,7 +66,7 @@ Untested by design: profile/name/password/preference mutations on the shared dem
 
 ## Review fixes
 
-All findings 1–11 were addressed without launching the app or calling a live Immich server. The v3.3.5 OpenAPI document was consulted again. `shouldChangePassword` is decoded and offers a non-blocking password-change sheet from the library banner.
+All findings 1–11 were addressed without launching the app or calling a live Immich server. The v3.3.5 OpenAPI document was consulted again. `shouldChangePassword` is decoded and offers a non-blocking password-change sheet from the library banner. The banner excludes administrators, API-key sessions, and servers with password login disabled, matching the applicable web password-login checks.
 
 Account cache sessions are reused by API URL/user ID. Removing an account or signing out invalidates its cached session and removes its disk directory, including the stable credential-based offline fallback directory. Bootstrap uses no persistent cache; the legacy ImageCache directory is removed on isolated startup. Offline bootstrap retries vault migration when the user becomes available. Saved entries are observed in AppModel rather than loaded by view evaluation. Account transitions use a busy guard and verify the original session after awaiting authentication.
 

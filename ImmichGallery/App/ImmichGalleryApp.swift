@@ -64,7 +64,7 @@ struct AccountPasswordBanner: ViewModifier {
 
     func body(content: Content) -> some View {
         content.safeAreaInset(edge: .top, spacing: 0) {
-            if app.services?.user?.shouldChangePassword == true {
+            if app.services?.requiresPasswordChange == true {
                 HStack {
                     Text("Your server asks you to change your password.")
                     Button("Change Password…") { changingPassword = true }
