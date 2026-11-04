@@ -8,7 +8,7 @@ struct SharingSidebar: View {
             if session.sharing.partnersAvailable {
                 Label("Partner Sharing", systemImage: "person.2").tag(SidebarItem.partners)
                 ForEach(session.sharing.receivedPartners) { partner in
-                    Label(partner.name, systemImage: "person.crop.square").tag(SidebarItem.partner(partner.id))
+                    Label(partner.name, systemImage: "person.2").tag(SidebarItem.partner(partner.id))
                 }
             }
         }
@@ -70,8 +70,7 @@ struct PartnersView: View {
                 List(users.filter { user in user.id != session.user?.id && !sharing.outgoingPartners.contains { $0.id == user.id } }) { user in
                     Button {
                         Task {
-                            await sharing.perform { try await session.client.addSharingPartner(user.id) }
-                            if sharing.error == nil { picking = false }
+                            if await sharing.perform({ try await session.client.addSharingPartner(user.id) }) { picking = false }
                         }
                     } label: { VStack(alignment: .leading) { Text(user.name); Text(user.email).font(.caption) } }
                     .disabled(sharing.busy)

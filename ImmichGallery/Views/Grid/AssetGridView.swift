@@ -91,7 +91,7 @@ struct AssetGridHost: View {
     }
 
     private func requestDelete(_ ids: [String]) {
-        guard !ids.isEmpty else { return }
+        guard !model.source.isPartner, !ids.isEmpty else { return }
         pendingDelete = ids
     }
 
@@ -120,7 +120,7 @@ struct AssetGridHost: View {
             }
         }
 
-        ToolbarItem { SharingMenu(assetIDs: ids, albumID: { if case .album(let id) = model.source { return id }; return nil }()) } // Sharing
+        ToolbarItem { SharingMenu(assetIDs: ids, allowPublicLinks: !model.source.isPartner, albumID: { if case .album(let id) = model.source { return id }; return nil }()) } // Sharing
         ToolbarSpacer(.fixed)
 
         if model.source == .trash {
@@ -129,7 +129,7 @@ struct AssetGridHost: View {
                     .disabled(ids.isEmpty)
                     .help("Restore")
             }
-        } else {
+        } else if !model.source.isPartner {
             ToolbarItem {
                 let allFavorite = !items.isEmpty && items.allSatisfy(\.isFavorite)
                 Button { Task { await model.toggleFavorite(ids) } } label: {
@@ -139,10 +139,12 @@ struct AssetGridHost: View {
                 .help(allFavorite ? "Unfavorite" : "Favorite")
             }
         }
-        ToolbarItem {
-            Button { requestDelete(ids) } label: { Label("Delete", systemImage: "trash") }
-                .disabled(ids.isEmpty)
-                .help("Delete")
+        if !model.source.isPartner {
+            ToolbarItem {
+                Button { requestDelete(ids) } label: { Label("Delete", systemImage: "trash") }
+                    .disabled(ids.isEmpty)
+                    .help("Delete")
+            }
         }
         ToolbarItem {
             Button { showInspector.toggle() } label: { Label("Info", systemImage: "info.circle") }
@@ -259,7 +261,10 @@ struct AssetGridView: View {
         let ids = model.selection.contains(asset.id) ? Array(model.selection) : [asset.id]
         Button("Open") { model.open(asset.id) }
         Divider()
-        if model.source == .trash {
+        if model.source.isPartner {
+            SharingMenuItems(assetIDs: ids, allowPublicLinks: false)
+            Button("Export Unmodified Original…") { Exporter.exportOriginals(ids, session: session) }
+        } else if model.source == .trash {
             Button("Restore") { Task { await model.restore(ids) } }
             Button("Delete Permanently…", role: .destructive) { onDelete(ids) }
         } else {

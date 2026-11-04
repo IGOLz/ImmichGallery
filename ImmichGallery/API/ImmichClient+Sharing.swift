@@ -48,8 +48,8 @@ extension ImmichClient {
     }
     func sharingPublicURL(_ link: SharedLink) async throws -> URL {
         struct Config: Decodable { var externalDomain: String? }
-        let config: Config = try await get("server/config")
-        return try Self.sharingURL(link, externalDomain: config.externalDomain, serverURL: serverURL)
+        let config: Config? = try? await get("server/config")
+        return try Self.sharingURL(link, externalDomain: config?.externalDomain, serverURL: serverURL)
     }
     static func sharingURL(_ link: SharedLink, externalDomain: String?, serverURL: URL) throws -> URL {
         let base = externalDomain.flatMap { $0.isEmpty ? nil : URL(string: $0) } ?? serverURL

@@ -47,6 +47,9 @@ struct MainView: View {
         .onChange(of: selection) { _, newValue in
             if newValue != .search { searchText = "" }
         }
+        .onChange(of: session.sharing.receivedPartners.map(\.id)) { _, ids in
+            if case .partner(let id) = selection, !ids.contains(id) { selection = .partners }
+        }
         .onChange(of: searchText) { _, text in
             if text.isEmpty, selection == .search { selection = lastNonSearchSelection }
         }

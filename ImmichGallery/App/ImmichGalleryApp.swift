@@ -4,6 +4,8 @@ import SwiftUI
 struct ImmichGalleryApp: App {
     @State private var app = AppModel()
 
+    init() { SharingTemporaryFiles.sweep() }
+
     var body: some Scene {
         Window("Immich Gallery", id: "main") {
             RootView()
@@ -93,14 +95,14 @@ struct AppCommands: Commands {
             let ids = grid?.selectedItems.map(\.id) ?? []
             // "." and ⌘⌫ are handled by the grid/viewer so they don't steal keys from text fields.
             Button("Favorite  (.)") { if let grid { Task { await grid.toggleFavorite(ids) } } }
-                .disabled(ids.isEmpty)
+                .disabled(ids.isEmpty || grid?.source.isPartner == true)
             if grid?.source == .archive {
                 Button("Unarchive") { if let grid { Task { await grid.setArchived(ids, false) } } }
-                    .disabled(ids.isEmpty)
+                    .disabled(ids.isEmpty || grid?.source.isPartner == true)
             } else {
                 Button("Archive") { if let grid { Task { await grid.setArchived(ids, true) } } }
                     .keyboardShortcut("a", modifiers: [.command, .control])
-                    .disabled(ids.isEmpty || grid?.source == .trash)
+                    .disabled(ids.isEmpty || grid?.source == .trash || grid?.source.isPartner == true)
             }
         }
     }

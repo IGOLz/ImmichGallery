@@ -29,14 +29,14 @@ struct SharedLinkEditor: View {
                 Form {
                     TextField("Description", text: $options.description)
                     TextField("Custom URL slug", text: $options.slug)
-                    if link?.password != nil {
+                    if link?.hasPassword == true {
                         Toggle("Keep existing password", isOn: $preservePassword)
                     }
-                    if link?.password == nil || !preservePassword {
+                    if link?.hasPassword != true || !preservePassword {
                         SecureField("Password (empty for none)", text: $options.password)
                     }
                     Toggle("Expires", isOn: $expires)
-                    if expires { DatePicker("Expiration", selection: $expiry, in: Date()...) }
+                    if expires { DatePicker("Expiration", selection: $expiry, in: min(Date(), expiry)...) }
                     Toggle("Show metadata", isOn: $options.showMetadata)
                         .onChange(of: options.showMetadata) { _, value in if !value { options.allowDownload = false } }
                     Toggle("Allow download", isOn: $options.allowDownload).disabled(!options.showMetadata)
@@ -67,6 +67,7 @@ struct SharedLinkEditor: View {
     }
 
     private func save() async {
+        error = nil
         busy = true
         defer { busy = false }
         options.expiresAt = expires ? ISO8601DateFormatter().string(from: expiry) : nil
@@ -74,12 +75,13 @@ struct SharedLinkEditor: View {
             let result: SharedLink
             if let link {
                 // The response only indicates password presence; never send its masked value back.
-                result = try await session.client.editSharedLink(link.id, options: options, keepPassword: link.password != nil && preservePassword)
+                result = try await session.client.editSharedLink(link.id, options: options, keepPassword: link.hasPassword && preservePassword)
             } else {
                 result = try await session.client.createSharedLink(albumID: albumID, assetIDs: assetIDs, options: options)
             }
-            await session.sharing.reload()
+            resultURL = try ImmichClient.sharingURL(result, externalDomain: nil, serverURL: session.client.serverURL)
             resultURL = try await session.client.sharingPublicURL(result)
+            await session.sharing.reload()
         } catch { self.error = error.localizedDescription; session.handle(error) }
     }
 }

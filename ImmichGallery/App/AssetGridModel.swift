@@ -10,6 +10,8 @@ enum GridSource: Hashable {
     case person(String)
     case search(String)
 
+    var isPartner: Bool { if case .partner = self { true } else { false } }
+
     var timelineQuery: TimelineQuery? {
         switch self {
         case .library: TimelineQuery(withPartners: true)
@@ -327,7 +329,7 @@ final class AssetGridModel {
     // MARK: Actions
 
     func setFavorite(_ ids: [String], _ value: Bool) async {
-        guard let session, !ids.isEmpty else { return }
+        guard !source.isPartner, let session, !ids.isEmpty else { return }
         do {
             try await session.client.setFavorite(ids, value)
             if source == .favorites && !value {
@@ -345,7 +347,7 @@ final class AssetGridModel {
     }
 
     func setArchived(_ ids: [String], _ archived: Bool) async {
-        guard let session, !ids.isEmpty else { return }
+        guard !source.isPartner, let session, !ids.isEmpty else { return }
         do {
             try await session.client.setVisibility(ids, archived ? "archive" : "timeline")
             if [.library, .archive].contains(source) || { if case .person = source { true } else { false } }() {
@@ -356,7 +358,7 @@ final class AssetGridModel {
     }
 
     func delete(_ ids: [String], permanently: Bool) async {
-        guard let session, !ids.isEmpty else { return }
+        guard !source.isPartner, let session, !ids.isEmpty else { return }
         do {
             try await session.client.delete(ids, force: permanently)
             remove(ids)
@@ -366,7 +368,7 @@ final class AssetGridModel {
     }
 
     func restore(_ ids: [String]) async {
-        guard let session, !ids.isEmpty else { return }
+        guard !source.isPartner, let session, !ids.isEmpty else { return }
         do {
             try await session.client.restore(ids)
             remove(ids)

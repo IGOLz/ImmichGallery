@@ -34,7 +34,7 @@ struct SharedLinksView: View {
                                 Button("Edit…") { editing = link }
                                 Button("Delete…", role: .destructive) { deleting = link }
                             }
-                            Text(link.expiresAt.map { "Expires \($0)" } ?? "Never expires").font(.caption).foregroundStyle(.secondary)
+                            Text(link.expiresAt.flatMap(ImmichDate.parse).map { $0 <= Date() ? "Expired" : "Expires \($0.formatted(date: .abbreviated, time: .shortened))" } ?? "Never expires").font(.caption).foregroundStyle(.secondary)
                             if link.type == "INDIVIDUAL" {
                                 NavigationLink("Manage \(link.assets.count) Photos") { SharedLinkAssetsView(linkID: link.id) }
                             }
@@ -137,7 +137,7 @@ private struct SharedLinkURLSheet: View {
                 }
             } else if let error { Text(error).foregroundStyle(.red) }
             else { ProgressView("Loading Public URL…") }
-            Button("Done") { dismiss() }.keyboardShortcut(.cancelAction)
+            Button("Done") { dismiss() }.keyboardShortcut(.defaultAction)
         }.padding(24).frame(width: 440)
         .task {
             do { url = try await session.client.sharingPublicURL(link) }

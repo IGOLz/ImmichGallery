@@ -14,6 +14,8 @@ struct SharedLink: Decodable, Identifiable, Sendable {
     var assets: [AssetResponse]
     var album: Album?
 
+    var hasPassword: Bool { !(password ?? "").isEmpty }
+
     var title: String { description.flatMap { $0.isEmpty ? nil : $0 } ?? album?.albumName ?? "Shared Photos" }
 }
 
