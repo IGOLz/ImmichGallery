@@ -26,14 +26,14 @@ enum AssetsDownloader {
         picker.canChooseFiles = false
         picker.canChooseDirectories = true
         picker.canCreateDirectories = true
-        picker.prompt = "Download ZIP"
+        picker.prompt = String(localized: "Download ZIP")
         guard picker.runModal() == .OK, let folder = picker.url else { return }
         let scoped = folder.startAccessingSecurityScopedResource()
         let progress = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 400, height: 150),
                                styleMask: [.titled], backing: .buffered, defer: false)
         progress.isReleasedWhenClosed = false
-        progress.title = "Downloading ZIP"
-        let label = NSTextField(labelWithString: "Preparing archives…")
+        progress.title = String(localized: "Downloading ZIP")
+        let label = NSTextField(labelWithString: String(localized: "Preparing archives…"))
         label.frame = NSRect(x: 20, y: 85, width: 360, height: 24)
         let bar = NSProgressIndicator(frame: NSRect(x: 20, y: 60, width: 360, height: 16))
         bar.isIndeterminate = true
@@ -41,7 +41,7 @@ enum AssetsDownloader {
         progress.contentView?.addSubview(label)
         progress.contentView?.addSubview(bar)
         let cancellation = AssetsDownloadCancellation()
-        let cancel = NSButton(title: "Cancel", target: cancellation, action: #selector(AssetsDownloadCancellation.cancel))
+        let cancel = NSButton(title: String(localized: "Cancel"), target: cancellation, action: #selector(AssetsDownloadCancellation.cancel))
         cancel.frame = NSRect(x: 280, y: 15, width: 100, height: 30)
         progress.contentView?.addSubview(cancel)
         progress.center()
@@ -57,21 +57,21 @@ enum AssetsDownloader {
                 var completedBytes: Int64 = 0
                 for (index, archive) in info.archives.enumerated() {
                     try Task.checkCancellation()
-                    let part = "Part \(index + 1) of \(info.archives.count)"
+                    let part = String(localized: "Part \(index + 1) of \(info.archives.count)")
                     label.stringValue = part
                     let previousBytes = completedBytes
                     let delegate = AssetsDownloadProgress { written, _ in
                         Task { @MainActor in
                             bar.isIndeterminate = info.totalSize <= 0
                             if info.totalSize > 0 { bar.doubleValue = min(100, Double(previousBytes + written) / Double(info.totalSize) * 100) }
-                            label.stringValue = "\(part) · \(ByteCountFormatter.string(fromByteCount: previousBytes + written, countStyle: .file)) of \(ByteCountFormatter.string(fromByteCount: info.totalSize, countStyle: .file))"
+                            label.stringValue = String(localized: "\(part) · \(ByteCountFormatter.string(fromByteCount: previousBytes + written, countStyle: .file)) of \(ByteCountFormatter.string(fromByteCount: info.totalSize, countStyle: .file))")
                         }
                     }
                     let (temp, response) = try await session.client.session.download(for: session.client.assetsArchiveRequest(archive.assetIds, archiveName: "\(baseName)-\(timestamp)-\(index + 1)"), delegate: delegate)
                     defer { try? FileManager.default.removeItem(at: temp) }
                     try Task.checkCancellation()
                     guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
-                        throw ImmichError.http((response as? HTTPURLResponse)?.statusCode ?? 500, "The archive could not be downloaded.")
+                        throw ImmichError.http((response as? HTTPURLResponse)?.statusCode ?? 500, String(localized: "The archive could not be downloaded."))
                     }
                     let suggested = response.suggestedFilename.map { URL(fileURLWithPath: $0).lastPathComponent }
                     let name = suggested.flatMap { $0.lowercased().hasSuffix(".zip") ? $0 : nil } ?? "\(baseName)-\(timestamp)-\(index + 1).zip"
@@ -94,8 +94,8 @@ enum AssetsDownloader {
                 }
                 session.handle(error)
                 let alert = NSAlert()
-                alert.messageText = "Download Failed"
-                alert.informativeText = error.localizedDescription + (saved.isEmpty ? "" : " Already completed ZIP parts remain in the chosen folder.")
+                alert.messageText = String(localized: "Download Failed")
+                alert.informativeText = error.localizedDescription + (saved.isEmpty ? "" : String(localized: " Already completed ZIP parts remain in the chosen folder."))
                 alert.runModal()
             }
         }

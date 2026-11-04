@@ -74,7 +74,7 @@ final class ViewerState: NSObject, NSWindowDelegate {
             guard window == nil else { return }
             let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1100, height: 760),
                                   styleMask: [.titled, .closable, .resizable, .miniaturizable], backing: .buffered, defer: false)
-            window.title = "Viewer"
+            window.title = String(localized: "Viewer")
             window.collectionBehavior = [.fullScreenPrimary]
             window.isReleasedWhenClosed = false
             window.delegate = self
@@ -209,7 +209,7 @@ final class ViewerState: NSObject, NSWindowDelegate {
                     await library.viewerLoadSection(index)
                 }
                 guard library.item(id) != nil else {
-                    model.lastError = "This item isn't in All Photos. It may be archived, hidden, trashed, or part of a stack."
+                    model.lastError = String(localized: "This item isn't in All Photos. It may be archived, hidden, trashed, or part of a stack.")
                     return
                 }
                 close()

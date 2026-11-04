@@ -56,14 +56,14 @@ private struct AdminView: View {
                 NavigationSplitView {
                     List(selection: $model.section) {
                         ForEach(AdminModel.Section.allCases.filter { !model.unavailable.contains($0) }) { section in
-                            Label(section.rawValue, systemImage: section.icon).tag(section)
+                            Label(String(localized: section.title), systemImage: section.icon).tag(section)
                         }
                     }
                     .navigationTitle("Administration")
                     .disabled(model.busy)
                 } detail: {
                     detail
-                        .navigationTitle(model.section.rawValue)
+                        .navigationTitle(String(localized: model.section.title))
                         .toolbar {
                             if model.busy { ProgressView().controlSize(.small) }
                             Button("Refresh", systemImage: "arrow.clockwise") { Task { await model.refresh() } }
@@ -195,7 +195,7 @@ private struct AdminView: View {
                         Button("Scan Library") {
                             Task { await model.perform {
                                 try await model.client.adminScanLibrary(library.id)
-                                model.notice = "Library scan queued. Progress is shown in Jobs."
+                                model.notice = String(localized: "Library scan queued. Progress is shown in Jobs.")
                             } }
                         }
                         Button("Statistics…") {

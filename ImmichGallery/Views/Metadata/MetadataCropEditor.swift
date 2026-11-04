@@ -61,8 +61,8 @@ struct MetadataCropEditor: View {
                                   width: Double(p.width ?? width) / Double(width), height: Double(p.height ?? height) / Double(height))
                 }
                 initialCrop = crop
-                if width == 0 || height == 0 { error = "Original dimensions are unavailable for cropping." }
-                if image == nil { error = "Couldn't load the unedited preview." }
+                if width == 0 || height == 0 { error = String(localized: "Original dimensions are unavailable for cropping.") }
+                if image == nil { error = String(localized: "Couldn't load the unedited preview.") }
             } catch {
                 self.error = error.localizedDescription
             }

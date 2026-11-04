@@ -28,7 +28,7 @@ struct AccountSettingsView: View {
                     operation.run {
                         _ = try await session.client.updateAccountName(name.trimmingCharacters(in: .whitespacesAndNewlines))
                         try await session.refreshAccountUser()
-                        operation.message = "Name saved."
+                        operation.message = String(localized: "Name saved.")
                     }
                 }.disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || name.trimmingCharacters(in: .whitespacesAndNewlines) == session.user?.name)
                 HStack {
@@ -197,17 +197,17 @@ nonisolated func accountProfileJPEG(url: URL) throws -> Data {
             kCGImageSourceCreateThumbnailWithTransform: true,
             kCGImageSourceThumbnailMaxPixelSize: 512
           ] as CFDictionary) else {
-        throw ImmichError.http(400, "Choose a supported image smaller than 50 MB.")
+        throw ImmichError.http(400, String(localized: "Choose a supported image smaller than 50 MB."))
     }
     let side = min(image.width, image.height)
     guard let square = image.cropping(to: CGRect(x: (image.width - side) / 2, y: (image.height - side) / 2, width: side, height: side)) else {
-        throw ImmichError.http(400, "Could not crop the profile picture.")
+        throw ImmichError.http(400, String(localized: "Could not crop the profile picture."))
     }
     let data = NSMutableData()
     guard let destination = CGImageDestinationCreateWithData(data, UTType.jpeg.identifier as CFString, 1, nil) else {
-        throw ImmichError.http(400, "Could not encode the profile picture.")
+        throw ImmichError.http(400, String(localized: "Could not encode the profile picture."))
     }
     CGImageDestinationAddImage(destination, square, [kCGImageDestinationLossyCompressionQuality: 0.9] as CFDictionary)
-    guard CGImageDestinationFinalize(destination) else { throw ImmichError.http(400, "Could not encode the profile picture.") }
+    guard CGImageDestinationFinalize(destination) else { throw ImmichError.http(400, String(localized: "Could not encode the profile picture.")) }
     return data as Data
 }

@@ -1,56 +1,102 @@
-"""Check compiled Swift string extraction against Italian catalogs after a Debug build."""
+"""Check compiler extraction, Italian coverage, placeholders, and count plurals.
+
+Run after a Debug build with build/DerivedData as the derived data path.
+"""
 import itertools
-import glob
 import json
+import plistlib
 import re
-import subprocess
 from pathlib import Path
 
-catalogs = {p.stem: json.loads(p.read_text())['strings'] for p in Path('ImmichGallery').glob('*.xcstrings')}
-def leaves(node):
-    if 'stringUnit' in node:
-        yield node['stringUnit']
-    for child in node.get('variations', {}).get('plural', {}).values():
-        yield from leaves(child)
+TOKEN = re.compile(r'%(?:(\d+)\$)?(@|lld|llu|ld|lu|d|u|(?:\.\d+)?[fgs])')
+COUNT = re.compile(r'%(?:\d+\$)?(?:lld|d)')
 
 
 def placeholders(value):
-    return re.findall(r'%(?:\d+\$)?(?:lld|@)|\$\{[^}]+\}', value)
+    # Escaped percent signs are literals, not format arguments.
+    return sorted((int(m[1]) if m[1] else index, m[2])
+                  for index, m in enumerate(TOKEN.finditer(value.replace('%%', '')), 1))
+
+
+def leaves(node):
+    if 'stringUnit' in node:
+        unit = node['stringUnit']
+        assert unit['state'] == 'translated', 'Untranslated string unit'
+        yield unit['value']
+    for variations in node.get('variations', {}).values():
+        for child in variations.values():
+            yield from leaves(child)
+
+
+def has_plurals(node):
+    return set(node.get('variations', {}).get('plural', {})) >= {'one', 'other'}
 
 
 def check(key, localization):
     substitutions = localization.get('substitutions', {})
-    if substitutions:
-        expanded = [localization['stringUnit']['value']]
-        for name, value in substitutions.items():
-            assert value['formatSpecifier'] == 'lld', key
-            assert set(value['variations']['plural']) >= {'one', 'other'}, key
-            variants = list(leaves(value))
-            assert all(v['state'] == 'translated' for v in variants), key
-            expanded = [base.replace(f'%#@{name}@', leaf['value'].replace('%arg', f"%{value['argNum']}$lld"))
-                        for base, leaf in itertools.product(expanded, variants)]
-        expected = placeholders(key)
-        for value in expanded:
-            actual = placeholders(value)
-            assert len(actual) == len(expected), key
-            assert sorted(int(re.search(r'%(\d+)\$', token)[1]) for token in actual) == list(range(1, len(expected) + 1)), key
-    else:
-        for leaf in leaves(localization):
-            assert leaf['state'] == 'translated', key
-            assert placeholders(key) == placeholders(leaf['value']), key
+    if COUNT.search(key):
+        assert has_plurals(localization) or (substitutions and all(
+            has_plurals(value) for value in substitutions.values())), f'Missing plurals: {key}'
+    expanded = list(leaves(localization))
+    assert expanded, f'Missing translation: {key}'
+    for name, substitution in substitutions.items():
+        assert has_plurals(substitution), f'Missing substitution plurals: {key}'
+        specifier = substitution['formatSpecifier']
+        arg = substitution['argNum']
+        expanded = [base.replace(f'%#@{name}@', variant.replace('%arg', f'%{arg}${specifier}'))
+                    for base, variant in itertools.product(expanded, leaves(substitution))]
+    for value in expanded:
+        assert key == '' or value.strip(), f'Empty translation: {key}'
+        assert '%#@' not in value, f'Unresolved substitution: {key}'
+        assert placeholders(key) == placeholders(value), f'Placeholder mismatch: {key}: {value}'
 
 
-checked = set()
-for filename in glob.glob('build/DerivedData/**/*.stringsdata', recursive=True):
-    extraction = json.loads(subprocess.check_output(['plutil', '-convert', 'json', '-o', '-', filename]))
-    for table, entries in extraction.get('tables', {}).items():
-        for entry in entries:
-            key = entry['key']
-            check(key, catalogs[table][key]['localizations']['it'])
-            checked.add((table, key))
-assert checked, 'Build first to extract localizable strings'
-print(f'Checked Italian coverage and placeholders for {len(checked)} extracted strings.')
+def load_extraction(path):
+    data = path.read_bytes()
+    try:
+        return json.loads(data)
+    except (ValueError, UnicodeError):
+        return plistlib.loads(data)
 
-for key, entry in catalogs['Localizable'].items():
-    for localization in entry.get('localizations', {}).values():
-        check(key, localization)
+
+def main():
+    catalogs = {p.stem: json.loads(p.read_text())['strings']
+                for p in Path('ImmichGallery').glob('*.xcstrings')}
+    checked = set()
+    for path in Path('build/DerivedData').rglob('*.stringsdata'):
+        for table, entries in load_extraction(path).get('tables', {}).items():
+            for entry in entries:
+                key = entry['key']
+                assert key in catalogs.get(table, {}), f'Missing catalog key: {table}: {key}'
+                checked.add((table, key))
+    assert checked, 'Build first to extract localizable strings'
+    for table, catalog in catalogs.items():
+        for key, entry in catalog.items():
+            localizations = entry.get('localizations', {})
+            assert 'it' in localizations, f'Missing Italian translation: {table}: {key}'
+            if COUNT.search(key):
+                assert 'en' in localizations, f'Missing English count forms: {key}'
+            for localization in localizations.values():
+                check(key, localization)
+    print(f'Checked {len(checked)} extracted keys and {sum(map(len, catalogs.values()))} catalog keys: '
+          'Italian coverage, placeholders, and count plurals passed.')
+
+
+def self_test():
+    unit = lambda value: {'stringUnit': {'state': 'translated', 'value': value}}
+    check('%@', unit('%@'))
+    check('%@ %lld', {'variations': {'plural': {
+        'one': unit('%2$lld %1$@'), 'other': unit('%2$lld %1$@')}}})
+    for key, value in [('%@', unit('%lld')), ('%lld items', unit('%lld elementi')),
+                       ('Hello', {'stringUnit': {'state': 'new', 'value': 'Ciao'}}),
+                       ('Hello', {}), ('Hello', unit(''))]:
+        try:
+            check(key, value)
+        except AssertionError:
+            continue
+        raise AssertionError(f'Invalid fixture passed: {key}')
+
+
+if __name__ == '__main__':
+    self_test()
+    main()

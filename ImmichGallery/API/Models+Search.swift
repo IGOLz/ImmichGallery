@@ -2,6 +2,14 @@ import Foundation
 
 enum SearchMode: String, Codable, CaseIterable, Identifiable {
     case context = "Context", fileName = "File Name", description = "Description", ocr = "Text in Images"
+    var title: LocalizedStringResource {
+        switch self {
+        case .context: "Context"
+        case .fileName: "File Name"
+        case .description: "Description"
+        case .ocr: "Text in Images"
+        }
+    }
     var id: Self { self }
 }
 

@@ -125,9 +125,9 @@ private struct ShareFilesView: View {
             for id in assetIDs {
                 try Task.checkCancellation()
                 let (temp, response) = try await session.client.session.download(for: session.client.originalRequest(id))
-                guard let response = response as? HTTPURLResponse else { throw ImmichError.http(400, "Couldn't download an original.") }
+                guard let response = response as? HTTPURLResponse else { throw ImmichError.http(400, String(localized: "Couldn't download an original.")) }
                 if response.statusCode == 401 { throw ImmichError.unauthorized(nil) }
-                guard (200..<300).contains(response.statusCode) else { throw ImmichError.http(response.statusCode, "Couldn't download an original.") }
+                guard (200..<300).contains(response.statusCode) else { throw ImmichError.http(response.statusCode, String(localized: "Couldn't download an original.")) }
                 try Task.checkCancellation()
                 // Separate directories preserve original names and avoid collisions or path traversal.
                 let itemFolder = destination.appendingPathComponent(UUID().uuidString, isDirectory: true)
@@ -154,7 +154,7 @@ private struct ShareOriginalFilesButton: NSViewRepresentable {
 
     func makeCoordinator() -> Coordinator { Coordinator(parent: self) }
     func makeNSView(context: Context) -> NSButton {
-        NSButton(title: "Share \(urls.count) Files…", target: context.coordinator, action: #selector(Coordinator.share(_:)))
+        NSButton(title: String(localized: "Share \(urls.count) Files…"), target: context.coordinator, action: #selector(Coordinator.share(_:)))
     }
     func updateNSView(_ button: NSButton, context: Context) {
         context.coordinator.parent = self

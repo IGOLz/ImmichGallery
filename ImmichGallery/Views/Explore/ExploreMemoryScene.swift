@@ -32,7 +32,7 @@ private struct ExploreMemoryWindow: View {
         .task(id: id) {
             do {
                 let preferences = try await session.client.explorePreferences()
-                guard preferences.memories?.enabled == true else { error = "Memories are disabled in Immich Account Settings."; return }
+                guard preferences.memories?.enabled == true else { error = String(localized: "Memories are disabled in Immich Account Settings."); return }
                 duration = max(1, preferences.memories?.duration ?? 5)
                 var loaded: ExploreMemory = try await session.client.get("memories/\(id)")
                 loaded.assets.removeAll { $0.visibility == "locked" }

@@ -5,6 +5,15 @@ import Observation
 final class AdminModel {
     enum Section: String, CaseIterable, Identifiable {
         case overview = "Server", queues = "Jobs", users = "Users", libraries = "External Libraries", settings = "Server Settings"
+        var title: LocalizedStringResource {
+            switch self {
+            case .overview: "Server"
+            case .queues: "Jobs"
+            case .users: "Users"
+            case .libraries: "External Libraries"
+            case .settings: "Server Settings"
+            }
+        }
         var id: String { rawValue }
         var icon: String {
             switch self {
@@ -47,13 +56,13 @@ final class AdminModel {
     }
 
     func checkAccess() async throws {
-        guard session.user?.isAdmin == true else { authorized = false; throw ImmichError.http(403, "Administrator access is required.") }
+        guard session.user?.isAdmin == true else { authorized = false; throw ImmichError.http(403, String(localized: "Administrator access is required.")) }
         if let lastAccessCheck, Date().timeIntervalSince(lastAccessCheck) < 60 { return }
         let user = try await client.currentUser()
         guard user.isAdmin == true else {
             authorized = false
             users = []; libraries = []; queues = []; overview = [:]; settings = nil
-            throw ImmichError.http(403, "Administrator access is required.")
+            throw ImmichError.http(403, String(localized: "Administrator access is required."))
         }
         lastAccessCheck = Date()
     }
@@ -105,15 +114,15 @@ final class AdminModel {
         } catch {
             if polling {
                 if !(error is CancellationError) && (error as? URLError)?.code != .cancelled {
-                    pollingError = "Automatic refresh stopped: \(error.localizedDescription) Use Refresh to retry."
+                    pollingError = String(localized: "Automatic refresh stopped: \(error.localizedDescription) Use Refresh to retry.")
                 }
             } else { report(error) }
         }
     }
 
     func perform(_ operation: () async throws -> Void) async -> Bool {
-        guard authorized else { error = "Administrator access is required."; return false }
-        guard !busy else { error = "Another operation is running. Please try again."; return false }
+        guard authorized else { error = String(localized: "Administrator access is required."); return false }
+        guard !busy else { error = String(localized: "Another operation is running. Please try again."); return false }
         busy = true
         error = nil
         await refreshTask?.value

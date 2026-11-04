@@ -11,12 +11,342 @@
         }
       }
     },
-    "%lld": {
+    " Already completed ZIP parts remain in the chosen folder.": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld"
+            "value": " Le parti ZIP già completate rimangono nella cartella scelta."
+          }
+        }
+      }
+    },
+    "%@ (%@)": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ (%@)"
+          }
+        }
+      }
+    },
+    "%@ of %@": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ di %@"
+          }
+        }
+      }
+    },
+    "%@ suggestions": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Suggerimenti: %@"
+          }
+        }
+      }
+    },
+    "%@ · %@": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · %@"
+          }
+        }
+      }
+    },
+    "%@ · %@ of %@": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · %@ di %@"
+          }
+        }
+      }
+    },
+    "%@ · Age %lld": {
+      "localizations": {
+        "it": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%@ · Età: %lld"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%@ · Età: %lld"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%@ · Age %lld"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%@ · Age %lld"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%@, %@": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@, %@"
+          }
+        }
+      }
+    },
+    "%@×": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@×"
+          }
+        }
+      }
+    },
+    "%lld": {
+      "localizations": {
+        "it": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld / %lld": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%#@count1@ / %#@count2@"
+          },
+          "substitutions": {
+            "count1": {
+              "argNum": 1,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg"
+                    }
+                  }
+                }
+              }
+            },
+            "count2": {
+              "argNum": 2,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%#@count1@ / %#@count2@"
+          },
+          "substitutions": {
+            "count1": {
+              "argNum": 1,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg"
+                    }
+                  }
+                }
+              }
+            },
+            "count2": {
+              "argNum": 2,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld assets · %@": {
+      "localizations": {
+        "it": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld elemento · %@"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld elementi · %@"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld asset · %@"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld assets · %@"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld comments": {
+      "localizations": {
+        "it": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld commento"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld commenti"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld comment"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld comments"
+                }
+              }
+            }
           }
         }
       }
@@ -121,6 +451,146 @@
         }
       }
     },
+    "%lld imported, %lld duplicates, %lld failed": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%#@count1@, %#@count2@, %#@count3@"
+          },
+          "substitutions": {
+            "count1": {
+              "argNum": 1,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg importato"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg importati"
+                    }
+                  }
+                }
+              }
+            },
+            "count2": {
+              "argNum": 2,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg duplicato"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg duplicati"
+                    }
+                  }
+                }
+              }
+            },
+            "count3": {
+              "argNum": 3,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg non riuscito"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg non riusciti"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%#@count1@, %#@count2@, %#@count3@"
+          },
+          "substitutions": {
+            "count1": {
+              "argNum": 1,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg imported"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg imported"
+                    }
+                  }
+                }
+              }
+            },
+            "count2": {
+              "argNum": 2,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg duplicates"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg duplicates"
+                    }
+                  }
+                }
+              }
+            },
+            "count3": {
+              "argNum": 3,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg failed"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg failed"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "%lld items": {
       "localizations": {
         "en": {
@@ -161,6 +631,126 @@
         }
       }
     },
+    "%lld items could not be added: %@.": {
+      "localizations": {
+        "it": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Impossibile aggiungere %lld elemento: %@."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Impossibile aggiungere %lld elementi: %@."
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld item could not be added: %@."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld items could not be added: %@."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld items could not be read": {
+      "localizations": {
+        "it": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Impossibile leggere %lld elemento"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Impossibile leggere %lld elementi"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld item could not be read"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld items could not be read"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld items could not be removed: %@.": {
+      "localizations": {
+        "it": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Impossibile rimuovere %lld elemento: %@."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Impossibile rimuovere %lld elementi: %@."
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld item could not be removed: %@."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld items could not be removed: %@."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "%lld items couldn't be exported.": {
       "localizations": {
         "en": {
@@ -194,6 +784,46 @@
                 "stringUnit": {
                   "state": "translated",
                   "value": "Impossibile esportare %lld elementi."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld items skipped because ownership could not be confirmed as yours.": {
+      "localizations": {
+        "it": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld elemento ignorato perché non è stato possibile confermare che ti appartenga."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld elementi ignorati perché non è stato possibile confermare che ti appartengano."
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld item skipped because ownership could not be confirmed as yours."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld items skipped because ownership could not be confirmed as yours."
                 }
               }
             }
@@ -261,12 +891,482 @@
         }
       }
     },
+    "%lld photos": {
+      "localizations": {
+        "it": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld foto"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld foto"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld photo"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld photos"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld photos and videos": {
+      "localizations": {
+        "it": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld foto o video"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld foto e video"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld photo or video"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld photos and videos"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld photos couldn't be updated in the link.": {
+      "localizations": {
+        "it": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Impossibile aggiornare %lld foto nel link."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Impossibile aggiornare %lld foto nel link."
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld photo couldn't be updated in the link."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld photos couldn't be updated in the link."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld seconds": {
+      "localizations": {
+        "it": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld secondo"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld secondi"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld second"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld seconds"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld selected items": {
+      "localizations": {
+        "it": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld elemento selezionato"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld elementi selezionati"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld selected item"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld selected items"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld similar items": {
+      "localizations": {
+        "it": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld elemento simile"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld elementi simili"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld similar item"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld similar items"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld stars": {
+      "localizations": {
+        "it": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld stella"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld stelle"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld star"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld stars"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld unread": {
+      "localizations": {
+        "it": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld da leggere"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld da leggere"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld unread"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld unread"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld unread notifications": {
+      "localizations": {
+        "it": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld notifica da leggere"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld notifiche da leggere"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld unread notification"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld unread notifications"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld unsupported files ignored": {
+      "localizations": {
+        "it": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld file non supportato ignorato"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld file non supportati ignorati"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld unsupported file ignored"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld unsupported files ignored"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld years ago": {
+      "localizations": {
+        "it": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld anno fa"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld anni fa"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld year ago"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld years ago"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "(in Recently Deleted)": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "(in Eliminati di recente)"
+          }
+        }
+      }
+    },
+    "1 year ago": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 anno fa"
+          }
+        }
+      }
+    },
     "API Key": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
             "value": "Chiave API"
+          }
+        }
+      }
+    },
+    "API Keys": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chiavi API"
           }
         }
       }
@@ -281,12 +1381,422 @@
         }
       }
     },
+    "Account Error": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Errore account"
+          }
+        }
+      }
+    },
+    "Account Settings…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impostazioni account…"
+          }
+        }
+      }
+    },
+    "Accounts": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Account"
+          }
+        }
+      }
+    },
+    "Actions": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Azioni"
+          }
+        }
+      }
+    },
+    "Active %lld · Waiting %lld · Paused %lld · Failed %lld · Delayed %lld · Completed %lld": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%#@count1@ · %#@count2@ · %#@count3@ · %#@count4@ · %#@count5@ · %#@count6@"
+          },
+          "substitutions": {
+            "count1": {
+              "argNum": 1,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "Attivo: %arg"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "Attivi: %arg"
+                    }
+                  }
+                }
+              }
+            },
+            "count2": {
+              "argNum": 2,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "In attesa: %arg"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "In attesa: %arg"
+                    }
+                  }
+                }
+              }
+            },
+            "count3": {
+              "argNum": 3,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "In pausa: %arg"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "In pausa: %arg"
+                    }
+                  }
+                }
+              }
+            },
+            "count4": {
+              "argNum": 4,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "Non riuscito: %arg"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "Non riusciti: %arg"
+                    }
+                  }
+                }
+              }
+            },
+            "count5": {
+              "argNum": 5,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "Posticipato: %arg"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "Posticipati: %arg"
+                    }
+                  }
+                }
+              }
+            },
+            "count6": {
+              "argNum": 6,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "Completato: %arg"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "Completati: %arg"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%#@count1@ · %#@count2@ · %#@count3@ · %#@count4@ · %#@count5@ · %#@count6@"
+          },
+          "substitutions": {
+            "count1": {
+              "argNum": 1,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "Active %arg"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "Active %arg"
+                    }
+                  }
+                }
+              }
+            },
+            "count2": {
+              "argNum": 2,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "Waiting %arg"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "Waiting %arg"
+                    }
+                  }
+                }
+              }
+            },
+            "count3": {
+              "argNum": 3,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "Paused %arg"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "Paused %arg"
+                    }
+                  }
+                }
+              }
+            },
+            "count4": {
+              "argNum": 4,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "Failed %arg"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "Failed %arg"
+                    }
+                  }
+                }
+              }
+            },
+            "count5": {
+              "argNum": 5,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "Delayed %arg"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "Delayed %arg"
+                    }
+                  }
+                }
+              }
+            },
+            "count6": {
+              "argNum": 6,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "Completed %arg"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "Completed %arg"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Activity is unavailable on this server.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L'attività non è disponibile su questo server."
+          }
+        }
+      }
+    },
+    "Add Account…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aggiungi account…"
+          }
+        }
+      }
+    },
     "Add Name": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
             "value": "Aggiungi nome"
+          }
+        }
+      }
+    },
+    "Add Partner…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aggiungi compagno…"
+          }
+        }
+      }
+    },
+    "Add Tag": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aggiungi tag"
+          }
+        }
+      }
+    },
+    "Add User": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aggiungi utente"
+          }
+        }
+      }
+    },
+    "Add a Description": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aggiungi una descrizione"
+          }
+        }
+      }
+    },
+    "Add a comment": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aggiungi un commento"
+          }
+        }
+      }
+    },
+    "Add to Album": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aggiungi all'album"
+          }
+        }
+      }
+    },
+    "Add to Public Link": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aggiungi a link pubblico"
+          }
+        }
+      }
+    },
+    "Add to Public Link…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aggiungi a link pubblico…"
+          }
+        }
+      }
+    },
+    "Adding to album": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aggiunta all'album"
           }
         }
       }
@@ -301,12 +1811,162 @@
         }
       }
     },
+    "Adjust": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Regola"
+          }
+        }
+      }
+    },
+    "Adjust Date and Time": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Regola data e ora"
+          }
+        }
+      }
+    },
+    "Adjust Date and Time…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Regola data e ora…"
+          }
+        }
+      }
+    },
+    "Administration": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Amministrazione"
+          }
+        }
+      }
+    },
+    "Administration…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Amministrazione…"
+          }
+        }
+      }
+    },
+    "Administrator": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Amministratore"
+          }
+        }
+      }
+    },
+    "Administrator Access Required": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "È richiesto l'accesso come amministratore"
+          }
+        }
+      }
+    },
+    "Administrator access is required.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "È richiesto l'accesso come amministratore."
+          }
+        }
+      }
+    },
+    "Album Activity": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Attività dell'album"
+          }
+        }
+      }
+    },
+    "Album Closed": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Album chiuso"
+          }
+        }
+      }
+    },
+    "Album Error": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Errore album"
+          }
+        }
+      }
+    },
+    "Album Invitations": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inviti agli album"
+          }
+        }
+      }
+    },
+    "Album Members": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Membri dell'album"
+          }
+        }
+      }
+    },
     "Album Name": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
             "value": "Nome dell'album"
+          }
+        }
+      }
+    },
+    "Album Options": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opzioni album"
+          }
+        }
+      }
+    },
+    "Album Updates": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aggiornamenti degli album"
           }
         }
       }
@@ -331,6 +1991,116 @@
         }
       }
     },
+    "All": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tutti"
+          }
+        }
+      }
+    },
+    "All faces of %@ will move to %@. This cannot be undone.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tutti i volti di %@ verranno spostati in %@. L'operazione non può essere annullata."
+          }
+        }
+      }
+    },
+    "All items remain in your library and will no longer be suggested as this duplicate group.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tutti gli elementi rimarranno nella libreria e non verranno più suggeriti come gruppo di duplicati."
+          }
+        }
+      }
+    },
+    "All photos remain in your library.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tutte le foto rimarranno nella libreria."
+          }
+        }
+      }
+    },
+    "All selected items will receive the same date and time.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A tutti gli elementi selezionati verranno assegnate la stessa data e ora."
+          }
+        }
+      }
+    },
+    "Allow download": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Consenti download"
+          }
+        }
+      }
+    },
+    "Allow upload": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Consenti caricamento"
+          }
+        }
+      }
+    },
+    "Another operation is running. Please try again.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "È in corso un'altra operazione. Riprova."
+          }
+        }
+      }
+    },
+    "Any": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Qualsiasi"
+          }
+        }
+      }
+    },
+    "Anyone with this link will lose access. The photos remain in your library.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chiunque disponga di questo link perderà l'accesso. Le foto rimarranno nella libreria."
+          }
+        }
+      }
+    },
+    "Apply Location": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Applica posizione"
+          }
+        }
+      }
+    },
     "Archive": {
       "localizations": {
         "it": {
@@ -351,12 +2121,118 @@
         }
       }
     },
+    "Archive Selected Photos": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archivia"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archive"
+          }
+        }
+      }
+    },
+    "Archive Size (GiB)": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dimensioni archivio (GiB)"
+          }
+        }
+      }
+    },
+    "Archived": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archiviati"
+          }
+        }
+      }
+    },
+    "Asset Utilities": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Strumenti per gli elementi"
+          }
+        }
+      }
+    },
+    "Assign": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Assegna"
+          }
+        }
+      }
+    },
+    "Assign Location": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Assegna posizione"
+          }
+        }
+      }
+    },
+    "Assign Location…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Assegna posizione…"
+          }
+        }
+      }
+    },
+    "Assign…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Assegna…"
+          }
+        }
+      }
+    },
+    "Automatic refresh stopped: %@ Use Refresh to retry.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aggiornamento automatico interrotto: %@ Usa Aggiorna per riprovare."
+          }
+        }
+      }
+    },
     "Back": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
             "value": "Indietro"
+          }
+        }
+      }
+    },
+    "Back to Grid": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Torna alla griglia"
           }
         }
       }
@@ -371,12 +2247,142 @@
         }
       }
     },
+    "Birthday": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compleanno"
+          }
+        }
+      }
+    },
+    "Browse Stack (%lld)": {
+      "localizations": {
+        "it": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Sfoglia gruppo (%lld)"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Sfoglia gruppo (%lld)"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Browse Stack (%lld)"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Browse Stack (%lld)"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "By %@": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Di %@"
+          }
+        }
+      }
+    },
+    "Camera": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotocamera"
+          }
+        }
+      }
+    },
+    "Cancel": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Annulla"
+          }
+        }
+      }
+    },
+    "Cancel All": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Annulla tutto"
+          }
+        }
+      }
+    },
+    "Cancelled": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Annullato"
+          }
+        }
+      }
+    },
+    "Change Password": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modifica password"
+          }
+        }
+      }
+    },
+    "Change Password…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modifica password…"
+          }
+        }
+      }
+    },
     "Change Server": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
             "value": "Cambia server"
+          }
+        }
+      }
+    },
+    "Choose Profile Picture…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scegli foto del profilo…"
           }
         }
       }
@@ -421,12 +2427,72 @@
         }
       }
     },
+    "Choose a supported image smaller than 50 MB.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scegli un'immagine supportata di dimensioni inferiori a 50 MB."
+          }
+        }
+      }
+    },
     "Choose a unique, existing album name.": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
             "value": "Scegli il nome univoco di un album esistente."
+          }
+        }
+      }
+    },
+    "Choose a user": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scegli un utente"
+          }
+        }
+      }
+    },
+    "Choose files or drop photos, videos, or folders onto the window. Drop onto an album to import there.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scegli i file o trascina foto, video o cartelle nella finestra. Trascinali su un album per importarli al suo interno."
+          }
+        }
+      }
+    },
+    "Choose only the permissions this key needs.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scegli solo le autorizzazioni necessarie per questa chiave."
+          }
+        }
+      }
+    },
+    "Choose photos, videos, or folders to import. Folders include their subfolders.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scegli foto, video o cartelle da importare. Sono incluse anche le sottocartelle."
+          }
+        }
+      }
+    },
+    "Clear": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancella"
           }
         }
       }
@@ -441,6 +2507,96 @@
         }
       }
     },
+    "Clear Failed Jobs": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancella processi non riusciti"
+          }
+        }
+      }
+    },
+    "Clear Filters": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancella filtri"
+          }
+        }
+      }
+    },
+    "Clear History": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancella cronologia"
+          }
+        }
+      }
+    },
+    "Clear Queue…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Svuota coda…"
+          }
+        }
+      }
+    },
+    "Click the map to place a pin. Applies to %lld items.": {
+      "localizations": {
+        "it": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Fai clic sulla mappa per posizionare un segnaposto. Si applica a %lld elemento."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Fai clic sulla mappa per posizionare un segnaposto. Si applica a %lld elementi."
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Click the map to place a pin. Applies to %lld item."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Click the map to place a pin. Applies to %lld items."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Close": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chiudi"
+          }
+        }
+      }
+    },
     "Collections": {
       "localizations": {
         "it": {
@@ -451,12 +2607,172 @@
         }
       }
     },
+    "Color (#RRGGBB, empty to clear)": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Colore (#RRGGBB, lascia vuoto per rimuoverlo)"
+          }
+        }
+      }
+    },
+    "Confirm New Password": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conferma nuova password"
+          }
+        }
+      }
+    },
+    "Confirm PIN": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conferma PIN"
+          }
+        }
+      }
+    },
+    "Context": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contesto"
+          }
+        }
+      }
+    },
     "Continue": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
             "value": "Continua"
+          }
+        }
+      }
+    },
+    "Copy Image": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copia immagine"
+          }
+        }
+      }
+    },
+    "Copy Key": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copia chiave"
+          }
+        }
+      }
+    },
+    "Copy Link": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copia link"
+          }
+        }
+      }
+    },
+    "Copy Original Image": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copia immagine originale"
+          }
+        }
+      }
+    },
+    "Copy as File": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copia come file"
+          }
+        }
+      }
+    },
+    "Copy this key now. It cannot be shown again.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copia ora questa chiave. Non potrà essere mostrata di nuovo."
+          }
+        }
+      }
+    },
+    "Could Not Switch Account": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossibile cambiare account"
+          }
+        }
+      }
+    },
+    "Could not add the imported item to the album.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossibile aggiungere l'elemento importato all'album."
+          }
+        }
+      }
+    },
+    "Could not crop the profile picture.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossibile ritagliare la foto del profilo."
+          }
+        }
+      }
+    },
+    "Could not encode the profile picture.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossibile codificare la foto del profilo."
+          }
+        }
+      }
+    },
+    "Could not verify saved accounts.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossibile verificare gli account salvati."
+          }
+        }
+      }
+    },
+    "Couldn't Load Album": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossibile caricare l'album"
           }
         }
       }
@@ -481,6 +2797,36 @@
         }
       }
     },
+    "Couldn't download an original.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossibile scaricare un originale."
+          }
+        }
+      }
+    },
+    "Couldn't load the unedited preview.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossibile caricare l'anteprima originale."
+          }
+        }
+      }
+    },
+    "Couldn't merge people.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossibile unire le persone."
+          }
+        }
+      }
+    },
     "Couldn't reach an Immich server at that address. %@": {
       "localizations": {
         "it": {
@@ -491,12 +2837,192 @@
         }
       }
     },
+    "Create": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crea"
+          }
+        }
+      }
+    },
+    "Create API Key": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crea chiave API"
+          }
+        }
+      }
+    },
+    "Create API Key…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crea chiave API…"
+          }
+        }
+      }
+    },
+    "Create Album Public Link…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crea link pubblico dell'album…"
+          }
+        }
+      }
+    },
+    "Create Link": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crea link"
+          }
+        }
+      }
+    },
+    "Create Person": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crea persona"
+          }
+        }
+      }
+    },
+    "Create Public Link": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crea link pubblico"
+          }
+        }
+      }
+    },
+    "Create Public Link…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crea link pubblico…"
+          }
+        }
+      }
+    },
     "Create an API key in Immich under Account Settings → API Keys. Useful if your server uses OAuth.": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
             "value": "Crea una chiave API in Immich in Impostazioni account → Chiavi API. Utile se il tuo server usa OAuth."
+          }
+        }
+      }
+    },
+    "Crop": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ritaglia"
+          }
+        }
+      }
+    },
+    "Crop…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ritaglia…"
+          }
+        }
+      }
+    },
+    "Current Password": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Password attuale"
+          }
+        }
+      }
+    },
+    "Current account": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Account attuale"
+          }
+        }
+      }
+    },
+    "Custom URL slug": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Suffisso URL personalizzato"
+          }
+        }
+      }
+    },
+    "Date Range": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Intervallo di date"
+          }
+        }
+      }
+    },
+    "Date Taken": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Data di acquisizione"
+          }
+        }
+      }
+    },
+    "Date and time": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Data e ora"
+          }
+        }
+      }
+    },
+    "Date of Birth": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Data di nascita"
+          }
+        }
+      }
+    },
+    "Default Album Order": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ordine predefinito degli album"
           }
         }
       }
@@ -551,6 +3077,96 @@
         }
       }
     },
+    "Delete Activity": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elimina attività"
+          }
+        }
+      }
+    },
+    "Delete Album": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elimina album"
+          }
+        }
+      }
+    },
+    "Delete Album?": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eliminare l'album?"
+          }
+        }
+      }
+    },
+    "Delete Album…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elimina album…"
+          }
+        }
+      }
+    },
+    "Delete Library…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elimina libreria…"
+          }
+        }
+      }
+    },
+    "Delete Link": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elimina link"
+          }
+        }
+      }
+    },
+    "Delete Memory": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elimina ricordo"
+          }
+        }
+      }
+    },
+    "Delete Memory?": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eliminare il ricordo?"
+          }
+        }
+      }
+    },
+    "Delete Memory…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elimina ricordo…"
+          }
+        }
+      }
+    },
     "Delete Permanently": {
       "localizations": {
         "it": {
@@ -571,12 +3187,82 @@
         }
       }
     },
+    "Delete Tag": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elimina tag"
+          }
+        }
+      }
+    },
+    "Delete Tag…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elimina tag…"
+          }
+        }
+      }
+    },
+    "Delete User…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elimina utente…"
+          }
+        }
+      }
+    },
+    "Delete public link?": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eliminare il link pubblico?"
+          }
+        }
+      }
+    },
+    "Delete tag %@ and its child tags?": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eliminare il tag %@ e i suoi tag secondari?"
+          }
+        }
+      }
+    },
+    "Deleted · %@": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eliminato · %@"
+          }
+        }
+      }
+    },
     "Delete…": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
             "value": "Elimina…"
+          }
+        }
+      }
+    },
+    "Description": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descrizione"
           }
         }
       }
@@ -591,12 +3277,412 @@
         }
       }
     },
+    "Disable Activity": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disattiva attività"
+          }
+        }
+      }
+    },
+    "Dismiss": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chiudi"
+          }
+        }
+      }
+    },
+    "Dismiss Group": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ignora gruppo"
+          }
+        }
+      }
+    },
+    "Dismiss Group…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ignora gruppo…"
+          }
+        }
+      }
+    },
+    "Dismiss this duplicate group?": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ignorare questo gruppo di duplicati?"
+          }
+        }
+      }
+    },
+    "Display": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Visualizzazione"
+          }
+        }
+      }
+    },
+    "Done": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fine"
+          }
+        }
+      }
+    },
+    "Download Album as ZIP…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scarica album come ZIP…"
+          }
+        }
+      }
+    },
+    "Download Failed": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download non riuscito"
+          }
+        }
+      }
+    },
+    "Download Selection as ZIP…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scarica selezione come ZIP…"
+          }
+        }
+      }
+    },
+    "Download ZIP": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scarica ZIP"
+          }
+        }
+      }
+    },
+    "Download ZIP…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scarica ZIP…"
+          }
+        }
+      }
+    },
+    "Downloading %lld of %lld": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download: %#@count1@ di %#@count2@"
+          },
+          "substitutions": {
+            "count1": {
+              "argNum": 1,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg"
+                    }
+                  }
+                }
+              }
+            },
+            "count2": {
+              "argNum": 2,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downloading %#@count1@ of %#@count2@"
+          },
+          "substitutions": {
+            "count1": {
+              "argNum": 1,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg"
+                    }
+                  }
+                }
+              }
+            },
+            "count2": {
+              "argNum": 2,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Downloading ZIP": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download dello ZIP"
+          }
+        }
+      }
+    },
+    "Downloads": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download"
+          }
+        }
+      }
+    },
+    "Drag a rectangle on the unedited preview. Existing rotation and mirror edits are preserved.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Traccia un rettangolo sull'anteprima originale. Le rotazioni e le riflessioni già applicate verranno mantenute."
+          }
+        }
+      }
+    },
+    "Duplicate": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Duplica"
+          }
+        }
+      }
+    },
+    "Duplicates": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Duplicati"
+          }
+        }
+      }
+    },
+    "Duplicates are unavailable on this server.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I duplicati non sono disponibili su questo server."
+          }
+        }
+      }
+    },
     "Duration": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
             "value": "Durata"
+          }
+        }
+      }
+    },
+    "Edit Album…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modifica album…"
+          }
+        }
+      }
+    },
+    "Edit External Library": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modifica libreria esterna"
+          }
+        }
+      }
+    },
+    "Edit Library…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modifica libreria…"
+          }
+        }
+      }
+    },
+    "Edit Metadata": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modifica metadati"
+          }
+        }
+      }
+    },
+    "Edit Name and Birthday…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modifica nome e compleanno…"
+          }
+        }
+      }
+    },
+    "Edit Person": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modifica persona"
+          }
+        }
+      }
+    },
+    "Edit Public Link": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modifica link pubblico"
+          }
+        }
+      }
+    },
+    "Edit Tag…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modifica tag…"
+          }
+        }
+      }
+    },
+    "Edit User": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modifica utente"
+          }
+        }
+      }
+    },
+    "Edit User…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modifica utente…"
+          }
+        }
+      }
+    },
+    "Editor": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Editor"
+          }
+        }
+      }
+    },
+    "Edit…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modifica…"
           }
         }
       }
@@ -621,12 +3707,212 @@
         }
       }
     },
+    "Email Notifications": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notifiche email"
+          }
+        }
+      }
+    },
+    "Empty Trash": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Svuota Eliminati di recente"
+          }
+        }
+      }
+    },
+    "Empty Trash…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Svuota Eliminati di recente…"
+          }
+        }
+      }
+    },
+    "Enable Activity": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Attiva attività"
+          }
+        }
+      }
+    },
+    "Enable Email Notifications": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Attiva le notifiche via email"
+          }
+        }
+      }
+    },
+    "Enable Tags in Immich Account Settings": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Attiva i tag nelle impostazioni account di Immich"
+          }
+        }
+      }
+    },
+    "Enable notifications for Immich Gallery in System Settings → Notifications.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abilita le notifiche per Immich Gallery in Impostazioni di Sistema → Notifiche."
+          }
+        }
+      }
+    },
+    "Enabled": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abilitato"
+          }
+        }
+      }
+    },
+    "Enter latitude from -90 to 90 and longitude from -180 to 180.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inserisci una latitudine da -90 a 90 e una longitudine da -180 a 180."
+          }
+        }
+      }
+    },
+    "Enter latitude from -90 to 90 and longitude from -180 to 180. Use a decimal point or comma.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inserisci una latitudine da -90 a 90 e una longitudine da -180 a 180. Usa il punto o la virgola come separatore decimale."
+          }
+        }
+      }
+    },
+    "Enter text in the toolbar or choose filters.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inserisci il testo nella barra strumenti o scegli i filtri."
+          }
+        }
+      }
+    },
     "Enter the address of your Immich server.": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
             "value": "Inserisci l'indirizzo del tuo server Immich."
+          }
+        }
+      }
+    },
+    "Everyone": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tutti"
+          }
+        }
+      }
+    },
+    "Exclusion patterns": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pattern di esclusione"
+          }
+        }
+      }
+    },
+    "Existing time zones will be preserved.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I fusi orari esistenti verranno mantenuti."
+          }
+        }
+      }
+    },
+    "Exit Full Screen": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esci da tutto schermo"
+          }
+        }
+      }
+    },
+    "Expiration": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scadenza"
+          }
+        }
+      }
+    },
+    "Expired": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scaduto"
+          }
+        }
+      }
+    },
+    "Expires": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scade"
+          }
+        }
+      }
+    },
+    "Expires %@": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scade %@"
+          }
+        }
+      }
+    },
+    "Explore": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esplora"
           }
         }
       }
@@ -661,6 +3947,66 @@
         }
       }
     },
+    "External Libraries": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Librerie esterne"
+          }
+        }
+      }
+    },
+    "Face boxes are unavailable for edited photos.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I riquadri dei volti non sono disponibili per le foto modificate."
+          }
+        }
+      }
+    },
+    "Faces": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volti"
+          }
+        }
+      }
+    },
+    "Faces in This Photo": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volti in questa foto"
+          }
+        }
+      }
+    },
+    "Fade Transition": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transizione con dissolvenza"
+          }
+        }
+      }
+    },
+    "Failed": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Non riuscito"
+          }
+        }
+      }
+    },
     "Favorite": {
       "localizations": {
         "it": {
@@ -681,12 +4027,72 @@
         }
       }
     },
+    "Favorite Person": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aggiungi persona ai preferiti"
+          }
+        }
+      }
+    },
     "Favorites": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
             "value": "Preferiti"
+          }
+        }
+      }
+    },
+    "Favorites Only": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Solo preferiti"
+          }
+        }
+      }
+    },
+    "File Name": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nome file"
+          }
+        }
+      }
+    },
+    "Filter loaded people by name": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filtra le persone caricate per nome"
+          }
+        }
+      }
+    },
+    "Filter permissions": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filtra autorizzazioni"
+          }
+        }
+      }
+    },
+    "Filters": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filtri"
           }
         }
       }
@@ -701,12 +4107,92 @@
         }
       }
     },
+    "Folders": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cartelle"
+          }
+        }
+      }
+    },
+    "Folders Unavailable": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cartelle non disponibili"
+          }
+        }
+      }
+    },
+    "Force Delete User…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Forza eliminazione utente…"
+          }
+        }
+      }
+    },
+    "From": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Da"
+          }
+        }
+      }
+    },
+    "Full Screen": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tutto schermo"
+          }
+        }
+      }
+    },
+    "General": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Generale"
+          }
+        }
+      }
+    },
+    "Google Cast": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google Cast"
+          }
+        }
+      }
+    },
     "Hide Info": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
             "value": "Nascondi informazioni"
+          }
+        }
+      }
+    },
+    "Hide Person": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nascondi persona"
           }
         }
       }
@@ -761,12 +4247,242 @@
         }
       }
     },
+    "Import": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importa"
+          }
+        }
+      }
+    },
+    "Import paths": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Percorsi di importazione"
+          }
+        }
+      }
+    },
+    "Import photos and videos": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importa foto e video"
+          }
+        }
+      }
+    },
+    "Imported": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importato"
+          }
+        }
+      }
+    },
+    "Importing %lld of %lld": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importazione: %#@count1@ di %#@count2@"
+          },
+          "substitutions": {
+            "count1": {
+              "argNum": 1,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg"
+                    }
+                  }
+                }
+              }
+            },
+            "count2": {
+              "argNum": 2,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importing %#@count1@ of %#@count2@"
+          },
+          "substitutions": {
+            "count1": {
+              "argNum": 1,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg"
+                    }
+                  }
+                }
+              }
+            },
+            "count2": {
+              "argNum": 2,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Import…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importa…"
+          }
+        }
+      }
+    },
+    "Include Archived": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Includi archiviati"
+          }
+        }
+      }
+    },
+    "Include Embedded Videos": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Includi video incorporati"
+          }
+        }
+      }
+    },
+    "Include Partners": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Includi compagni"
+          }
+        }
+      }
+    },
     "Info": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
             "value": "Informazioni"
+          }
+        }
+      }
+    },
+    "Interval": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Intervallo"
+          }
+        }
+      }
+    },
+    "Items are deleted after %lld days.": {
+      "localizations": {
+        "it": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Gli elementi vengono eliminati dopo %lld giorno."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Gli elementi vengono eliminati dopo %lld giorni."
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Items are deleted after %lld day."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Items are deleted after %lld days."
+                }
+              }
+            }
           }
         }
       }
@@ -781,12 +4497,142 @@
         }
       }
     },
+    "Jobs": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Processi"
+          }
+        }
+      }
+    },
+    "Keep": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mantieni"
+          }
+        }
+      }
+    },
+    "Keep Selected, Delete Others…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mantieni selezionati, elimina gli altri…"
+          }
+        }
+      }
+    },
+    "Keep Selected, Trash Others…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mantieni selezionati, sposta gli altri in Eliminati di recente…"
+          }
+        }
+      }
+    },
+    "Keep existing password": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mantieni password attuale"
+          }
+        }
+      }
+    },
+    "Large Files": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "File pesanti"
+          }
+        }
+      }
+    },
+    "Last active: %@": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ultima attività: %@"
+          }
+        }
+      }
+    },
+    "Latitude (-90 to 90)": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Latitudine (da -90 a 90)"
+          }
+        }
+      }
+    },
+    "Leave Album": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esci dall’album"
+          }
+        }
+      }
+    },
+    "Leave Album?": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uscire dall'album?"
+          }
+        }
+      }
+    },
+    "Leave Album…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esci dall'album…"
+          }
+        }
+      }
+    },
     "Library": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
             "value": "Libreria"
+          }
+        }
+      }
+    },
+    "Library scan queued. Progress is shown in Jobs.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scansione della libreria in coda. L'avanzamento viene mostrato in Processi."
+          }
+        }
+      }
+    },
+    "Limit Videos to Slide Interval": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Limita video all'intervallo delle diapositive"
           }
         }
       }
@@ -801,12 +4647,452 @@
         }
       }
     },
+    "Load More": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Carica di più"
+          }
+        }
+      }
+    },
+    "Loading Public URL…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Caricamento URL pubblico…"
+          }
+        }
+      }
+    },
+    "Location": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Posizione"
+          }
+        }
+      }
+    },
+    "Lock": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Blocca"
+          }
+        }
+      }
+    },
+    "Locked Folder": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cartella bloccata"
+          }
+        }
+      }
+    },
+    "Locked Folder access expired. Unlock again to continue.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L'accesso alla cartella bloccata è scaduto. Sbloccala di nuovo per continuare."
+          }
+        }
+      }
+    },
+    "Locked Folder requires a session-token login.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La cartella bloccata richiede l'accesso con un token di sessione."
+          }
+        }
+      }
+    },
+    "Locks when you leave this view or the app becomes inactive.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Si blocca quando esci da questa vista o l'app diventa inattiva."
+          }
+        }
+      }
+    },
+    "Log Out": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esci"
+          }
+        }
+      }
+    },
+    "Log Out All Other Devices…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disconnetti tutti gli altri dispositivi…"
+          }
+        }
+      }
+    },
+    "Log out of other devices": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disconnetti gli altri dispositivi"
+          }
+        }
+      }
+    },
+    "Longitude (-180 to 180)": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Longitudine (da -180 a 180)"
+          }
+        }
+      }
+    },
+    "Loop Video": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ripeti video"
+          }
+        }
+      }
+    },
+    "Manage %lld Photos": {
+      "localizations": {
+        "it": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Gestisci %lld foto"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Gestisci %lld foto"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Manage %lld Photo"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Manage %lld Photos"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Manage Faces": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gestisci volti"
+          }
+        }
+      }
+    },
+    "Manage Sharing…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gestisci condivisione…"
+          }
+        }
+      }
+    },
+    "Map": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mappa"
+          }
+        }
+      }
+    },
+    "Map Filters": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filtri mappa"
+          }
+        }
+      }
+    },
+    "Map Photos": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Foto sulla mappa"
+          }
+        }
+      }
+    },
+    "Map Unavailable": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mappa non disponibile"
+          }
+        }
+      }
+    },
+    "Mark All Read": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Segna tutto come letto"
+          }
+        }
+      }
+    },
+    "Mark Read": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Segna come letto"
+          }
+        }
+      }
+    },
+    "Media Type": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tipo di media"
+          }
+        }
+      }
+    },
+    "Media was cleared locally, but the server session could not be locked: %@": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I contenuti multimediali sono stati rimossi localmente, ma non è stato possibile bloccare la sessione sul server: %@"
+          }
+        }
+      }
+    },
+    "Memories": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ricordi"
+          }
+        }
+      }
+    },
+    "Memories are disabled in Immich Account Settings.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I ricordi sono disattivati nelle impostazioni account di Immich."
+          }
+        }
+      }
+    },
+    "Memory": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ricordo"
+          }
+        }
+      }
+    },
+    "Memory Duration: %lld seconds": {
+      "localizations": {
+        "it": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Durata ricordo: %lld secondo"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Durata ricordo: %lld secondi"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Memory Duration: %lld second"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Memory Duration: %lld seconds"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Memory Unavailable": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ricordo non disponibile"
+          }
+        }
+      }
+    },
+    "Merge": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unisci"
+          }
+        }
+      }
+    },
+    "Merge People?": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unire le persone?"
+          }
+        }
+      }
+    },
+    "Merge with Another Person…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unisci con un'altra persona…"
+          }
+        }
+      }
+    },
+    "Merge…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unisci…"
+          }
+        }
+      }
+    },
+    "Metadata": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Metadati"
+          }
+        }
+      }
+    },
     "Method": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
             "value": "Metodo"
+          }
+        }
+      }
+    },
+    "Minimum Faces: %lld": {
+      "localizations": {
+        "it": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Numero minimo di volti: %lld"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Numero minimo di volti: %lld"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Minimum Faces: %lld"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Minimum Faces: %lld"
+                }
+              }
+            }
           }
         }
       }
@@ -821,12 +5107,192 @@
         }
       }
     },
+    "Move to Locked Folder": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sposta nella cartella bloccata"
+          }
+        }
+      }
+    },
+    "Move unselected items to Recently Deleted?": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spostare gli elementi non selezionati in Eliminati di recente?"
+          }
+        }
+      }
+    },
+    "My Albums": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I miei album"
+          }
+        }
+      }
+    },
     "Name": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
             "value": "Nome"
+          }
+        }
+      }
+    },
+    "Name saved.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nome salvato."
+          }
+        }
+      }
+    },
+    "Never expires": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Non scade mai"
+          }
+        }
+      }
+    },
+    "New Album": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nuovo album"
+          }
+        }
+      }
+    },
+    "New Album with Selection…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nuovo album con selezione…"
+          }
+        }
+      }
+    },
+    "New Album…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nuovo album…"
+          }
+        }
+      }
+    },
+    "New External Library": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nuova libreria esterna"
+          }
+        }
+      }
+    },
+    "New Library": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nuova libreria"
+          }
+        }
+      }
+    },
+    "New Password": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nuova password"
+          }
+        }
+      }
+    },
+    "New Tab": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nuova scheda"
+          }
+        }
+      }
+    },
+    "New Tag": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nuovo tag"
+          }
+        }
+      }
+    },
+    "New User": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nuovo utente"
+          }
+        }
+      }
+    },
+    "New Window": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nuova finestra"
+          }
+        }
+      }
+    },
+    "New password (leave blank to keep)": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nuova password (lascia vuoto per mantenere quella attuale)"
+          }
+        }
+      }
+    },
+    "Newest First": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prima i più recenti"
+          }
+        }
+      }
+    },
+    "Next": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Successivo"
           }
         }
       }
@@ -847,6 +5313,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nessun preferito"
+          }
+        }
+      }
+    },
+    "No Notifications": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nessuna notifica"
           }
         }
       }
@@ -911,6 +5387,76 @@
         }
       }
     },
+    "No external libraries.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nessuna libreria esterna."
+          }
+        }
+      }
+    },
+    "No faces found.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nessun volto trovato."
+          }
+        }
+      }
+    },
+    "No files were found in the selected folders.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nessun file trovato nelle cartelle selezionate."
+          }
+        }
+      }
+    },
+    "No partners are sharing with you.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nessun compagno condivide contenuti con te."
+          }
+        }
+      }
+    },
+    "No people": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nessuna persona"
+          }
+        }
+      }
+    },
+    "No public links. Select photos or choose an album to create one.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nessun link pubblico. Seleziona le foto o scegli un album per crearne uno."
+          }
+        }
+      }
+    },
+    "Not in an album": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Non in un album"
+          }
+        }
+      }
+    },
     "Not signed in.": {
       "localizations": {
         "it": {
@@ -931,6 +5477,46 @@
         }
       }
     },
+    "Notifications, %lld unread": {
+      "localizations": {
+        "it": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Notifiche, %lld da leggere"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Notifiche, %lld da leggere"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Notifications, %lld unread"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Notifications, %lld unread"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Notify When Background Work Finishes": {
       "localizations": {
         "it": {
@@ -947,6 +5533,46 @@
           "stringUnit": {
             "state": "translated",
             "value": "OK"
+          }
+        }
+      }
+    },
+    "Offset in minutes": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scostamento in minuti"
+          }
+        }
+      }
+    },
+    "Oldest First": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prima i meno recenti"
+          }
+        }
+      }
+    },
+    "Only This Person": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Solo questa persona"
+          }
+        }
+      }
+    },
+    "Only assets you own can be updated. No items were changed.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Puoi aggiornare solo gli elementi che ti appartengono. Nessun elemento è stato modificato."
           }
         }
       }
@@ -981,6 +5607,16 @@
         }
       }
     },
+    "Open Full-Screen Viewer": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apri visualizzatore a tutto schermo"
+          }
+        }
+      }
+    },
     "Open an Immich album by its exact name.": {
       "localizations": {
         "it": {
@@ -1001,6 +5637,166 @@
         }
       }
     },
+    "Original dimensions are unavailable for cropping.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le dimensioni originali non sono disponibili per il ritaglio."
+          }
+        }
+      }
+    },
+    "Originals include embedded metadata such as location.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gli originali includono metadati incorporati, come la posizione."
+          }
+        }
+      }
+    },
+    "Owner": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Proprietario"
+          }
+        }
+      }
+    },
+    "Owner: %@": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Proprietario: %@"
+          }
+        }
+      }
+    },
+    "Part %lld of %lld": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Parte %#@count1@ di %#@count2@"
+          },
+          "substitutions": {
+            "count1": {
+              "argNum": 1,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg"
+                    }
+                  }
+                }
+              }
+            },
+            "count2": {
+              "argNum": 2,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Part %#@count1@ of %#@count2@"
+          },
+          "substitutions": {
+            "count1": {
+              "argNum": 1,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg"
+                    }
+                  }
+                }
+              }
+            },
+            "count2": {
+              "argNum": 2,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Partner Sharing": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Condivisione con compagni"
+          }
+        }
+      }
+    },
+    "Partner sharing gives another user access to your library and its metadata, including locations. Sharing is one-way.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La condivisione con un compagno consente a un altro utente di accedere alla tua libreria e ai suoi metadati, incluse le posizioni. La condivisione è unidirezionale."
+          }
+        }
+      }
+    },
     "Password": {
       "localizations": {
         "it": {
@@ -1011,12 +5807,62 @@
         }
       }
     },
+    "Password (empty for none)": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Password (lascia vuoto per non impostarla)"
+          }
+        }
+      }
+    },
+    "Password changed.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Password modificata."
+          }
+        }
+      }
+    },
+    "Pause": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pausa"
+          }
+        }
+      }
+    },
+    "Paused": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In pausa"
+          }
+        }
+      }
+    },
     "People": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
             "value": "Persone"
+          }
+        }
+      }
+    },
+    "People Update Strategy": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Criterio di aggiornamento delle persone"
           }
         }
       }
@@ -1071,6 +5917,56 @@
         }
       }
     },
+    "Permanently delete every item in Recently Deleted?": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eliminare definitivamente tutti gli elementi in Eliminati di recente?"
+          }
+        }
+      }
+    },
+    "Permanently delete unselected items?": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eliminare definitivamente gli elementi non selezionati?"
+          }
+        }
+      }
+    },
+    "Permission": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Autorizzazione"
+          }
+        }
+      }
+    },
+    "Person Actions": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Azioni persona"
+          }
+        }
+      }
+    },
+    "Photo Activity": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Attività della foto"
+          }
+        }
+      }
+    },
     "Photos": {
       "localizations": {
         "it": {
@@ -1081,12 +5977,212 @@
         }
       }
     },
+    "Photos are kept. Tag assignments are removed.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le foto verranno mantenute. Le assegnazioni dei tag verranno rimosse."
+          }
+        }
+      }
+    },
+    "Places": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Luoghi"
+          }
+        }
+      }
+    },
+    "Places Unavailable": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Luoghi non disponibili"
+          }
+        }
+      }
+    },
+    "Play": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Riproduci"
+          }
+        }
+      }
+    },
     "Play Live Photo": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
             "value": "Riproduci Live Photo"
+          }
+        }
+      }
+    },
+    "Play Video": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Riproduci video"
+          }
+        }
+      }
+    },
+    "Playback Speed": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Velocità di riproduzione"
+          }
+        }
+      }
+    },
+    "Please wait for the current folder scan to finish, then try again.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Attendi il completamento della scansione della cartella, poi riprova."
+          }
+        }
+      }
+    },
+    "Positive values move dates later; negative values move them earlier.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I valori positivi posticipano le date, quelli negativi le anticipano."
+          }
+        }
+      }
+    },
+    "Post Comment": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pubblica commento"
+          }
+        }
+      }
+    },
+    "Preferences": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preferenze"
+          }
+        }
+      }
+    },
+    "Preferences saved.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preferenze salvate."
+          }
+        }
+      }
+    },
+    "Preparing": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preparazione"
+          }
+        }
+      }
+    },
+    "Preparing archives…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preparazione degli archivi…"
+          }
+        }
+      }
+    },
+    "Previous": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Precedente"
+          }
+        }
+      }
+    },
+    "Profile": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Profilo"
+          }
+        }
+      }
+    },
+    "Quota": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quota"
+          }
+        }
+      }
+    },
+    "Quota in GiB (blank for unlimited)": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quota in GiB (lascia vuoto per nessun limite)"
+          }
+        }
+      }
+    },
+    "Rating": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Valutazione"
+          }
+        }
+      }
+    },
+    "Recent Searches": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ricerche recenti"
+          }
+        }
+      }
+    },
+    "Recently Added in Web Sidebar": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aggiunti di recente nella barra laterale web"
           }
         }
       }
@@ -1111,6 +6207,296 @@
         }
       }
     },
+    "Refresh Activity": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aggiorna attività"
+          }
+        }
+      }
+    },
+    "Refresh Faces": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aggiorna volti"
+          }
+        }
+      }
+    },
+    "Refusing to overwrite saved accounts with an empty list.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossibile sovrascrivere gli account salvati con un elenco vuoto."
+          }
+        }
+      }
+    },
+    "Reload": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ricarica"
+          }
+        }
+      }
+    },
+    "Remove": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rimuovi"
+          }
+        }
+      }
+    },
+    "Remove %@ filter": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rimuovi filtro %@"
+          }
+        }
+      }
+    },
+    "Remove Face": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rimuovi volto"
+          }
+        }
+      }
+    },
+    "Remove Face?": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rimuovere il volto?"
+          }
+        }
+      }
+    },
+    "Remove Partner": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rimuovi compagno"
+          }
+        }
+      }
+    },
+    "Remove Picture": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rimuovi foto"
+          }
+        }
+      }
+    },
+    "Remove Selected Photos": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rimuovi foto selezionate"
+          }
+        }
+      }
+    },
+    "Remove Tag": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rimuovi tag"
+          }
+        }
+      }
+    },
+    "Remove from Album": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rimuovi dall'album"
+          }
+        }
+      }
+    },
+    "Remove from Locked Folder": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rimuovi dalla cartella bloccata"
+          }
+        }
+      }
+    },
+    "Remove from Memory": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rimuovi dal ricordo"
+          }
+        }
+      }
+    },
+    "Remove from Stack": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rimuovi dal gruppo"
+          }
+        }
+      }
+    },
+    "Remove saved credentials from this Mac": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rimuovi credenziali salvate da questo Mac"
+          }
+        }
+      }
+    },
+    "Remove this face from the photo. The photo itself will be kept.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rimuovi questo volto dalla foto. La foto verrà mantenuta."
+          }
+        }
+      }
+    },
+    "Remove…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rimuovi…"
+          }
+        }
+      }
+    },
+    "Rename": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rinomina"
+          }
+        }
+      }
+    },
+    "Rename API Key": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rinomina chiave API"
+          }
+        }
+      }
+    },
+    "Rename…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rinomina…"
+          }
+        }
+      }
+    },
+    "Replace the location of %lld selected items.": {
+      "localizations": {
+        "it": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Sostituisci la posizione di %lld elemento selezionato."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Sostituisci la posizione di %lld elementi selezionati."
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Replace the location of %lld selected item."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Replace the location of %lld selected items."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Require password change at next login": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Richiedi modifica della password al prossimo accesso"
+          }
+        }
+      }
+    },
+    "Reset": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ripristina"
+          }
+        }
+      }
+    },
+    "Reset Crop": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ripristina ritaglio"
+          }
+        }
+      }
+    },
     "Resolution": {
       "localizations": {
         "it": {
@@ -1131,12 +6517,242 @@
         }
       }
     },
+    "Restore All": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ripristina tutto"
+          }
+        }
+      }
+    },
+    "Restore All…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ripristina tutto…"
+          }
+        }
+      }
+    },
+    "Restore User": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ripristina utente"
+          }
+        }
+      }
+    },
+    "Restore every item in Recently Deleted?": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ripristinare tutti gli elementi in Eliminati di recente?"
+          }
+        }
+      }
+    },
+    "Resume": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Riprendi"
+          }
+        }
+      }
+    },
+    "Retry": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Riprova"
+          }
+        }
+      }
+    },
+    "Retry Failed": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Riprova non riusciti"
+          }
+        }
+      }
+    },
+    "Revoke Access": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Revoca accesso"
+          }
+        }
+      }
+    },
+    "Role": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ruolo"
+          }
+        }
+      }
+    },
+    "Rotate View Left": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ruota vista a sinistra"
+          }
+        }
+      }
+    },
+    "Rotate View Right": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ruota vista a destra"
+          }
+        }
+      }
+    },
+    "Running": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In esecuzione"
+          }
+        }
+      }
+    },
+    "Save": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salva"
+          }
+        }
+      }
+    },
+    "Save Description": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salva descrizione"
+          }
+        }
+      }
+    },
+    "Save Name": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salva nome"
+          }
+        }
+      }
+    },
+    "Save Preferences": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salva preferenze"
+          }
+        }
+      }
+    },
+    "Save the library before validating its paths.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salva la libreria prima di convalidarne i percorsi."
+          }
+        }
+      }
+    },
+    "Saved Accounts": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Account salvati"
+          }
+        }
+      }
+    },
+    "Scan Library": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scansiona libreria"
+          }
+        }
+      }
+    },
+    "Scanning files…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scansione dei file…"
+          }
+        }
+      }
+    },
     "Search": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
             "value": "Cerca"
+          }
+        }
+      }
+    },
+    "Search Filters": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filtri di ricerca"
+          }
+        }
+      }
+    },
+    "Search Filters…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filtri di ricerca…"
+          }
+        }
+      }
+    },
+    "Search People": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cerca persone"
           }
         }
       }
@@ -1151,12 +6767,42 @@
         }
       }
     },
+    "Search Your Photos": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cerca le tue foto"
+          }
+        }
+      }
+    },
     "Search file names": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
             "value": "Cerca nomi dei file"
+          }
+        }
+      }
+    },
+    "Search for a place": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cerca un luogo"
+          }
+        }
+      }
+    },
+    "Search mode": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modalità di ricerca"
           }
         }
       }
@@ -1181,6 +6827,16 @@
         }
       }
     },
+    "Security": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sicurezza"
+          }
+        }
+      }
+    },
     "Select All Photos": {
       "localizations": {
         "it": {
@@ -1201,12 +6857,332 @@
         }
       }
     },
+    "Selected Location": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Posizione selezionata"
+          }
+        }
+      }
+    },
+    "Selected items stay in your library. The other items are moved to Recently Deleted.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gli elementi selezionati rimarranno nella libreria. Gli altri verranno spostati in Eliminati di recente."
+          }
+        }
+      }
+    },
+    "Selected items stay in your library. The other items are permanently deleted. This cannot be undone.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gli elementi selezionati rimarranno nella libreria. Gli altri verranno eliminati definitivamente. L'operazione non può essere annullata."
+          }
+        }
+      }
+    },
     "Server": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
             "value": "Server"
+          }
+        }
+      }
+    },
+    "Server Settings": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impostazioni server"
+          }
+        }
+      }
+    },
+    "Server configuration is read-only.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La configurazione del server è di sola lettura."
+          }
+        }
+      }
+    },
+    "Session Login Required": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "È richiesto l'accesso con una sessione"
+          }
+        }
+      }
+    },
+    "Sessions and Devices": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sessioni e dispositivi"
+          }
+        }
+      }
+    },
+    "Set PIN and Unlock": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Imposta PIN e sblocca"
+          }
+        }
+      }
+    },
+    "Set Primary": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Imposta come principale"
+          }
+        }
+      }
+    },
+    "Set Up Locked Folder": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Configura cartella bloccata"
+          }
+        }
+      }
+    },
+    "Share": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Condividi"
+          }
+        }
+      }
+    },
+    "Share %lld Files…": {
+      "localizations": {
+        "it": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Condividi %lld file…"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Condividi %lld file…"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Share %lld File…"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Share %lld Files…"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Share Album": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Condividi album"
+          }
+        }
+      }
+    },
+    "Share Original Files": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Condividi file originali"
+          }
+        }
+      }
+    },
+    "Share Original Files…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Condividi file originali…"
+          }
+        }
+      }
+    },
+    "Share Your Library": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Condividi la tua libreria"
+          }
+        }
+      }
+    },
+    "Shared Albums": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Album condivisi"
+          }
+        }
+      }
+    },
+    "Shared Links": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link condivisi"
+          }
+        }
+      }
+    },
+    "Shared Links Unavailable": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link condivisi non disponibili"
+          }
+        }
+      }
+    },
+    "Shared links are disabled or unavailable on this server.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I link condivisi sono disattivati o non disponibili su questo server."
+          }
+        }
+      }
+    },
+    "Shared with Me": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Condivisi con me"
+          }
+        }
+      }
+    },
+    "Share…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Condividi…"
+          }
+        }
+      }
+    },
+    "Sharing": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Condivisione"
+          }
+        }
+      }
+    },
+    "Sharing Failed": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Condivisione non riuscita"
+          }
+        }
+      }
+    },
+    "Sharing My Library With": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Condivido la mia libreria con"
+          }
+        }
+      }
+    },
+    "Shift each item's date by an offset": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sposta la data di ogni elemento di un intervallo"
+          }
+        }
+      }
+    },
+    "Show Activity": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostra attività"
+          }
+        }
+      }
+    },
+    "Show Faces": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostra volti"
+          }
+        }
+      }
+    },
+    "Show Hidden People": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostra persone nascoste"
           }
         }
       }
@@ -1231,12 +7207,102 @@
         }
       }
     },
+    "Show Support Badge": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostra badge di sostenitore"
+          }
+        }
+      }
+    },
+    "Show Tab Bar": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostra barra delle schede"
+          }
+        }
+      }
+    },
+    "Show faces and manage people": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostra volti e gestisci persone"
+          }
+        }
+      }
+    },
+    "Show in All Photos": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostra in Tutte le foto"
+          }
+        }
+      }
+    },
+    "Show in Web Sidebar": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostra nella barra laterale web"
+          }
+        }
+      }
+    },
+    "Show in timeline": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostra nella timeline"
+          }
+        }
+      }
+    },
+    "Show metadata": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Visualizza metadati"
+          }
+        }
+      }
+    },
+    "Shuffle": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Casuale"
+          }
+        }
+      }
+    },
     "Sign In": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
             "value": "Accedi"
+          }
+        }
+      }
+    },
+    "Sign In to View Memories": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accedi per visualizzare i ricordi"
           }
         }
       }
@@ -1261,6 +7327,16 @@
         }
       }
     },
+    "Sign in from the main library window to continue.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accedi dalla finestra principale della libreria per continuare."
+          }
+        }
+      }
+    },
     "Sign in to %@": {
       "localizations": {
         "it": {
@@ -1281,12 +7357,32 @@
         }
       }
     },
+    "Sign in with email and password to use Locked Folder. API keys cannot unlock a session.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accedi con email e password per usare la cartella bloccata. Le chiavi API non possono sbloccare una sessione."
+          }
+        }
+      }
+    },
     "Signed in with": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
             "value": "Accesso effettuato con"
+          }
+        }
+      }
+    },
+    "Six-digit PIN": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PIN a sei cifre"
           }
         }
       }
@@ -1301,12 +7397,112 @@
         }
       }
     },
+    "Slideshow": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Presentazione"
+          }
+        }
+      }
+    },
+    "Slideshow Settings": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impostazioni presentazione"
+          }
+        }
+      }
+    },
+    "Some items could not be updated. Refresh and try again.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossibile aggiornare alcuni elementi. Aggiorna e riprova."
+          }
+        }
+      }
+    },
     "Something Went Wrong": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
             "value": "Si è verificato un errore"
+          }
+        }
+      }
+    },
+    "Sort Photos": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ordina foto"
+          }
+        }
+      }
+    },
+    "Stack": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gruppo"
+          }
+        }
+      }
+    },
+    "Stack Selection": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raggruppa selezione"
+          }
+        }
+      }
+    },
+    "Start Slideshow": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avvia presentazione"
+          }
+        }
+      }
+    },
+    "Statistics…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Statistiche…"
+          }
+        }
+      }
+    },
+    "Stop sharing your library?": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Interrompere la condivisione della libreria?"
+          }
+        }
+      }
+    },
+    "Storage": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spazio di archiviazione"
           }
         }
       }
@@ -1321,12 +7517,142 @@
         }
       }
     },
+    "Storage usage is unavailable.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L'utilizzo dello spazio di archiviazione non è disponibile."
+          }
+        }
+      }
+    },
+    "Switch": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cambia"
+          }
+        }
+      }
+    },
+    "Tag path (parent/child)": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Percorso tag (principale/secondario)"
+          }
+        }
+      }
+    },
+    "Tags": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tag"
+          }
+        }
+      }
+    },
+    "Text in Images": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Testo nelle immagini"
+          }
+        }
+      }
+    },
     "That doesn't look like a valid server address.": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
             "value": "L'indirizzo del server non sembra valido."
+          }
+        }
+      }
+    },
+    "The album will be deleted for everyone. Its photos and videos stay in the library.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L'album verrà eliminato per tutti. Le foto e i video rimarranno nella libreria."
+          }
+        }
+      }
+    },
+    "The archive could not be downloaded.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossibile scaricare l'archivio."
+          }
+        }
+      }
+    },
+    "The dropped files could not be read. Try Import… instead.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossibile leggere i file trascinati. Prova a usare Importa…"
+          }
+        }
+      }
+    },
+    "The duplicate group could not be resolved. Reload and try again.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossibile risolvere il gruppo di duplicati. Ricarica e riprova."
+          }
+        }
+      }
+    },
+    "The photo could not be removed from this memory.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossibile rimuovere la foto da questo ricordo."
+          }
+        }
+      }
+    },
+    "The photos in this memory are kept.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le foto di questo ricordo verranno mantenute."
+          }
+        }
+      }
+    },
+    "The selected photos will become accessible to anyone who can open the link.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le foto selezionate saranno accessibili a chiunque possa aprire il link."
+          }
+        }
+      }
+    },
+    "The selected user will be able to view and download your photos and their metadata.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L'utente selezionato potrà visualizzare e scaricare le tue foto e i relativi metadati."
           }
         }
       }
@@ -1341,12 +7667,92 @@
         }
       }
     },
-    "The server returned an error (%lld).": {
+    "The server did not unlock this session.": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Il server ha restituito un errore (%lld)."
+            "value": "Il server non ha sbloccato questa sessione."
+          }
+        }
+      }
+    },
+    "The server returned an error (%lld).": {
+      "localizations": {
+        "it": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Il server ha restituito un errore (%lld)."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Il server ha restituito un errore (%lld)."
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The server returned an error (%lld)."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The server returned an error (%lld)."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "The start date must precede the end date.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La data di inizio deve precedere la data di fine."
+          }
+        }
+      }
+    },
+    "These preferences are stored on your Immich server. Web sidebar options affect the web client.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Queste preferenze vengono salvate sul tuo server Immich. Le opzioni della barra laterale web si applicano al client web."
+          }
+        }
+      }
+    },
+    "This account is no longer saved.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Questo account non è più salvato."
+          }
+        }
+      }
+    },
+    "This asset cannot be edited. Only owned, non-panorama still images with dimensions are supported.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Questo elemento non può essere modificato. Sono supportate solo le immagini statiche non panoramiche che ti appartengono e di cui sono disponibili le dimensioni."
           }
         }
       }
@@ -1361,12 +7767,112 @@
         }
       }
     },
+    "This cannot be undone.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L'operazione non può essere annullata."
+          }
+        }
+      }
+    },
+    "This device": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Questo dispositivo"
+          }
+        }
+      }
+    },
+    "This feature is unavailable on this server.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Questa funzionalità non è disponibile su questo server."
+          }
+        }
+      }
+    },
+    "This item isn't in All Photos. It may be archived, hidden, trashed, or part of a stack.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Questo elemento non è in Tutte le foto. Potrebbe essere archiviato, nascosto, eliminato o parte di un gruppo."
+          }
+        }
+      }
+    },
+    "This restores all trashed items, including items that are not loaded in this view.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verranno ripristinati tutti gli elementi eliminati, inclusi quelli non caricati in questa vista."
+          }
+        }
+      }
+    },
     "This server is older than Immich 2.0 and may not work correctly.": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
             "value": "Questo server usa una versione precedente a Immich 2.0 e potrebbe non funzionare correttamente."
+          }
+        }
+      }
+    },
+    "This will revoke access. Continue?": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L'accesso verrà revocato. Continuare?"
+          }
+        }
+      }
+    },
+    "Through": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fino a"
+          }
+        }
+      }
+    },
+    "Time zone": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fuso orario"
+          }
+        }
+      }
+    },
+    "To add photos, select them in Library and choose Share → Add to Public Link.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Per aggiungere foto, selezionale nella Libreria e scegli Condividi → Aggiungi a link pubblico."
+          }
+        }
+      }
+    },
+    "Trash Others": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sposta gli altri in Eliminati di recente"
           }
         }
       }
@@ -1391,12 +7897,62 @@
         }
       }
     },
+    "UTC offset: %lld minutes": {
+      "localizations": {
+        "it": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Scostamento UTC: %lld minuto"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Scostamento UTC: %lld minuti"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "UTC offset: %lld minute"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "UTC offset: %lld minutes"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Unarchive": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
             "value": "Rimuovi dall'archivio"
+          }
+        }
+      }
+    },
+    "Unavailable on This Server": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Non disponibile su questo server"
           }
         }
       }
@@ -1411,12 +7967,272 @@
         }
       }
     },
+    "Unfavorite Person": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rimuovi persona dai preferiti"
+          }
+        }
+      }
+    },
+    "Unhide Person": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostra persona"
+          }
+        }
+      }
+    },
+    "Unlock": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sblocca"
+          }
+        }
+      }
+    },
+    "Unlock Locked Folder": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sblocca cartella bloccata"
+          }
+        }
+      }
+    },
     "Unnamed Person": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
             "value": "Persona senza nome"
+          }
+        }
+      }
+    },
+    "Unstack": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Separa gruppo"
+          }
+        }
+      }
+    },
+    "Unstack all members?": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Separare tutti gli elementi del gruppo?"
+          }
+        }
+      }
+    },
+    "Unstack…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Separa gruppo…"
+          }
+        }
+      }
+    },
+    "Updated %lld items. Skipped %lld items you do not own.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%#@count1@. %#@count2@"
+          },
+          "substitutions": {
+            "count1": {
+              "argNum": 1,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "Aggiornato %arg elemento"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "Aggiornati %arg elementi"
+                    }
+                  }
+                }
+              }
+            },
+            "count2": {
+              "argNum": 2,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "Ignorato %arg elemento che non ti appartiene."
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "Ignorati %arg elementi che non ti appartengono."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%#@count1@. %#@count2@"
+          },
+          "substitutions": {
+            "count1": {
+              "argNum": 1,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "Updated %arg item"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "Updated %arg items"
+                    }
+                  }
+                }
+              }
+            },
+            "count2": {
+              "argNum": 2,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "Skipped %arg item you do not own."
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "Skipped %arg items you do not own."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Uploading": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Caricamento"
+          }
+        }
+      }
+    },
+    "Use as Album Cover": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usa come copertina dell'album"
+          }
+        }
+      }
+    },
+    "Use as Featured Photo": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usa come foto in evidenza"
+          }
+        }
+      }
+    },
+    "Use at least 8 characters.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usa almeno 8 caratteri."
+          }
+        }
+      }
+    },
+    "Use paths on the Immich server, one per line. Up to 128 paths and exclusion patterns.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usa i percorsi sul server Immich, uno per riga. Sono consentiti fino a 128 percorsi e pattern di esclusione."
+          }
+        }
+      }
+    },
+    "Used": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Utilizzato"
+          }
+        }
+      }
+    },
+    "Used: %@ · Quota: %@": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Utilizzato: %@ · Quota: %@"
+          }
+        }
+      }
+    },
+    "User": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Utente"
+          }
+        }
+      }
+    },
+    "Users": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Utenti"
           }
         }
       }
@@ -1431,6 +8247,16 @@
         }
       }
     },
+    "Validate Paths": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Convalida percorsi"
+          }
+        }
+      }
+    },
     "Version": {
       "localizations": {
         "it": {
@@ -1441,12 +8267,102 @@
         }
       }
     },
+    "Video Options": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opzioni video"
+          }
+        }
+      }
+    },
     "Videos": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
             "value": "Video"
+          }
+        }
+      }
+    },
+    "Videos otherwise play to the end. Space pauses or resumes playback.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Altrimenti i video vengono riprodotti fino alla fine. Premi la barra spaziatrice per mettere in pausa o riprendere la riproduzione."
+          }
+        }
+      }
+    },
+    "View Members…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Visualizza membri…"
+          }
+        }
+      }
+    },
+    "Viewer": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Visualizzatore"
+          }
+        }
+      }
+    },
+    "Visitors can upload photos to your account.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I visitatori possono caricare foto nel tuo account."
+          }
+        }
+      }
+    },
+    "Waiting": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In attesa"
+          }
+        }
+      }
+    },
+    "You aren't sharing your library with anyone.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Non condividi la tua libreria con nessuno."
+          }
+        }
+      }
+    },
+    "You will lose access to this album until the owner invites you again.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Perderai l'accesso a questo album finché il proprietario non ti inviterà di nuovo."
+          }
+        }
+      }
+    },
+    "Your server asks you to change your password.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il server richiede di modificare la password."
           }
         }
       }
@@ -1491,68 +8407,22 @@
         }
       }
     },
+    "–": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "–"
+          }
+        }
+      }
+    },
     "“%@”": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
             "value": "“%@”"
-          }
-        }
-      }
-    },
-    "New Window": {
-      "localizations": {
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nuova finestra"
-          }
-        }
-      }
-    },
-    "Archive Selected Photos": {
-      "localizations": {
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Archivia"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Archive"
-          }
-        }
-      }
-    },
-    "New Tab": {
-      "localizations": {
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nuova scheda"
-          }
-        }
-      }
-    },
-    "Show Tab Bar": {
-      "localizations": {
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mostra barra delle schede"
-          }
-        }
-      }
-    },
-    "Enable notifications for Immich Gallery in System Settings → Notifications.": {
-      "localizations": {
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Abilita le notifiche per Immich Gallery in Impostazioni di Sistema → Notifiche."
           }
         }
       }
