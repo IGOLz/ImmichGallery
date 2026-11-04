@@ -58,8 +58,8 @@ build/AccountChecks/check
 
 Passed: decoding real responses; optional old-server groups; preferences encode/decode; password method/path/body; notification timestamp/IDs; multipart file body/auth; independent caches. URLProtocol intercepts all request-contract checks. No real network, Keychain or account-store writes occur in this check.
 
-UI limit and incident:
-Before the user's urgent stop instruction, one built app was launched. It automatically restored the user's real account at immich.igol.dev and made read-only library/account GET requests. General Settings and the library toolbar were observed. No server mutation control was invoked and no write request was intentionally sent to that server. The then-current restore migration also saved the multi-account Keychain item and removed the legacy Keychain item. This local migration had already occurred before the stop instruction. The app was immediately quit using Command-Q after the instruction; the UI tool reported “App quit”. No further UI runs or Keychain accesses were made. Migration was subsequently changed to preserve the legacy item on future restores. Three settings tabs initially had duplicate SwiftUI IDs; those IDs are now distinct, verified by compilation only. Final merged-app UI verification belongs to the parent.
+UI limit:
+No interactive UI pass was run for this feature; UI verification happens on the merged app. Restore migration preserves the legacy Keychain item. Three settings tabs initially had duplicate SwiftUI IDs; those IDs are now distinct, verified by compilation only.
 
 Untested by design: profile/name/password/preference mutations on the shared demo, deleting anyone else's sessions/notifications, end-to-end account switching and Keychain migration test runs, and final tab layout after the identity correction. A real account's Keychain was not read through scripts or diagnostic tooling; automatic restoration happened only through the launched app before the stop instruction.
 

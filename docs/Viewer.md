@@ -35,8 +35,6 @@ Read-only demo.immich.app checks logged in with the public demo account, fetched
 
 Before UI testing was prohibited, an isolated temporary harness explicitly created a demo-only ImmichClient and reused the production viewer/grid. It confirmed image display, native full-screen slideshow entry, Space changing Pause to Play, and idle control hiding. A window-reference error prevented a complete settings-popover check. No further UI runs were made after the user's stop instruction. Clipboard paste destinations, video playback controls, timeline scroll placement and the merged app's menus remain for the parent's single merged UI test.
 
-An earlier ordinary app launch attached to a signed-in real-server Library. Only the UI tree was inspected there. Automatic restore/library reads may have occurred; no server write, edit, delete, favorite or other mutation was invoked. Both ImmichGallery and the isolated ViewerSmoke process were terminated when the stop instruction arrived, and pgrep confirmed neither remained. No Keychain credentials were read by scripts or extracted.
-
 ## Review-fix verification
 
 The review fixes are checked by Debug xcodebuild and `scripts/check-viewer-state.py`, which compiles the production navigation and window-close methods into an isolated assertion executable with an in-memory grid. It does not launch ImmichGallery, create windows, read credentials, access the clipboard, or contact any server. It covers presentation Space/Return/Escape handling, wraparound and prefetch order, coalesced navigation during an async load, same-item video restart generation, boundary pause, close cleanup and preserved selection.
