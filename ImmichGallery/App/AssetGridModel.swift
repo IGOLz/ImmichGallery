@@ -5,6 +5,7 @@ import Observation
 /// What a grid shows.
 enum GridSource: Hashable {
     case library, favorites, videos, archive, trash
+    case largeFiles, geolocation // Assets
     case album(String)
     case partner(String) // Sharing
     case person(String)
@@ -16,13 +17,14 @@ enum GridSource: Hashable {
     var timelineQuery: TimelineQuery? {
         switch self {
         case .library: TimelineQuery(withPartners: true)
+        case .geolocation: TimelineQuery(withPartners: false)
         case .favorites: TimelineQuery(visibility: nil, isFavorite: true)
         case .archive: TimelineQuery(visibility: "archive")
         case .trash: TimelineQuery(visibility: nil, isTrashed: true)
         case .album(let id): TimelineQuery(visibility: nil, albumId: id)
         case .partner(let id): TimelineQuery(userId: id) // Sharing
         case .person(let id): TimelineQuery(personId: id)
-        case .videos, .search, .filteredSearch: nil
+        case .videos, .search, .filteredSearch, .largeFiles: nil
         }
     }
 }
@@ -30,6 +32,7 @@ enum GridSource: Hashable {
 /// Lightweight asset used by grids and the viewer.
 struct AssetItem: Identifiable, Hashable, Sendable {
     let id: String
+    let ownerId: String?
     let isVideo: Bool
     var isFavorite: Bool
     var isTrashed: Bool
@@ -39,9 +42,11 @@ struct AssetItem: Identifiable, Hashable, Sendable {
     let date: Date?
     let livePhotoVideoID: String?
     let stackCount: Int?
+    var fileSizeInBytes: Int64? = nil
 
     init(_ r: AssetResponse) {
         id = r.id
+        ownerId = r.ownerId
         isVideo = r.type == .video
         isFavorite = r.isFavorite
         isTrashed = r.isTrashed
@@ -50,21 +55,23 @@ struct AssetItem: Identifiable, Hashable, Sendable {
         durationMS = r.duration?.milliseconds
         date = ImmichDate.parse(r.localDateTime)
         livePhotoVideoID = r.livePhotoVideoId
-        stackCount = nil
+        stackCount = r.stack?.assetCount
+        fileSizeInBytes = r.exifInfo?.fileSizeInByte
     }
 
     static func from(_ c: TimeBucketAssets) -> [AssetItem] {
         c.id.indices.map { i in
             AssetItem(
-                id: c.id[i], isVideo: !c.isImage[i], isFavorite: c.isFavorite[i], isTrashed: c.isTrashed[i],
+                id: c.id[i], ownerId: c.ownerId.flatMap { $0.indices.contains(i) ? $0[i] : nil }, isVideo: !c.isImage[i], isFavorite: c.isFavorite[i], isTrashed: c.isTrashed[i],
                 thumbhash: c.thumbhash[i], ratio: c.ratio[i] ?? 1, durationMS: c.duration[i]?.milliseconds,
                 date: ImmichDate.parse(c.fileCreatedAt[i]), livePhotoVideoID: c.livePhotoVideoId[i],
                 stackCount: c.stack?[i].flatMap { $0.count > 1 ? Int($0[1]) : nil })
         }
     }
 
-    private init(id: String, isVideo: Bool, isFavorite: Bool, isTrashed: Bool, thumbhash: String?, ratio: Double,
+    private init(id: String, ownerId: String?, isVideo: Bool, isFavorite: Bool, isTrashed: Bool, thumbhash: String?, ratio: Double,
                  durationMS: Int?, date: Date?, livePhotoVideoID: String?, stackCount: Int?) {
+        self.ownerId = ownerId
         self.id = id; self.isVideo = isVideo; self.isFavorite = isFavorite; self.isTrashed = isTrashed
         self.thumbhash = thumbhash; self.ratio = ratio; self.durationMS = durationMS; self.date = date
         self.livePhotoVideoID = livePhotoVideoID; self.stackCount = stackCount
@@ -109,7 +116,7 @@ final class AssetGridModel {
     var totalCount: Int { sections.reduce(0) { $0 + $1.count } }
     var isPaged: Bool { source.timelineQuery == nil }
     var showsSectionHeaders: Bool {
-        switch source { case .search, .filteredSearch: false; default: true }
+        switch source { case .search, .filteredSearch, .largeFiles: false; default: true }
     }
 
     func asset(_ section: Int, _ item: Int) -> AssetItem? {
@@ -198,7 +205,7 @@ final class AssetGridModel {
                     ? session.client.albumTimeBucket(id, query, order: albumOrder)
                     : session.client.timeBucket(id, query)
                 guard let i = sections.firstIndex(where: { $0.id == id }) else { return }
-                let assets = AssetItem.from(columns)
+                let assets = AssetItem.from(columns).filter { source != .geolocation || (session.user?.id != nil && $0.ownerId == session.user?.id) }
                 sections[i].assets = assets
                 sections[i].count = assets.count
                 rebuildIndex()
@@ -225,6 +232,11 @@ final class AssetGridModel {
         guard let session, let page = nextPage else { return }
         let result: SearchResponse.Assets
         switch source {
+        case .largeFiles:
+            let assets = try await session.client.assetsLargeFiles()
+            nextPage = nil
+            append(assets.map(AssetItem.init))
+            return
         case .search(let text):
             if session.features.smartSearch {
                 result = try await session.client.smartSearch(text, page: page.page ?? 1)

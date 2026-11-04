@@ -51,6 +51,7 @@ struct AssetGridHost: View {
         .navigationSubtitle(subtitle)
         .toolbar { toolbar }
         .sharingPresentation() // Sharing
+        .modifier(AssetsGridUtilities(model: model))
         .inspector(isPresented: $showInspector) {
             AssetInspector(assetID: inspectedID)
                 .inspectorColumnWidth(min: 260, ideal: 300, max: 420)
@@ -255,6 +256,7 @@ struct AssetGridView: View {
                 thumbnail
             }
         }
+        .overlay(alignment: .topLeading) { AssetsLargeFileBadge(asset: asset, source: model.source) }
         .onAppear { model.cellAppeared(section: s, item: i) }
         .onTapGesture(count: 2) { if let asset { model.open(asset.id) } }
         .simultaneousGesture(TapGesture().onEnded { if let asset { model.click(asset.id) } })
@@ -278,6 +280,7 @@ struct AssetGridView: View {
             AlbumSelectionMenu(session: session, model: model, ids: ids) // Albums
             Button(asset.isFavorite ? "Unfavorite" : "Favorite") { Task { await model.setFavorite(ids, !asset.isFavorite) } }
             SharingMenu(assetIDs: ids) // Sharing
+            AssetsContextMenu(model: model, ids: [asset.id] + ids.filter { $0 != asset.id })
             Button("Export Unmodified Original…") { Exporter.exportOriginals(ids, session: session) }
             Divider()
             if model.source == .archive {

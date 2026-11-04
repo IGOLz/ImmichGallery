@@ -7,6 +7,7 @@ enum SidebarItem: Hashable {
     case sharedLinks // Sharing
     case partners // Sharing
     case partner(String) // Sharing
+    case duplicates, largeFiles, geolocation // Assets
 }
 
 struct MainView: View {
@@ -80,6 +81,9 @@ struct MainView: View {
         case .sharedLinks: SharedLinksView() // Sharing
         case .partners: PartnersView() // Sharing
         case .partner(let id): AssetGridContainer(source: .partner(id), title: Text(session.sharing.receivedPartners.first { $0.id == id }?.name ?? "Partner Library")) // Sharing
+        case .duplicates: AssetsDuplicatesView()
+        case .largeFiles: AssetGridContainer(source: .largeFiles, title: Text("Large Files"))
+        case .geolocation: AssetGridContainer(source: .geolocation, title: Text("Assign Location"))
         case .search:
             SearchView(text: submittedSearch, chooseText: { searchText = $0; submittedSearch = $0 }, showFilters: $showSearchFilters)
         }
@@ -106,6 +110,7 @@ struct SidebarView: View {
             }
             SharingSidebar() // Sharing
             Section("Utilities") {
+                AssetsSidebarItems()
                 Label("Archive", systemImage: "archivebox").tag(SidebarItem.archive)
                 if session.features.trash {
                     Label("Recently Deleted", systemImage: "trash").tag(SidebarItem.trash)

@@ -39,6 +39,7 @@ struct AssetViewer: View {
             }
             .padding(.horizontal, 16)
         }
+        .safeAreaInset(edge: .top) { AssetsStackButton(item: item, model: model).id(item.id) }
         .focusable()
         .focused($isFocused)
         .focusEffectDisabled()
