@@ -19,6 +19,12 @@ struct MainView: View {
     @State private var showSearchFilters = false
     @FocusState private var searchFocused: Bool
 
+    init(initialAlbumID: String? = nil, initialSearch: String? = nil) {
+        _selection = State(initialValue: initialAlbumID.map(SidebarItem.album) ?? (initialSearch == nil ? .library : .search))
+        _searchText = State(initialValue: initialSearch ?? "")
+        _submittedSearch = State(initialValue: initialSearch ?? "")
+    }
+
     var body: some View {
         NavigationSplitView {
             SidebarView(selection: $selection)

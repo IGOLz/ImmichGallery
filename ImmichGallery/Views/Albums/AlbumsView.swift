@@ -18,6 +18,7 @@ struct AlbumsView: View {
                             LazyVGrid(columns: [GridItem(.adaptive(minimum: 170, maximum: 240), spacing: 20)], spacing: 24) {
                                 ForEach(albums) { album in
                                     NavigationLink(value: album) { AlbumCell(album: album) }.buttonStyle(.plain)
+                                        .contextMenu { MacAlbumWindowMenu(albumID: album.id) } // MacIntegration
                                 }
                             }.padding(20)
                         }

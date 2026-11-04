@@ -84,6 +84,7 @@ final class AppModel {
         guard self.session === session else { return }
         session.upload.cancelAll() // Upload
         session.pipeline.removeAll()
+        MacIntegrationRouter.shared.pending.removeAll()
         phase = .signedOut
         currentAccountID = nil
         do { try clearCache(session) } catch { accountError = error.localizedDescription }
@@ -214,6 +215,7 @@ final class LibrarySession {
         }
         self.upload.onError = { [weak self] in self?.handle($0) } // Upload
         self.user = user
+        MacWindowInvalidation.register(self)
     }
 
     func bootstrap() async {
@@ -266,9 +268,19 @@ final class LibrarySession {
         albumActions.details.removeValue(forKey: id)
     }
 
-    /// Mutations in one view (favorite, delete…) can affect other cached grids.
+    var macGridRevision = 0
+
+    func invalidateMacWindowGrids() {
+        for model in gridModels.values { model.markStale() }
+        macGridRevision += 1
+        Task { await reloadAlbums() }
+    }
+
+    /// Mutations affect cached grids in every window for this account.
     func invalidateGrids(except keep: AssetGridModel? = nil) {
         for model in gridModels.values where model !== keep { model.markStale() }
+        macGridRevision += 1
+        MacWindowInvalidation.invalidate(from: self)
     }
 
     // Explore

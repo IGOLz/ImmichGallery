@@ -30,6 +30,7 @@ enum Exporter {
                     failures += 1
                 }
             }
+            await SystemNotifier.completed(title: String(localized: "Export Finished"), body: String(localized: "\(saved.count) files exported; \(failures) failed."))
             if !saved.isEmpty { NSWorkspace.shared.activateFileViewerSelecting(saved) }
             if failures > 0 {
                 let alert = NSAlert()

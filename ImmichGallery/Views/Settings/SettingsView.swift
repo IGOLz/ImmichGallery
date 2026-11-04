@@ -38,6 +38,7 @@ struct SettingsView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
+                MacNotificationPreference()
                 Section {
                     LabeledContent("Image Cache", value: cacheSize.formatted(.byteCount(style: .file)))
                     HStack {

@@ -104,6 +104,7 @@ struct AlbumSidebarSections: View {
                     Label(album.albumName, systemImage: shared ? "person.2.crop.square.stack" : "rectangle.stack")
                         .modifier(UploadDropModifier(queue: session.upload, albumID: album.id)) // Upload
                         .tag(SidebarItem.album(album.id))
+                        .contextMenu { MacAlbumWindowMenu(albumID: album.id) } // MacIntegration
                         .dropDestination(for: AlbumAssetTransfer.self) { values, _ in
                             let ids = values.flatMap(\.ids)
                             guard album.canEdit(session.user?.id),

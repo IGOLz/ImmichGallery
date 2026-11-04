@@ -60,7 +60,7 @@ struct AssetGridHost: View {
             AssetInspector(assetID: inspectedID)
                 .inspectorColumnWidth(min: 260, ideal: 300, max: 420)
         }
-        .task { await model.loadIfNeeded() }
+        .task(id: session.macGridRevision) { await model.loadIfNeeded() }
         .onChange(of: session.upload.revision) { Task { await model.reload() } } // Upload
         .focusedSceneValue(\.gridModel, model)
         .confirmationDialog(deleteTitle, isPresented: Binding(get: { pendingDelete != nil }, set: { if !$0 { pendingDelete = nil } })) {
@@ -233,6 +233,8 @@ struct AssetGridView: View {
         .onAppear { scrollToViewerTarget(proxy) }
         .onChange(of: model.viewerScrollTarget) { scrollToViewerTarget(proxy) }
         }
+        .macOriginalDragContainer(model: model, client: session.client)
+        .dragContainerSelection(Array(model.selection))
         .fastWheelScrolling()
         .background {
             // Clicking empty space clears the selection, like Photos.
@@ -278,6 +280,7 @@ struct AssetGridView: View {
             }
         }
         .overlay(alignment: .topLeading) { AssetsLargeFileBadge(asset: asset, source: model.source) }
+        .draggable(OriginalTransfer.self, item: asset.map { OriginalTransfer(id: $0.id, isVideo: $0.isVideo, client: session.client) })
         .onAppear { model.cellAppeared(section: s, item: i) }
         .onTapGesture(count: 2) { if let asset { model.open(asset.id) } }
         .simultaneousGesture(TapGesture().onEnded { if let asset { model.click(asset.id) } })
@@ -310,7 +313,7 @@ struct AssetGridView: View {
             if model.source == .archive {
                 Button("Unarchive") { Task { await model.setArchived(ids, false) } }
             } else {
-                Button("Archive") { Task { await model.setArchived(ids, true) } }
+                Button(String(localized: "Archive Selected Photos")) { Task { await model.setArchived(ids, true) } }
             }
             Button("Delete…", role: .destructive) { onDelete(ids) }
         }
@@ -319,7 +322,10 @@ struct AssetGridView: View {
     private func handleKey(_ press: KeyPress) -> KeyPress.Result {
         let ids = Array(model.selection)
         switch press.key {
-        case .space, .return:
+        case .space:
+            guard !ids.isEmpty else { return .ignored }
+            MacQuickLook.shared.toggle(model.macOrderedSelection, session: session) { model.lastError = $0 }
+        case .return:
             guard let first = model.selectedItems.first else { return .ignored }
             model.open(first.id)
         case .delete, .deleteForward:

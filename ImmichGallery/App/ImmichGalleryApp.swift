@@ -2,23 +2,28 @@ import SwiftUI
 
 @main
 struct ImmichGalleryApp: App {
+    @NSApplicationDelegateAdaptor(MacIntegrationLifecycle.self) private var lifecycle
     @State private var app = AppModel()
+    @Environment(\.openWindow) private var openWindow
 
     init() {
+        MacTransferCache.prune() // MacIntegration
         SharingTemporaryFiles.sweep() // Sharing
         Task.detached { UploadMultipart.sweepStale() } // Upload
         ViewerState.pruneClipboard() // Viewer
     }
 
     var body: some Scene {
-        Window("Immich Gallery", id: "main") {
-            RootView()
+        WindowGroup("Immich Gallery", id: "main", for: MacWindowRoute.self) { route in
+            MacWindowRoot(app: app, route: route.wrappedValue)
                 .environment(app)
                 .frame(minWidth: 760, minHeight: 480)
         }
         .defaultSize(width: 1280, height: 820)
         .windowToolbarStyle(.unified)
-        .commands { AppCommands(app: app); AdminCommands(app: app); UploadCommands(app: app); ViewerCommands() }
+        .onChange(of: MacIntegrationRouter.shared.pending, initial: true) { openPendingIntents() }
+        .onChange(of: app.session.map(ObjectIdentifier.init)) { openPendingIntents() }
+        .commands { AppCommands(app: app); AdminCommands(app: app); UploadCommands(app: app); ViewerCommands(); MacIntegrationCommands() }
 
         AdminScene(app: app) // Admin
 
@@ -28,6 +33,13 @@ struct ImmichGalleryApp: App {
             AccountSettingsTabs() // Account
                 .environment(app)
         }
+    }
+
+    private func openPendingIntents() {
+        guard app.session != nil else { return }
+        let routes = MacIntegrationRouter.shared.pending
+        MacIntegrationRouter.shared.pending.removeAll()
+        for route in routes { openWindow(id: "main", value: route) }
     }
 }
 
@@ -167,7 +179,7 @@ struct AppCommands: Commands {
                 Button("Unarchive") { if let grid { Task { await grid.setArchived(ids, false) } } }
                     .disabled(ids.isEmpty || grid?.source.isPartner == true)
             } else {
-                Button("Archive") { if let grid { Task { await grid.setArchived(ids, true) } } }
+                Button(String(localized: "Archive Selected Photos")) { if let grid { Task { await grid.setArchived(ids, true) } } }
                     .keyboardShortcut("a", modifiers: [.command, .control])
                     .disabled(ids.isEmpty || grid?.source == .trash || grid?.source.isPartner == true)
             }

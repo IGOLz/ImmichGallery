@@ -29,6 +29,7 @@ struct AssetViewer: View {
                     .overlay(alignment: .topTrailing) { ViewerVideoOptions().padding()
                         .opacity(!isPresentation || viewer?.controlsVisible != false ? 1 : 0)
                         .allowsHitTesting(!isPresentation || viewer?.controlsVisible != false) }
+                    .draggable(OriginalTransfer(id: item.id, isVideo: true, client: session.client))
             } else {
                 ZoomableImage(item: item, rotation: viewer?.rotation ?? 0)
                     .id(item.id)
@@ -148,6 +149,8 @@ private struct ZoomableImage: View {
                         .resizable()
                         .interpolation(.high)
                         .scaledToFit()
+                        .draggable(OriginalTransfer.self, item: scale * gestureScale <= 1
+                                   ? OriginalTransfer(id: item.id, client: session.client) : nil)
                 } else if let hash = item.thumbhash, let placeholder = ThumbHash.image(base64: hash) {
                     Image(decorative: placeholder, scale: 1)
                         .resizable()
@@ -168,7 +171,7 @@ private struct ZoomableImage: View {
             }
             .contentShape(Rectangle())
             .gesture(magnify)
-            .simultaneousGesture(pan(in: geo.size))
+            .simultaneousGesture(pan(in: geo.size), isEnabled: scale * gestureScale > 1)
             .onTapGesture(count: 2) {
                 withAnimation(.snappy) {
                     if scale > 1 { scale = 1; offset = .zero } else { scale = 2.5 }
