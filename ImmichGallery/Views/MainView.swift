@@ -8,6 +8,7 @@ enum SidebarItem: Hashable {
     case partners // Sharing
     case partner(String) // Sharing
     case duplicates, largeFiles, geolocation // Assets
+    case explore(ExplorePage) // Explore
 }
 
 struct MainView: View {
@@ -87,6 +88,7 @@ struct MainView: View {
         case .duplicates: AssetsDuplicatesView()
         case .largeFiles: AssetGridContainer(source: .largeFiles, title: Text("Large Files"))
         case .geolocation: AssetGridContainer(source: .geolocation, title: Text("Assign Location"))
+        case .explore(let page): ExploreView(page: page) // Explore
         case .search:
             SearchView(text: submittedSearch, chooseText: { searchText = $0; submittedSearch = $0 }, showFilters: $showSearchFilters)
         }
@@ -105,6 +107,7 @@ struct SidebarView: View {
                 Label("Favorites", systemImage: "heart").tag(SidebarItem.favorites)
                 Label("Videos", systemImage: "video").tag(SidebarItem.videos)
             }
+            ExploreSidebar() // Explore
             Section("Collections") {
                 Label("Albums", systemImage: "rectangle.stack").tag(SidebarItem.albums)
                 if session.features.facialRecognition {

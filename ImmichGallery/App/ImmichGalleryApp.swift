@@ -22,6 +22,8 @@ struct ImmichGalleryApp: App {
 
         AdminScene(app: app) // Admin
 
+        ExploreMemoryScene(app: app) // Explore
+
         Settings {
             AccountSettingsTabs() // Account
                 .environment(app)
@@ -156,6 +158,8 @@ struct AppCommands: Commands {
             }
             let ids = grid?.selectedItems.map(\.id) ?? []
             if let session = app.session { AlbumSelectionMenu(session: session, model: grid, ids: ids) } // Albums
+            Button("Move to Locked Folder") { if let grid { Task { await grid.moveToLockedFolder(ids) } } }
+                .disabled(ids.isEmpty || grid?.source == .trash || grid?.source.isPartner == true) // Explore
             // "." and ⌘⌫ are handled by the grid/viewer so they don't steal keys from text fields.
             Button("Favorite  (.)") { if let grid { Task { await grid.toggleFavorite(ids) } } }
                 .disabled(ids.isEmpty || grid?.source.isPartner == true)

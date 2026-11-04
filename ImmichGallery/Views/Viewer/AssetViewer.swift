@@ -53,6 +53,11 @@ struct AssetViewer: View {
             }
         }
         .safeAreaInset(edge: .top) { AssetsStackButton(item: item, model: model).id(item.id) }
+        .contextMenu {
+            if !model.source.isPartner, model.source != .trash { // Explore
+                Button("Move to Locked Folder") { Task { await model.moveToLockedFolder([item.id]) } }
+            }
+        }
         .focusable()
         .focused($isFocused)
         .focusEffectDisabled()

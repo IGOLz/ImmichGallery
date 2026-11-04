@@ -189,17 +189,21 @@ struct TimelineQuery: Hashable, Sendable {
     var albumId: String?
     var personId: String?
     var userId: String? // Sharing
+    var tagId: String? // Explore
     var withPartners: Bool?
     var withStacked: Bool? = true
+    var bbox: String? // Explore
 
     var parameters: [String: String?] {
         [
+            "bbox": bbox, // Explore
             "visibility": visibility,
             "isFavorite": isFavorite.map(String.init),
             "isTrashed": isTrashed.map(String.init),
             "albumId": albumId,
             "personId": personId,
             "userId": userId, // Sharing
+            "tagId": tagId, // Explore
             "withPartners": withPartners.map(String.init),
             "withStacked": withStacked.map(String.init),
         ]

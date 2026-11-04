@@ -177,6 +177,25 @@ final class LibrarySession {
     private(set) var version: ServerVersion?
     private(set) var albums: [Album] = []
     private(set) var preferences: AccountPreferences? // Account: loaded preferences for feature consumers.
+    var exploreTags: [ExploreTag] = []
+    var exploreTagsEnabled = false
+    @ObservationIgnored private var exploreTagsLoaded = false
+    @ObservationIgnored private var exploreTagsTask: Task<Void, Never>?
+
+    func loadExploreTags(refresh: Bool = false) async {
+        if let task = exploreTagsTask { await task.value; if !refresh { return } }
+        guard refresh || !exploreTagsLoaded else { return }
+        let task = Task {
+            do {
+                exploreTagsEnabled = try await client.explorePreferences().tags?.enabled == true
+                exploreTags = exploreTagsEnabled ? try await client.exploreTags().sorted { $0.value.localizedStandardCompare($1.value) == .orderedAscending } : []
+                exploreTagsLoaded = true
+            } catch { handle(error) }
+        }
+        exploreTagsTask = task
+        await task.value
+        exploreTagsTask = nil
+    }
 
     let cacheUserID: String
     @ObservationIgnored var onUserLoaded: (User) -> Void = { _ in }
@@ -207,6 +226,7 @@ final class LibrarySession {
         preferences = try? await client.accountPreferences()
         await reloadAlbums()
         await sharing.reload() // Sharing
+        await loadExploreTags()
     }
 
     func setPreferences(_ value: AccountPreferences) { preferences = value }
@@ -249,6 +269,11 @@ final class LibrarySession {
     /// Mutations in one view (favorite, delete…) can affect other cached grids.
     func invalidateGrids(except keep: AssetGridModel? = nil) {
         for model in gridModels.values where model !== keep { model.markStale() }
+    }
+
+    // Explore
+    func exploreRemoveFromGrids(_ ids: Set<String>) {
+        for model in gridModels.values { model.exploreRemove(ids) }
     }
 
     func handle(_ error: Error) {

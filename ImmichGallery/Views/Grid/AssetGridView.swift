@@ -304,6 +304,7 @@ struct AssetGridView: View {
             SharingMenu(assetIDs: ids) // Sharing
             AssetsContextMenu(model: model, ids: [asset.id] + ids.filter { $0 != asset.id })
             MetadataMenuItems(ids: ids, canEditImage: !asset.isVideo && asset.livePhotoVideoID == nil).disabled(session.metadata.busy) // Metadata
+            ExploreAssetActions(ids: ids, model: model) // Explore
             Button("Export Unmodified Original…") { Exporter.exportOriginals(ids, session: session) }
             Divider()
             if model.source == .archive {

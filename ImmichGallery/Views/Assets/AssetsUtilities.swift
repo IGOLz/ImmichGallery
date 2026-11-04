@@ -41,7 +41,7 @@ struct AssetsGridUtilities: ViewModifier {
     private var supportsLocation: Bool {
         switch model.source {
         case .library, .favorites, .videos, .archive, .largeFiles, .geolocation, .person: true
-        case .album, .search, .filteredSearch, .partner, .trash: false
+        case .album, .search, .filteredSearch, .partner, .explore, .trash: false
         }
     }
     func body(content: Content) -> some View {
