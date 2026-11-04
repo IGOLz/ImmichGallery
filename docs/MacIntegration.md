@@ -43,3 +43,9 @@ No widget extension: robust delivery needs a separate extension target, App Grou
 - ImmichGallery.xcodeproj/project.pbxproj: add Italian knownRegions entry only.
 
 No changes to README.md, shared API/DTO files, AppModel.swift or AssetGridModel.swift.
+
+## UI-run stop instruction
+
+The parent subsequently clarified that all worktree builds share the bundle identifier and Keychain, so startup may restore the user's real account at https://immich.igol.dev. No further UI runs are permitted for this category. A process check found no remaining instance belonging to this checkout or carrying the `-AppleLanguages (it)` arguments used for the launch.
+
+The launch executed existing account-restoration code, which attempts to read saved credentials and can automatically issue startup GET requests for the account, server capabilities/version, albums and timeline. The UI inspection timed out before any interaction. Actual startup request destinations/results were not observed, so user-server activity cannot truthfully be reported as "none". No manual UI interaction or write request to the user's server was performed. Direct API verification used only the public demo and its explicitly supplied demo credentials. Do not launch this branch again; final UI verification belongs to the parent's single merged app.
