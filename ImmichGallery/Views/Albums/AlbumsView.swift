@@ -10,20 +10,28 @@ struct AlbumsView: View {
                                        description: Text("Albums you create or that are shared with you appear here."))
             } else {
                 ScrollView {
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 170, maximum: 240), spacing: 20)], spacing: 24) {
-                        ForEach(session.albums) { album in
-                            NavigationLink(value: album) { AlbumCell(album: album) }
-                                .buttonStyle(.plain)
+                    ForEach([false, true], id: \.self) { shared in
+                        let albums = session.albums.filter { $0.shared == shared }
+                        if !albums.isEmpty {
+                            Text(shared ? "Shared Albums" : "My Albums")
+                                .font(.title2.bold()).frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 20)
+                            LazyVGrid(columns: [GridItem(.adaptive(minimum: 170, maximum: 240), spacing: 20)], spacing: 24) {
+                                ForEach(albums) { album in
+                                    NavigationLink(value: album) { AlbumCell(album: album) }.buttonStyle(.plain)
+                                }
+                            }.padding(20)
                         }
                     }
-                    .padding(20)
                 }
                 .fastWheelScrolling()
             }
         }
         .navigationTitle("Albums")
         .navigationDestination(for: Album.self) { album in
-            AssetGridContainer(source: .album(album.id), title: Text(verbatim: album.albumName))
+            AlbumDetailView(id: album.id)
+        }
+        .toolbar {
+            ToolbarItem { Button { session.albumActions.newAlbum() } label: { Label("New Album", systemImage: "plus") } }
         }
         .task { await session.reloadAlbums() }
     }

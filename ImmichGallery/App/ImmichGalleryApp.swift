@@ -60,6 +60,12 @@ struct AppCommands: Commands {
             }
         }
 
+        CommandGroup(after: .newItem) {
+            Button("New Album…") { app.session?.albumActions.newAlbum() }
+                .keyboardShortcut("n", modifiers: [.command, .option])
+                .disabled(app.session == nil)
+        } // Albums
+
         CommandGroup(after: .importExport) {
             Button("Export Unmodified Original…") {
                 if let grid { Exporter.exportOriginals(grid.selectedItems.map(\.id), session: app.session) }
@@ -91,6 +97,7 @@ struct AppCommands: Commands {
 
         CommandMenu("Image") {
             let ids = grid?.selectedItems.map(\.id) ?? []
+            if let session = app.session { AlbumSelectionMenu(session: session, model: grid, ids: ids) } // Albums
             // "." and ⌘⌫ are handled by the grid/viewer so they don't steal keys from text fields.
             Button("Favorite  (.)") { if let grid { Task { await grid.toggleFavorite(ids) } } }
                 .disabled(ids.isEmpty)
