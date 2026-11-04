@@ -54,10 +54,10 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
-        .frame(width: 460)
+        .frame(maxWidth: .infinity)
         .fixedSize(horizontal: false, vertical: true)
         .onAppear {
-            cacheSize = Int64(ImmichClient.sharedSession.configuration.urlCache?.currentDiskUsage ?? 0)
+            cacheSize = Int64(app.session?.client.session.configuration.urlCache?.currentDiskUsage ?? 0)
         }
     }
 }

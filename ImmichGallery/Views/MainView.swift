@@ -24,6 +24,7 @@ struct MainView: View {
             }
             .id(selection)
         }
+        .toolbar { ToolbarItemGroup { AccountNotificationBell(session: session); AccountMenu() } } // Account
         .searchable(text: $searchText, placement: .toolbar, prompt: session.features.smartSearch ? "Search photos" : "Search file names")
         .searchFocused($searchFocused)
         .background {

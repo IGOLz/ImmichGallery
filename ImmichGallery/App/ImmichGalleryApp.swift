@@ -15,7 +15,7 @@ struct ImmichGalleryApp: App {
         .commands { AppCommands(app: app) }
 
         Settings {
-            SettingsView()
+            AccountSettingsTabs() // Account
                 .environment(app)
         }
     }
