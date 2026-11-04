@@ -93,6 +93,7 @@ final class AssetGridModel {
     @ObservationIgnored private var isStale = false
     // Paged sources (search, videos)
     @ObservationIgnored private var nextPage: ImmichClient.SearchPage?
+    @ObservationIgnored private var pageFailed = false
     @ObservationIgnored private var pageTask: Task<Void, Never>?
 
     init(source: GridSource, session: LibrarySession) {
@@ -132,6 +133,7 @@ final class AssetGridModel {
     func reload() async {
         guard let session else { return }
         isStale = false
+        pageFailed = false
         sectionTasks.values.forEach { $0.cancel() }
         sectionTasks = [:]
         pageTask?.cancel()
@@ -201,10 +203,11 @@ final class AssetGridModel {
     }
 
     private func loadNextPage() {
-        guard pageTask == nil, nextPage != nil else { return }
+        guard !pageFailed, pageTask == nil, nextPage != nil else { return }
         pageTask = Task { [weak self] in
             guard let self else { return }
-            do { try await fetchNextPage() } catch { if !error.isCancellation { report(error) } }
+            do { try await fetchNextPage() }
+            catch { if !error.isCancellation { pageFailed = true; report(error) } }
             pageTask = nil
         }
     }
@@ -280,8 +283,12 @@ final class AssetGridModel {
                 if sections[s].assets == nil { await loadSection(id: sections[s].id).value }
                 i = (sections[s].assets?.count ?? 0) - 1
             } else if i >= count {
-                if isPaged, s == sections.count - 1, nextPage != nil {
-                    try? await fetchNextPage()
+                if isPaged, s == sections.count - 1, nextPage != nil, !pageFailed {
+                    do { try await fetchNextPage() }
+                    catch {
+                        if !error.isCancellation { pageFailed = true; report(error) }
+                        return nil
+                    }
                     continue
                 }
                 s += 1

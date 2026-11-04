@@ -6,6 +6,7 @@ struct SearchFiltersView: View {
     @Binding var query: SearchQuery
     let ratingsEnabled: Bool
     let apply: () -> Void
+    @State private var peopleName = ""
     @State private var people: [Person] = []
     @State private var page = 1
     @State private var hasMorePeople = true
@@ -25,10 +26,12 @@ struct SearchFiltersView: View {
             Form {
                 if session.features.facialRecognition {
                     Section("People") {
+                        TextField("Filter loaded people by name", text: $peopleName)
                         ScrollView(.horizontal) {
                             LazyHStack {
-                                ForEach(people) { person in
+                                ForEach(people.filter { peopleName.isEmpty || $0.name.localizedCaseInsensitiveContains(peopleName) }) { person in
                                     SearchPersonButton(person: person, selected: query.personIDs.contains(person.id)) {
+                                        query.personNames[person.id] = person.name.isEmpty ? "Unnamed Person" : person.name
                                         if !query.personIDs.insert(person.id).inserted { query.personIDs.remove(person.id) }
                                     }
                                 }
@@ -121,7 +124,7 @@ private struct SearchSuggestionField: View {
             if !unavailable {
                 Menu {
                     Button("Any") { value = "" }
-                    ForEach(suggestions.filter { value.isEmpty || $0.localizedCaseInsensitiveContains(value) }, id: \.self) { suggestion in
+                    ForEach(suggestions, id: \.self) { suggestion in
                         Button(suggestion) { value = suggestion }
                     }
                     if let errorMessage { Text(errorMessage) }
@@ -130,7 +133,13 @@ private struct SearchSuggestionField: View {
             }
         }
         .task(id: dependencies) {
-            do { suggestions = try await session.client.searchSuggestions(type, filters: filters); errorMessage = nil }
+            suggestions = []
+            do {
+                try await Task.sleep(for: .milliseconds(250))
+                let result = try await session.client.searchSuggestions(type, filters: filters)
+                try Task.checkCancellation()
+                suggestions = result; errorMessage = nil
+            }
             catch ImmichError.http(404, _) { unavailable = true }
             catch { if !error.isCancellation { session.handle(error); errorMessage = error.localizedDescription } }
         }

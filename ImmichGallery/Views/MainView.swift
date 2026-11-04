@@ -11,6 +11,7 @@ struct MainView: View {
     @State private var selection: SidebarItem? = .library
     @State private var searchText = ""
     @State private var submittedSearch = ""
+    @State private var showSearchFilters = false
     @FocusState private var searchFocused: Bool
 
     var body: some View {
@@ -26,14 +27,9 @@ struct MainView: View {
         .searchable(text: $searchText, placement: .toolbar, prompt: session.features.smartSearch ? "Search photos" : "Search file names")
         .searchSuggestions { SearchFieldSuggestions(text: searchText) }
         .searchFocused($searchFocused)
-        .background {
-            // ⌘F focuses the toolbar search field, like Photos.
-            Button("Find") { searchFocused = true }
-                .keyboardShortcut("f", modifiers: .command)
-                .opacity(0)
-                .allowsHitTesting(false)
-                .accessibilityHidden(true)
-        }
+        .focusedSceneValue(\.searchActions, SearchActions(
+            find: { selection = .search; searchFocused = true },
+            filters: { selection = .search; showSearchFilters = true }))
         .onSubmit(of: .search) {
             let query = searchText.trimmingCharacters(in: .whitespaces)
             guard !query.isEmpty else { return }
@@ -41,7 +37,7 @@ struct MainView: View {
             selection = .search
         }
         .onChange(of: selection) { _, newValue in
-            if newValue != .search { searchText = "" }
+            if newValue != .search { searchText = ""; submittedSearch = ""; showSearchFilters = false }
         }
         .onChange(of: searchText) { _, text in
             if text.isEmpty, selection == .search { submittedSearch = "" }
@@ -68,7 +64,7 @@ struct MainView: View {
         case .album(let id):
             AssetGridContainer(source: .album(id), title: Text(verbatim: session.albums.first { $0.id == id }?.albumName ?? ""))
         case .search:
-            SearchView(text: submittedSearch) { searchText = $0; submittedSearch = $0 }
+            SearchView(text: submittedSearch, chooseText: { searchText = $0; submittedSearch = $0 }, showFilters: $showSearchFilters)
         }
     }
 }

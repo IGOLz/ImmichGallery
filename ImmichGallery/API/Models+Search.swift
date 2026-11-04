@@ -9,6 +9,7 @@ struct SearchQuery: Codable, Hashable, Sendable {
     var text = ""
     var mode: SearchMode = .context
     var personIDs: Set<String> = []
+    var personNames: [String: String] = [:]
     var country = ""
     var state = ""
     var city = ""
@@ -23,19 +24,89 @@ struct SearchQuery: Codable, Hashable, Sendable {
     var notInAlbum = false
     var rating: Int?
 
-    var chips: [String] {
-        var values = [country, state, city, make, model, lensModel, mediaType == "IMAGE" ? "Photos" : mediaType == "VIDEO" ? "Videos" : ""].filter { !$0.isEmpty }
-        if !personIDs.isEmpty { values.append("\(personIDs.count) people") }
-        if let takenAfter { values.append("After \(takenAfter.formatted(date: .abbreviated, time: .omitted))") }
-        if let takenBefore { values.append("Before \(takenBefore.formatted(date: .abbreviated, time: .omitted))") }
-        if archived { values.append("Archived") }
-        if favorites { values.append("Favorites") }
-        if notInAlbum { values.append("Not in an album") }
-        if let rating { values.append("\(rating) stars") }
+    enum Filter: String, Identifiable {
+        case country, state, city, make, model, lensModel, mediaType, people
+        case takenAfter, takenBefore, archived, favorites, notInAlbum, rating
+        var id: Self { self }
+    }
+
+    var filterChips: [(id: Filter, title: String)] {
+        var values: [(id: Filter, title: String)] = []
+        for (field, value) in [(Filter.country, country), (.state, state), (.city, city),
+                               (.make, make), (.model, model), (.lensModel, lensModel),
+                               (.mediaType, mediaType == "IMAGE" ? "Photos" : mediaType == "VIDEO" ? "Videos" : "")] where !value.isEmpty {
+            values.append((field, value))
+        }
+        if !personIDs.isEmpty {
+            values.append((.people, personIDs.sorted().map { personNames[$0] ?? "Unnamed Person" }.joined(separator: ", ")))
+        }
+        if let takenAfter { values.append((.takenAfter, "After \(takenAfter.formatted(date: .abbreviated, time: .omitted))")) }
+        if let takenBefore { values.append((.takenBefore, "Before \(takenBefore.formatted(date: .abbreviated, time: .omitted))")) }
+        if archived { values.append((.archived, "Archived")) }
+        if favorites { values.append((.favorites, "Favorites")) }
+        if notInAlbum { values.append((.notInAlbum, "Not in an album")) }
+        if let rating { values.append((.rating, "\(rating) stars")) }
         return values
     }
 
-    var validDates: Bool { takenAfter == nil || takenBefore == nil || takenAfter! <= takenBefore! }
+    var chips: [String] { filterChips.map(\.title) }
+
+    mutating func remove(_ filter: Filter) {
+        switch filter {
+        case .country: country = ""
+        case .state: state = ""
+        case .city: city = ""
+        case .make: make = ""
+        case .model: model = ""
+        case .lensModel: lensModel = ""
+        case .mediaType: mediaType = ""
+        case .people: personIDs = []; personNames = [:]
+        case .takenAfter: takenAfter = nil
+        case .takenBefore: takenBefore = nil
+        case .archived: archived = false
+        case .favorites: favorites = false
+        case .notInAlbum: notInAlbum = false
+        case .rating: rating = nil
+        }
+    }
+
+    mutating func clampMode(smartEnabled: Bool, ocrEnabled: Bool) {
+        if (mode == .context && !smartEnabled) || (mode == .ocr && !ocrEnabled) { mode = .fileName }
+    }
+
+    var validDates: Bool {
+        guard let takenAfter, let takenBefore else { return true }
+        return Calendar.current.startOfDay(for: takenAfter) <= Calendar.current.startOfDay(for: takenBefore)
+    }
+
+    init() {}
+
+    private enum CodingKeys: String, CodingKey {
+        case text, mode, personIDs, personNames, country, state, city, make, model, lensModel
+        case takenAfter, takenBefore, mediaType, archived, favorites, notInAlbum, rating
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        text = try c.decodeIfPresent(String.self, forKey: .text) ?? ""
+        mode = try c.decodeIfPresent(SearchMode.self, forKey: .mode) ?? .context
+        personIDs = try c.decodeIfPresent(Set<String>.self, forKey: .personIDs) ?? []
+        personNames = try c.decodeIfPresent([String: String].self, forKey: .personNames) ?? [:]
+        country = try c.decodeIfPresent(String.self, forKey: .country) ?? ""
+        state = try c.decodeIfPresent(String.self, forKey: .state) ?? ""
+        city = try c.decodeIfPresent(String.self, forKey: .city) ?? ""
+        make = try c.decodeIfPresent(String.self, forKey: .make) ?? ""
+        model = try c.decodeIfPresent(String.self, forKey: .model) ?? ""
+        lensModel = try c.decodeIfPresent(String.self, forKey: .lensModel) ?? ""
+        takenAfter = try c.decodeIfPresent(Date.self, forKey: .takenAfter)
+        takenBefore = try c.decodeIfPresent(Date.self, forKey: .takenBefore)
+        mediaType = try c.decodeIfPresent(String.self, forKey: .mediaType) ?? ""
+        archived = try c.decodeIfPresent(Bool.self, forKey: .archived) ?? false
+        favorites = try c.decodeIfPresent(Bool.self, forKey: .favorites) ?? false
+        notInAlbum = try c.decodeIfPresent(Bool.self, forKey: .notInAlbum) ?? false
+        rating = try c.decodeIfPresent(Int.self, forKey: .rating)
+    }
+
 }
 
 /// Both endpoints accept these flat filters in v2 and v3.3.5. The latter deprecates
@@ -62,7 +133,6 @@ struct AdvancedSearchRequest: Encodable {
     var page: Int?
     var cursor: String?
     var size = 100
-    var withExif = true
     var order: String?
 
     init(_ search: SearchQuery, smart: Bool, page: ImmichClient.SearchPage) {
@@ -96,9 +166,6 @@ struct AdvancedSearchRequest: Encodable {
     }
 }
 
-struct SearchCapabilities: Decodable {
-    var ocr: Bool?
-}
 struct SearchPreferences: Decodable {
     struct Ratings: Decodable { var enabled: Bool }
     var ratings: Ratings?

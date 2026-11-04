@@ -14,14 +14,19 @@ extension ImmichClient {
     }
 
     func searchSuggestions(_ type: String, filters: SearchQuery) async throws -> [String] {
-        try await get("search/suggestions", query: [
-            "type": type, "country": filters.country.isEmpty ? nil : filters.country,
-            "state": filters.state.isEmpty ? nil : filters.state,
-            "make": filters.make.isEmpty ? nil : filters.make,
-            "model": filters.model.isEmpty ? nil : filters.model,
-        ])
+        try await get("search/suggestions", query: Self.searchSuggestionParameters(type, filters: filters))
     }
-    func searchCapabilities() async throws -> SearchCapabilities { try await get("server/features") }
+
+    static func searchSuggestionParameters(_ type: String, filters: SearchQuery) -> [String: String?] {
+        func value(_ text: String) -> String? { text.isEmpty ? nil : text }
+        return [
+            "type": type,
+            "country": type == "state" || type == "city" ? value(filters.country) : nil,
+            "state": type == "city" ? value(filters.state) : nil,
+            "make": type == "camera-model" || type == "camera-lens-model" ? value(filters.make) : nil,
+            "model": type == "camera-lens-model" ? value(filters.model) : nil,
+        ]
+    }
     func searchPreferences() async throws -> SearchPreferences { try await get("users/me/preferences") }
     func searchExplore() async throws -> [SearchExploreGroup] { try await get("search/explore") }
 }

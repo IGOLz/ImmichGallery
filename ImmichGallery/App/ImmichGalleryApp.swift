@@ -43,12 +43,19 @@ struct RootView: View {
 
 // MARK: - Menu commands
 
+struct SearchActions {
+    var find: () -> Void
+    var filters: () -> Void
+}
+
 extension FocusedValues {
+    @Entry var searchActions: SearchActions?
     @Entry var gridModel: AssetGridModel?
 }
 
 struct AppCommands: Commands {
     let app: AppModel
+    @FocusedValue(\.searchActions) private var searchActions
     @FocusedValue(\.gridModel) private var grid
     @AppStorage("gridThumbnailSize") private var thumbnailSize = GridMetrics.defaultSize
     @AppStorage("showInspector") private var showInspector = false
@@ -66,6 +73,15 @@ struct AppCommands: Commands {
             }
             .keyboardShortcut("e", modifiers: [.command, .shift])
             .disabled(grid?.selection.isEmpty ?? true)
+        }
+
+        CommandGroup(after: .textEditing) {
+            Button("Find") { searchActions?.find() }
+                .keyboardShortcut("f", modifiers: .command)
+                .disabled(searchActions == nil)
+            Button("Search Filters…") { searchActions?.filters() }
+                .keyboardShortcut("f", modifiers: [.command, .option])
+                .disabled(searchActions == nil)
         }
 
         CommandGroup(after: .pasteboard) {
