@@ -193,9 +193,11 @@ struct TimelineQuery: Hashable, Sendable {
     var tagId: String? // Explore
     var withPartners: Bool?
     var withStacked: Bool? = true
+    var bbox: String? // Explore
 
     var parameters: [String: String?] {
         [
+            "bbox": bbox, // Explore
             "visibility": visibility,
             "isFavorite": isFavorite.map(String.init),
             "isTrashed": isTrashed.map(String.init),

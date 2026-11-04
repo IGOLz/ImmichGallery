@@ -3,16 +3,19 @@ import Foundation
 import ImageIO
 
 /// Loads and decodes Immich media off the main thread with a memory cache in front of the
-/// ephemeral URLSession. Cancelling the calling task cancels the network request, which keeps
+/// cached URLSession. Cancelling the calling task cancels the network request, which keeps
 /// fast scrolling responsive.
 final class ImagePipeline: Sendable {
     let client: ImmichClient
     // NSCache is thread-safe.
     nonisolated(unsafe) private let cache: NSCache<NSString, CGImage>
 
+    private let evictionLock = NSLock()
+    nonisolated(unsafe) private var revisions: [String: Int] = [:]
+    nonisolated(unsafe) private var revision = 0
+
     init(client: ImmichClient) {
-        client.session.configuration.urlCache?.removeAllCachedResponses()
-        self.client = client.explorePrivateClient() // Explore: media must not survive a move into Locked Folder on disk.
+        self.client = client
         let cache = NSCache<NSString, CGImage>()
         cache.totalCostLimit = 512 << 20
         self.cache = cache
@@ -36,16 +39,45 @@ final class ImagePipeline: Sendable {
     }
 
     func removeAll() {
-        cache.removeAllObjects()
-        client.session.configuration.urlCache?.removeAllCachedResponses()
+        evictionLock.withLock {
+            revision += 1
+            cache.removeAllObjects()
+            client.session.configuration.urlCache?.removeAllCachedResponses()
+        }
+    }
+
+    func evict(ids: [String]) {
+        evictionLock.withLock {
+            for id in ids {
+                for size in [ImmichClient.ThumbnailSize.thumbnail, .preview, .fullsize] {
+                    evict(key: "\(id)-\(size.rawValue)", request: client.thumbnailRequest(id, size: size))
+                }
+                evict(key: "\(id)-original", request: client.originalRequest(id))
+            }
+        }
+    }
+
+    private func evict(key: String, request: URLRequest) {
+        revisions[key, default: 0] += 1
+        cache.removeObject(forKey: key as NSString)
+        client.session.configuration.urlCache?.removeCachedResponse(for: request)
     }
 
     private func load(_ request: URLRequest, key: String, maxPixelSize: Int?) async -> CGImage? {
+        let started = evictionLock.withLock { (revision, revisions[key, default: 0]) }
         if let cached = cache.object(forKey: key as NSString) { return cached }
-        guard let data = try? await client.data(for: request), !Task.isCancelled,
-              let image = Self.decode(data, maxPixelSize: maxPixelSize) else { return nil }
-        cache.setObject(image, forKey: key as NSString, cost: image.bytesPerRow * image.height)
-        return image
+        let data = try? await client.data(for: request)
+        let image = data.flatMap { Self.decode($0, maxPixelSize: maxPixelSize) }
+        return evictionLock.withLock {
+            // A request started before eviction may finish after the delayed purge.
+            guard started == (revision, revisions[key, default: 0]) else {
+                client.session.configuration.urlCache?.removeCachedResponse(for: request)
+                return nil
+            }
+            guard !Task.isCancelled, let image else { return nil }
+            cache.setObject(image, forKey: key as NSString, cost: image.bytesPerRow * image.height)
+            return image
+        }
     }
 
     static func decode(_ data: Data, maxPixelSize: Int?) -> CGImage? {

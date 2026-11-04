@@ -2,7 +2,6 @@ import SwiftUI
 
 struct ExploreTagsView: View {
     @Environment(LibrarySession.self) private var session
-    @State private var tags: [ExploreTag] = []
     @State private var editing: ExploreTag?
     @State private var deleting: ExploreTag?
     @State private var name = ""
@@ -10,10 +9,11 @@ struct ExploreTagsView: View {
     @State private var showingEditor = false
     @State private var error: String?
     var body: some View {
-        List(tags) { tag in
+        List(ExploreTagNode.tree(session.exploreTags), children: \.children) { node in
+            let tag = node.tag
             NavigationLink {
                 AssetGridContainer(source: .explore(.tag(tag.id)), title: Text(tag.value))
-            } label: { Label(tag.value, systemImage: "tag").foregroundStyle(tagColor(tag.color)) }
+            } label: { Label(tag.name, systemImage: "tag").foregroundStyle(tagColor(tag.color)) }
             .contextMenu {
                 Button("Edit Tag…") { editing = tag; name = tag.name; color = tag.color ?? ""; showingEditor = true }
                 Button("Delete Tag…", role: .destructive) { deleting = tag }
@@ -52,11 +52,10 @@ struct ExploreTagsView: View {
     }
     private var valid: Bool {
         !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && (editing == nil || !name.contains("/")) &&
-        (color.isEmpty || color.range(of: "^#?([0-9A-Fa-f]{3}|[0-9A-Fa-f]{4}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$", options: .regularExpression) != nil)
+        (color.isEmpty || color.range(of: "^#[0-9A-Fa-f]{6}$", options: .regularExpression) != nil)
     }
     private func reload() async {
-        do { tags = try await session.client.exploreTags().sorted { $0.value.localizedStandardCompare($1.value) == .orderedAscending } }
-        catch { self.error = error.localizedDescription }
+        await session.loadExploreTags(refresh: true)
     }
     private func tagColor(_ hex: String?) -> Color {
         guard let hex, hex.count == 7, let value = UInt(hex.dropFirst(), radix: 16) else { return .primary }
@@ -68,37 +67,24 @@ struct ExploreAssetActions: View {
     @Environment(LibrarySession.self) private var session
     let ids: [String]
     let model: AssetGridModel
-    @State private var tags: [ExploreTag] = []
-    @State private var enabled = false
     var body: some View {
         Menu("Tags") {
-            if !enabled { Text("Enable Tags in Immich Account Settings") }
-            ForEach(tags) { tag in
+            if !session.exploreTagsEnabled { Text("Enable Tags in Immich Account Settings") }
+            ForEach(session.exploreTags) { tag in
                 Menu(tag.value) {
                     Button("Add Tag") { update(tag, remove: false) }
                     Button("Remove Tag") { update(tag, remove: true) }
                 }
             }
-        }.task {
-            enabled = (try? await session.client.explorePreferences())?.tags?.enabled == true
-            if enabled { tags = (try? await session.client.exploreTags()) ?? [] }
         }
-        Button("Move to Locked Folder") {
-            Task {
-                do {
-                    try await session.client.setVisibility(ids, "locked")
-                    session.exploreRemoveFromGrids(Set(ids))
-                    session.pipeline.removeAll()
-                    session.invalidateGrids()
-                    await model.reload()
-                } catch { model.lastError = error.localizedDescription }
-            }
-        }
+        Button("Move to Locked Folder") { Task { await model.moveToLockedFolder(ids) } }
     }
     private func update(_ tag: ExploreTag, remove: Bool) {
         Task {
-            do { try await session.client.exploreTagAssets(ids, tag: tag.id, remove: remove); session.invalidateGrids(); await model.reload() }
+            do { try await session.client.exploreTagAssets(ids, tag: tag.id, remove: remove) }
             catch { model.lastError = error.localizedDescription }
+            session.invalidateGrids()
+            await model.reload()
         }
     }
 }

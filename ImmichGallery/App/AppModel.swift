@@ -71,6 +71,25 @@ final class LibrarySession {
     private(set) var features = ServerFeatures()
     private(set) var version: ServerVersion?
     private(set) var albums: [Album] = []
+    var exploreTags: [ExploreTag] = []
+    var exploreTagsEnabled = false
+    @ObservationIgnored private var exploreTagsLoaded = false
+    @ObservationIgnored private var exploreTagsTask: Task<Void, Never>?
+
+    func loadExploreTags(refresh: Bool = false) async {
+        if let task = exploreTagsTask { await task.value; if !refresh { return } }
+        guard refresh || !exploreTagsLoaded else { return }
+        let task = Task {
+            do {
+                exploreTagsEnabled = try await client.explorePreferences().tags?.enabled == true
+                exploreTags = exploreTagsEnabled ? try await client.exploreTags().sorted { $0.value.localizedStandardCompare($1.value) == .orderedAscending } : []
+                exploreTagsLoaded = true
+            } catch { handle(error) }
+        }
+        exploreTagsTask = task
+        await task.value
+        exploreTagsTask = nil
+    }
 
     @ObservationIgnored var onUnauthorized: () -> Void = {}
     @ObservationIgnored private var gridModels: [GridSource: AssetGridModel] = [:]
@@ -89,6 +108,7 @@ final class LibrarySession {
         self.version = await version
         if let user = await user { self.user = user }
         await reloadAlbums()
+        await loadExploreTags()
     }
 
     func reloadAlbums() async {

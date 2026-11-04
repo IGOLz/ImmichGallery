@@ -1,61 +1,65 @@
-# Explore implementation and verification
+# Explore implementation and review verification
 
-Targets Immich v3.3.5 and macOS 26. README and project.pbxproj were not edited.
+Targets Immich v3.3.5 and macOS 26. This review pass never launched the app, read Keychain credentials, contacted the user's server, used a live demo session, or pushed the branch.
 
-## Features
+## Review findings
 
-- Map sidebar with SwiftUI Map, photo-cover clusters, counts, favorites, archived, partner and inclusive date-range filters. Camera changes regroup markers off the main actor into bounded geographic cells. Cluster selection opens the existing grid/viewer, fetching full asset details in batches of at most eight requests and pages of 100 assets.
-- Places uses representative photos from search/cities, with city metadata search on selection.
-- Memories respects memories.enabled and opens a separate full-window player with timed preview slides, pause, arrows, keyboard controls, seen state, hide and removal of individual memory associations. Both on_this_day and birthday titles decode; unknown future types still decode.
-- Tags respects tags.enabled, supports full hierarchy paths through upsert, browsing with timeline tagId, rename, hex recolor/clear, confirmed deletion, and assignment/removal for selected assets through the grid context menu.
-- Folders respects folders.enabled and builds a deduplicated expandable path tree. Selection loads direct children through view/folder.
-- Locked Folder checks auth status, supports six-digit PIN setup with confirmation, unlock and lock, pages locked assets, and moves assets back to the timeline. Normal grid context menus move selected assets into the locked folder. Locked media uses a separate ephemeral client and never enters the common grid/viewer or image cache. The view clears media on disappearance/inactivity and requests server relocking. Failures to relock are surfaced.
+| Finding | Result |
+| --- | --- |
+| 1 | Fixed. Ordinary media keeps its original client and disk cache; pipeline creation no longer purges it. Per-ID eviction covers thumbnail, preview, fullsize and original requests. Move-to-locked repeats eviction after two seconds; revision checks also reject and purge requests completing after eviction. Locked Folder owns one ephemeral client per appearance with matching User-Agent, connection limit and timeout, invalidated when done. |
+| 2 | Fixed. Memories sends `for` for today's date. The v3.3.5 OpenAPI and `MemorySearchDto` require an ISO **date**, so this uses YYYY-MM-DD rather than the review's suggested full timestamp. |
+| 3 | Fixed. Include Archived sends `isArchived=true`; disabling it omits the parameter. |
+| 4 | Fixed. Duplicate additions and not-found removals succeed. Permission/unknown failures still surface. The grid refreshes after partial failures too. |
+| 5 | Fixed. Map cluster navigation now uses timeline buckets with a compact bounding-box source, no per-asset detail requests or ID-array hashing. Bounding boxes use `west,south,east,north`. Favorite, archive and partner filters carry through. Date limits filter months before fetching and assets inside fetched months because these timeline endpoints have no date-range parameters. |
+| 6 | Fixed. Lock returns early unless unlocked. Locked views clear their own state and never purge the shared image cache. Pending unlocks use a generation check to relock if the view left. |
+| 7 | Fixed. API-key users have no Locked Folder sidebar item, and a directly restored route explains the session-login requirement. The API method also rejects API-key PIN setup before issuing a request. |
+| 8 | Fixed. Auth status decodes `pinExpiresAt`; unlocking schedules automatic locking at that deadline, with a conservative 15-minute fallback. Media 401/403 responses clear the locked UI and explain that access expired. |
+| 9 | Fixed. Delete Memory uses a confirmation and says photos are kept. |
+| 10 | Fixed. Tag timeline queries omit visibility so archived tagged photos are included. |
+| 11 | Fixed. Move to Locked Folder is available in the grid context menu, Image menu and viewer context menu. The locked viewer and its toolbar menu offer removal, as does the locked grid context menu. |
+| 12 | Fixed. Tags form a disclosure tree using parent IDs. The editor accepts only #RRGGBB or empty, matching rendering. |
+| 13 | Fixed. On-this-day titles use localized singular/plural years-ago strings. Load More is hidden until an initial batch has loaded and is disabled while loading. |
+| 14 | Fixed. Locked metadata filtering remains. Counts use visible appended items; pages containing only locked results or empty pages with a continuation advance without depending on a visible cell. |
 
-## Privacy and integration
+Additional checks addressed: tag/preferences requests moved out of context menus into a coalesced session cache refreshed after tag edits; map date controls moved into a popover; successful initial marker loading explicitly reclusters; restored memory windows show a sign-in explanation when no session exists.
 
-The image pipeline now uses an ephemeral media session for ALL image loads. This intentionally gives up disk thumbnail caching because an in-flight ordinary thumbnail request could otherwise write to disk after an asset is moved into Locked Folder. Existing URLCache entries are purged when a pipeline is created. The memory NSCache remains for ordinary photos. Moving photos into Locked Folder immediately removes them from every cached grid, selection and viewer, and clears image caches. Metadata results filter locked visibility. The v3.3.5 timeline's default visibility includes only timeline/archive, confirmed in server/src/utils/database.ts.
+## Privacy and limits
 
-Touch ID is deliberately omitted: this implementation never stores the PIN. Locked videos and Live Photos currently show preview stills, without AVPlayer or export, to keep locked media out of uncontrolled disk caches. Memory videos also use preview slides. An independent video playback/cache design remains needed for those views.
+Ordinary media uses the existing 4 GB HTTP disk cache and 512 MB decoded-image cache. Locked media uses only the view's ephemeral session and SwiftUI image state. Per-ID eviction removes ordinary cached media when moving it into Locked Folder, including stale in-flight completions. Other cached assets are retained.
 
-Map and Places depend on the server's map flag where applicable. Preferences must explicitly enable Memories, Tags and Folders. Locked Folder is hidden when auth/status is unavailable. Endpoint failures render unavailable/error states rather than crashing. v3.3.5 deprecated PUT tag/memory updates remain supported and retain compatibility with v2. Missing preference sections hide their respective features. No v2 server was available for runtime verification.
+Touch ID remains omitted because PIN storage and biometric access control need a separate design. Locked video/Live Photo and memory playback still use preview images. The map grid represents the cluster's geographic bounds, so co-located photos inside those bounds can also appear. Date-filtered timeline counts for boundary months become exact as those buckets load.
 
-## Documentation checked
+## Source evidence
 
-- https://raw.githubusercontent.com/immich-app/immich/v3.3.5/open-api/immich-openapi-specs.json, downloaded once into ignored build/explore/spec.json. Checked map/markers query names, search/cities, search/metadata, timeline tagId, all tags endpoints and DTOs, memories query/types/update/assets, view/folder endpoints, users/me/preferences, auth/status, auth/pin-code, auth/session/unlock and lock.
-- https://api.immich.app and https://docs.immich.app/features/tags/.
-- Official v3.3.5 web Explore, Folders, Locked and Memories routes; timeline and asset-viewer SetVisibilityAction, PIN creation form. Server timeline.service.ts, asset.repository.ts, search.repository.ts and utils/database.ts confirmed default visibility and city selection.
-- Apple Map, NSViewRepresentable, ScenePhase and URLSessionConfiguration.ephemeral references, including the downloadable Apple documentation Markdown. Actual implementation uses SwiftUI Map and native SwiftUI windows, not an AppKit map wrapper.
+- [Immich v3.3.5 OpenAPI](https://raw.githubusercontent.com/immich-app/immich/v3.3.5/open-api/immich-openapi-specs.json): timeline bbox syntax and supported parameters, memories `for` date format, optional auth PIN expiry, tag bulk results.
+- [Memory DTO](https://github.com/immich-app/immich/blob/v3.3.5/server/src/dtos/memory.dto.ts): `for: isoDateToDate.optional()`.
+- [Memory repository](https://github.com/immich-app/immich/blob/v3.3.5/server/src/repositories/memory.repository.ts): `for` limits showAt/hideAt.
+- [Map repository](https://github.com/immich-app/immich/blob/v3.3.5/server/src/repositories/map.repository.ts): `isArchived=true` includes timeline/archive; absent/false selects timeline.
+
+No finding was rejected. Finding 2 follows the versioned contract's date-only representation.
 
 ## Verification
 
+```
 xcodebuild -project ImmichGallery.xcodeproj -scheme ImmichGallery -configuration Debug -derivedDataPath build/DerivedData build
 
-Build succeeded. No Swift compiler warnings. Xcode prints its existing AppIntents metadata warning because the app has no AppIntents dependency.
+swiftc -parse-as-library ImmichGallery/API/ImmichClient.swift ImmichGallery/API/ImmichClient+Explore.swift ImmichGallery/API/Models.swift ImmichGallery/API/Models+Explore.swift ImmichGallery/Support/ImagePipeline.swift ImmichGallery/App/ExploreClustering.swift ImmichGallery/App/ExploreFolders.swift Tests/ExploreChecks.swift -o build/explore/review-checks
+build/explore/review-checks
+```
 
-Standalone checks, using actual production clustering/tree/DTO definitions:
+Build succeeded with no Swift compiler warnings. Xcode emits its existing AppIntents metadata-extraction warning because there is no AppIntents.framework dependency.
 
-swiftc -parse-as-library ImmichGallery/API/Models.swift ImmichGallery/API/Models+Explore.swift ImmichGallery/App/ExploreClustering.swift ImmichGallery/App/ExploreFolders.swift Tests/ExploreChecks.swift -o build/explore/checks
-build/explore/checks
+Standalone checks run production client/model/cache code with a URLProtocol stub, without live requests. They cover memory/archive query parameters, optional PIN expiry, API-key PIN rejection before transport, idempotent bulk-tag outcomes, hierarchy, bbox/date/month filtering, private-client configuration, selective HTTP/decoded cache eviction, and rejection of in-flight image responses invalidated during transport. Existing checks cover preferences, folder deduplication, 50,000-marker clustering and the date line.
 
-Passed preference optionality, auth elevation, folder hierarchy/deduplication, 50,000-marker bounded clustering and international date-line visibility checks.
+UI interaction, real PIN setup/unlock/expiry and live asset mutations remain unverified. No shared demo data or settings were changed.
 
-Live script checks used ONLY https://demo.immich.app with a newly obtained demo account token:
+## Shared files changed in this review pass
 
-- Swift decoded real responses: 969 map markers, 149 representative city assets, 40 memories, 4,779 tags, 25,964 folder paths, preferences and auth status.
-- Map filters with date bounds/favorites/partners returned four markers; city search, direct folder search and tag timeline buckets succeeded.
-- Created a uniquely named parent/child tag hierarchy; renamed, recolored and cleared color; deleted both test tags successfully.
-- Created a temporary memory, marked it seen, removed its photo association, and deleted the memory. The referenced existing photo was never modified.
-- Attempted a tiny generated test-image upload for tag-assignment verification; demo returned HTTP 403 before creating an asset. Tag assignment/removal were therefore checked against spec and source, not mutated on shared photos.
-- Demo memories.enabled was false; settings were not changed. Demo already had a PIN. PIN setup/unlock/lock and locked-asset mutations were NOT attempted on the demo.
+- API/ImmichClient.swift: optional timeline bbox and parameter encoding.
+- App/AssetGridModel.swift: tag/map timeline routing, local date bounds, continuation after filtered pages, shared move-to-locked action.
+- App/AppModel.swift: session tag/preference cache and bootstrap load.
+- App/ImmichGalleryApp.swift: Image menu move action.
+- Views/Viewer/AssetViewer.swift: viewer context-menu move action.
+- Support/ImagePipeline.swift: restore ordinary cache and add selective eviction with in-flight protection.
 
-One local app copy was launched before the parent announced that all worktrees share the bundle ID and Keychain. No UI actions were performed. It may have automatically made read-only startup requests to the user's real server through restored credentials; this was not observed or verified. No write call to the user's server was initiated. The process had already exited when instructed to quit; a process-list check confirmed no copy from this worktree remained. No further UI runs were made. Authenticated feature UI remains unverified and is reserved for the parent's single merged build. No credentials were read from Keychain by tooling.
-
-## Shared-file changes
-
-- API/ImmichClient.swift: optional TimelineQuery.tagId and query encoding.
-- App/AssetGridModel.swift: Explore source routing/pagination, immediate removal of sensitive assets, filter locked metadata results.
-- App/AppModel.swift: remove selected IDs from all cached grids.
-- App/ImmichGalleryApp.swift: one ExploreMemoryScene insertion.
-- Views/MainView.swift: Explore SidebarItem case, detail routing and sidebar section insertion.
-- Views/Grid/AssetGridView.swift: one ExploreAssetActions context-menu insertion.
-- Support/ImagePipeline.swift: ephemeral media client and purge of old shared URLCache entries.
+MainView, AssetGridView, AssetInspector and Models.swift were not changed by this review pass. Remaining changes are confined to Explore files, these checks and this document. Local build products and logs are ignored and excluded from the commit.

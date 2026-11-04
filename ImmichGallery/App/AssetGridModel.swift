@@ -18,7 +18,8 @@ enum GridSource: Hashable {
         case .trash: TimelineQuery(visibility: nil, isTrashed: true)
         case .album(let id): TimelineQuery(visibility: nil, albumId: id)
         case .person(let id): TimelineQuery(personId: id)
-        case .explore(.tag(let id)): TimelineQuery(tagId: id)
+        case .explore(.tag(let id)): TimelineQuery(visibility: nil, tagId: id)
+        case .explore(.map(let query)): query.timeline
         case .explore: nil
         case .videos, .search: nil
         }
@@ -153,7 +154,10 @@ final class AssetGridModel {
         if sections.isEmpty { state = .loading }
         do {
             if let query = source.timelineQuery {
-                let buckets = try await session.client.timeBuckets(query)
+                var buckets = try await session.client.timeBuckets(query)
+                if case .explore(.map(let map)) = source {
+                    buckets.removeAll { !map.includesMonth(start: ImmichDate.parse($0.timeBucket)) }
+                }
                 sections = buckets.map {
                     GridSection(id: $0.timeBucket, title: ImmichDate.monthTitle($0.timeBucket), count: $0.count)
                 }
@@ -201,7 +205,8 @@ final class AssetGridModel {
             do {
                 let columns = try await session.client.timeBucket(id, query)
                 guard let i = sections.firstIndex(where: { $0.id == id }) else { return }
-                let assets = AssetItem.from(columns)
+                var assets = AssetItem.from(columns)
+                if case .explore(.map(let query)) = source { assets.removeAll { !query.includes($0.date) } }
                 sections[i].assets = assets
                 sections[i].count = assets.count
                 rebuildIndex()
@@ -248,6 +253,10 @@ final class AssetGridModel {
             nextPage = nil
         }
         append(result.items.filter { $0.visibility != "locked" }.map(AssetItem.init))
+        // A page containing only locked results must not strand the pagination trigger.
+        if result.items.allSatisfy({ $0.visibility == "locked" }), nextPage != nil {
+            try await fetchNextPage()
+        }
     }
 
     /// Appends paged results. Search keeps relevance order in one section;
@@ -357,6 +366,21 @@ final class AssetGridModel {
     func toggleFavorite(_ ids: [String]) async {
         let items = ids.compactMap(item)
         await setFavorite(ids, !items.allSatisfy(\.isFavorite))
+    }
+
+    func moveToLockedFolder(_ ids: [String]) async {
+        guard let session, !ids.isEmpty else { return }
+        do {
+            try await session.client.setVisibility(ids, "locked")
+            session.exploreRemoveFromGrids(Set(ids))
+            session.pipeline.evict(ids: ids)
+            Task {
+                try? await Task.sleep(for: .seconds(2))
+                session.pipeline.evict(ids: ids)
+            }
+            session.invalidateGrids()
+            await reload()
+        } catch { report(error) }
     }
 
     func setArchived(_ ids: [String], _ archived: Bool) async {

@@ -7,7 +7,9 @@ struct ExploreMemoriesView: View {
     @State private var error: String?
     @State private var duration = 5
     @State private var page = 1
-    @State private var hasMore = true
+    @State private var hasMore = false
+    @State private var busy = false
+    @State private var deleting: ExploreMemory?
     var body: some View {
         ScrollView {
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 240, maximum: 340))]) {
@@ -20,16 +22,11 @@ struct ExploreMemoriesView: View {
                         }
                     }.buttonStyle(.plain)
                     .contextMenu {
-                        Button("Hide Memory", role: .destructive) {
-                            Task {
-                                do { try await session.client.exploreHideMemory(memory.id); memories.removeAll { $0.id == memory.id } }
-                                catch { self.error = error.localizedDescription }
-                            }
-                        }
+                        Button("Delete Memory…", role: .destructive) { deleting = memory }
                     }
                 }
             }.padding()
-            if hasMore { Button("Load More") { Task { await load() } } }
+            if hasMore { Button("Load More") { Task { await load() } }.disabled(busy) }
         }
         .task {
             do {
@@ -39,9 +36,21 @@ struct ExploreMemoriesView: View {
                 await load()
             } catch { self.error = error.localizedDescription }
         }
+        .confirmationDialog("Delete Memory?", isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } })) {
+            Button("Delete Memory", role: .destructive) {
+                guard let memory = deleting else { return }
+                Task {
+                    do { try await session.client.exploreDeleteMemory(memory.id); memories.removeAll { $0.id == memory.id } }
+                    catch { self.error = error.localizedDescription }
+                }
+            }
+        } message: { Text("The photos in this memory are kept.") }
         .alert("Memories", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) { Button("OK") {} } message: { Text(error ?? "") }
     }
     private func load() async {
+        guard !busy else { return }
+        busy = true
+        defer { busy = false }
         do {
             let batch = try await session.client.exploreMemories(page: page)
             memories.append(contentsOf: batch.map { memory in

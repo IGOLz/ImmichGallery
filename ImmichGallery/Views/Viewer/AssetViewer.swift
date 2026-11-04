@@ -39,6 +39,9 @@ struct AssetViewer: View {
             }
             .padding(.horizontal, 16)
         }
+        .contextMenu {
+            Button("Move to Locked Folder") { Task { await model.moveToLockedFolder([item.id]) } }
+        }
         .focusable()
         .focused($isFocused)
         .focusEffectDisabled()

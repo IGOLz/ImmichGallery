@@ -6,6 +6,9 @@ struct ExploreMemoryScene: Scene {
         WindowGroup("Memories", id: "explore-memory", for: String.self) { $id in
             if let session = app.session, let id {
                 ExploreMemoryWindow(id: id).environment(session)
+            } else {
+                ContentUnavailableView("Sign In to View Memories", systemImage: "sparkles.rectangle.stack",
+                                       description: Text("Sign in from the main library window to continue."))
             }
         }
         .defaultSize(width: 1200, height: 800)

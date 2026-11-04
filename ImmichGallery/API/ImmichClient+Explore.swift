@@ -7,7 +7,7 @@ extension ImmichClient {
     func explorePaths() async throws -> [String] { try await get("view/folder/unique-paths") }
     func exploreMarkers(favorites: Bool, archived: Bool, partners: Bool, after: Date?, before: Date?) async throws -> [ExploreMarker] {
         try await get("map/markers", query: ["isFavorite": favorites ? "true" : nil,
-            "isArchived": archived ? nil : "false", "withPartners": String(partners),
+            "isArchived": archived ? "true" : nil, "withPartners": String(partners),
             "fileCreatedAfter": after.map { $0.ISO8601Format() }, "fileCreatedBefore": before.map { $0.ISO8601Format() }])
     }
     func exploreAssets(_ source: ExploreSource, page: SearchPage) async throws -> SearchResponse.Assets {
@@ -15,26 +15,11 @@ extension ImmichClient {
         case .folder(let path):
             let assets: [AssetResponse] = try await get("view/folder", query: ["path": path])
             return .init(items: assets.filter { $0.visibility != "locked" })
-        case .markers(let ids):
-            let start = ((page.page ?? 1) - 1) * 100
-            var assets: [AssetResponse] = []
-            // Bounded concurrency avoids one task/request per marker on large clusters.
-            for batch in stride(from: start, to: min(start + 100, ids.count), by: 8) {
-                let end = min(batch + 8, min(start + 100, ids.count))
-                let fetched = try await withThrowingTaskGroup(of: AssetResponse.self) { group in
-                    for id in ids[batch..<end] { group.addTask { try await self.asset(id) } }
-                    var result: [AssetResponse] = []
-                    for try await asset in group { if asset.visibility != "locked" { result.append(asset) } }
-                    return result
-                }
-                assets.append(contentsOf: fetched)
-            }
-            return .init(items: assets.sorted { $0.localDateTime > $1.localDateTime }, nextPage: start + 100 < ids.count ? String((page.page ?? 1) + 1) : nil)
         case .city(let city):
             struct Body: Encodable { let city: String; var page: Int?; var cursor: String?; let size = 250; let visibility = "timeline" }
             let response: SearchResponse = try await send("POST", "search/metadata", body: Body(city: city, page: page.page, cursor: page.cursor))
             return response.assets
-        case .tag: return .init(items: []) // Tags use the timeline endpoint.
+        case .tag, .map: return .init(items: []) // Tags use the timeline endpoint.
         }
     }
     func exploreCreateTag(_ path: String) async throws {
@@ -57,22 +42,23 @@ extension ImmichClient {
     func exploreDeleteTag(_ id: String) async throws { try await send("DELETE", "tags/\(id)") }
     func exploreTagAssets(_ ids: [String], tag: String, remove: Bool) async throws {
         let result: [ExploreBulkResult] = try await send(remove ? "DELETE" : "PUT", "tags/\(tag)/assets", body: ExploreIDs(ids: ids))
-        if result.contains(where: { !$0.success }) { throw ImmichError.http(400, "Some items could not be updated. Refresh and try again.") }
+        if result.contains(where: { !$0.isAccepted(removing: remove) }) { throw ImmichError.http(400, "Some items could not be updated. Refresh and try again.") }
     }
     func exploreMemories(page: Int) async throws -> [ExploreMemory] {
-        try await get("memories", query: ["page": String(page), "size": "100", "isTrashed": "false", "isUpcoming": "false"])
+        try await get("memories", query: ["for": String(Date().ISO8601Format().prefix(10)), "page": String(page), "size": "100", "isTrashed": "false", "isUpcoming": "false"])
     }
     func exploreSeenMemory(_ id: String) async throws {
         struct Body: Encodable { let seenAt: String }
         let _: ExploreMemory = try await send("PUT", "memories/\(id)", body: Body(seenAt: Date().ISO8601Format()))
     }
-    func exploreHideMemory(_ id: String) async throws { try await send("DELETE", "memories/\(id)") }
+    func exploreDeleteMemory(_ id: String) async throws { try await send("DELETE", "memories/\(id)") }
     func exploreRemoveMemoryAsset(_ memory: String, asset: String) async throws {
         let result: [ExploreBulkResult] = try await send("DELETE", "memories/\(memory)/assets", body: ExploreIDs(ids: [asset]))
         guard result.allSatisfy(\.success) else { throw ImmichError.http(400, "The photo could not be removed from this memory.") }
     }
     func exploreAuth() async throws -> ExploreAuthStatus { try await get("auth/status") }
     func exploreUnlock(_ pin: String, setup: Bool) async throws {
+        guard exploreSupportsLockedFolder else { throw ImmichError.http(400, "Locked Folder requires a session-token login.") }
         struct Body: Encodable { let pinCode: String }
         if setup { try await send("POST", "auth/pin-code", body: Body(pinCode: pin)) }
         try await send("POST", "auth/session/unlock", body: Body(pinCode: pin))
@@ -83,8 +69,15 @@ extension ImmichClient {
         let response: SearchResponse = try await send("POST", "search/metadata", body: Body(page: page))
         return response.assets
     }
+    var exploreSupportsLockedFolder: Bool {
+        if case .accessToken = credential { return true }
+        return false
+    }
     func explorePrivateClient() -> ImmichClient {
         let configuration = URLSessionConfiguration.ephemeral
+        configuration.httpAdditionalHeaders = ["User-Agent": Self.userAgent]
+        configuration.httpMaximumConnectionsPerHost = 8
+        configuration.timeoutIntervalForRequest = 30
         configuration.urlCache = nil
         configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
         return ImmichClient(serverURL: serverURL, apiURL: apiURL, credential: credential, session: URLSession(configuration: configuration))

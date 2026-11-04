@@ -6,6 +6,7 @@ struct ExploreMapView: View {
     @State private var markers: [ExploreMarker] = []
     @State private var clusters: [ExploreMapCluster] = []
     @State private var region = MKCoordinateRegion(center: .init(latitude: 0, longitude: 0), span: .init(latitudeDelta: 180, longitudeDelta: 360))
+    @State private var showingFilters = false
     @State private var favorites = false
     @State private var archived = false
     @State private var partners = true
@@ -33,16 +34,19 @@ struct ExploreMapView: View {
         }
         .onMapCameraChange(frequency: .onEnd) { context in region = context.region; recluster() }
         .toolbar {
-            Menu {
-                Toggle("Favorites Only", isOn: $favorites)
-                Toggle("Include Archived", isOn: $archived)
-                Toggle("Include Partners", isOn: $partners)
-                Toggle("Date Range", isOn: $dateFilter)
-                if dateFilter {
-                    DatePicker("From", selection: $after, in: ...before, displayedComponents: .date)
-                    DatePicker("Through", selection: $before, in: after..., displayedComponents: .date)
-                }
-            } label: { Label("Map Filters", systemImage: "line.3.horizontal.decrease") }
+            Button { showingFilters.toggle() } label: { Label("Map Filters", systemImage: "line.3.horizontal.decrease") }
+            .popover(isPresented: $showingFilters) {
+                VStack(alignment: .leading, spacing: 12) {
+                    Toggle("Favorites Only", isOn: $favorites)
+                    Toggle("Include Archived", isOn: $archived)
+                    Toggle("Include Partners", isOn: $partners)
+                    Toggle("Date Range", isOn: $dateFilter)
+                    if dateFilter {
+                        DatePicker("From", selection: $after, in: ...before, displayedComponents: .date)
+                        DatePicker("Through", selection: $before, in: after..., displayedComponents: .date)
+                    }
+                }.padding().frame(width: 300)
+            }
         }
         .task(id: filterKey) {
             do {
@@ -55,7 +59,9 @@ struct ExploreMapView: View {
         }
         .overlay { if let error { ContentUnavailableView("Map Unavailable", systemImage: "map", description: Text(error)) } }
         .navigationDestination(item: $selection) { cluster in
-            AssetGridContainer(source: .explore(.markers(cluster.assets)), title: Text("Map Photos"))
+            AssetGridContainer(source: .explore(.map(ExploreMapQuery(bbox: cluster.bbox, favorites: favorites, archived: archived, partners: partners,
+                after: dateFilter ? Calendar.current.startOfDay(for: after) : nil,
+                before: dateFilter ? Calendar.current.date(byAdding: .day, value: 1, to: Calendar.current.startOfDay(for: before)) : nil))), title: Text("Map Photos"))
         }
         .onDisappear { clusterTask?.cancel() }
     }

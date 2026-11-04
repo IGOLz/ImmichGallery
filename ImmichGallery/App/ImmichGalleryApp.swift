@@ -93,6 +93,8 @@ struct AppCommands: Commands {
 
         CommandMenu("Image") {
             let ids = grid?.selectedItems.map(\.id) ?? []
+            Button("Move to Locked Folder") { if let grid { Task { await grid.moveToLockedFolder(ids) } } }
+                .disabled(ids.isEmpty || grid?.source == .trash)
             // "." and ⌘⌫ are handled by the grid/viewer so they don't steal keys from text fields.
             Button("Favorite  (.)") { if let grid { Task { await grid.toggleFavorite(ids) } } }
                 .disabled(ids.isEmpty)

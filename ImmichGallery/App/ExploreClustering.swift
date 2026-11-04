@@ -5,6 +5,7 @@ struct ExploreMapCluster: Identifiable, Sendable {
     let lat: Double
     let lon: Double
     let assets: [String]
+    let bbox: String
     static func make(_ markers: [ExploreMarker], latitude: Double, longitude: Double, latSpan: Double, lonSpan: Double) -> [Self] {
         let latStep = max(latSpan / 12, 0.00001)
         let lonStep = max(lonSpan / 16, 0.00001)
@@ -16,7 +17,8 @@ struct ExploreMapCluster: Identifiable, Sendable {
             groups[key, default: []].append(marker)
         }
         return groups.map { key, group in
-            Self(id: key, lat: group.reduce(0) { $0 + $1.lat } / Double(group.count), lon: group.reduce(0) { $0 + $1.lon } / Double(group.count), assets: group.map(\.id))
+            Self(id: key, lat: group.reduce(0) { $0 + $1.lat } / Double(group.count), lon: group.reduce(0) { $0 + $1.lon } / Double(group.count), assets: group.map(\.id),
+                 bbox: "\(max(-180, group.map(\.lon).min()! - 0.000001)),\(max(-90, group.map(\.lat).min()! - 0.000001)),\(min(180, group.map(\.lon).max()! + 0.000001)),\(min(90, group.map(\.lat).max()! + 0.000001))")
         }.sorted { $0.id < $1.id }
     }
 }

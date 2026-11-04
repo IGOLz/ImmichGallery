@@ -26,7 +26,7 @@ struct ExploreSidebar: View {
         }
         .task {
             preferences = try? await session.client.explorePreferences()
-            lockedAvailable = (try? await session.client.exploreAuth()) != nil
+            if session.client.exploreSupportsLockedFolder { lockedAvailable = (try? await session.client.exploreAuth()) != nil }
         }
     }
     private func enabled(_ page: ExplorePage) -> Bool {
