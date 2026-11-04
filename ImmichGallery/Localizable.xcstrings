@@ -791,46 +791,6 @@
         }
       }
     },
-    "%lld items skipped because ownership could not be confirmed as yours.": {
-      "localizations": {
-        "it": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld elemento ignorato perché non è stato possibile confermare che ti appartenga."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld elementi ignorati perché non è stato possibile confermare che ti appartengano."
-                }
-              }
-            }
-          }
-        },
-        "en": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld item skipped because ownership could not be confirmed as yours."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld items skipped because ownership could not be confirmed as yours."
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "%lld of %lld selected": {
       "localizations": {
         "en": {
@@ -2087,16 +2047,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Chiunque disponga di questo link perderà l'accesso. Le foto rimarranno nella libreria."
-          }
-        }
-      }
-    },
-    "Apply Location": {
-      "localizations": {
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Applica posizione"
           }
         }
       }
@@ -3367,16 +3317,6 @@
         }
       }
     },
-    "Download Selection as ZIP…": {
-      "localizations": {
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Scarica selezione come ZIP…"
-          }
-        }
-      }
-    },
     "Download ZIP": {
       "localizations": {
         "it": {
@@ -3387,12 +3327,12 @@
         }
       }
     },
-    "Download ZIP…": {
+    "Download as ZIP…": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Scarica ZIP…"
+            "value": "Scarica come ZIP…"
           }
         }
       }
@@ -3797,16 +3737,6 @@
         }
       }
     },
-    "Enter latitude from -90 to 90 and longitude from -180 to 180. Use a decimal point or comma.": {
-      "localizations": {
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Inserisci una latitudine da -90 a 90 e una longitudine da -180 a 180. Usa il punto o la virgola come separatore decimale."
-          }
-        }
-      }
-    },
     "Enter text in the toolbar or choose filters.": {
       "localizations": {
         "it": {
@@ -3917,6 +3847,16 @@
         }
       }
     },
+    "Export": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esporta"
+          }
+        }
+      }
+    },
     "Export Finished": {
       "localizations": {
         "it": {
@@ -4023,6 +3963,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Aggiungi ai preferiti  (.)"
+          }
+        }
+      }
+    },
+    "Favorite (.)": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preferito (.)"
           }
         }
       }
@@ -4567,16 +4517,6 @@
         }
       }
     },
-    "Latitude (-90 to 90)": {
-      "localizations": {
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Latitudine (da -90 a 90)"
-          }
-        }
-      }
-    },
     "Leave Album": {
       "localizations": {
         "it": {
@@ -4753,16 +4693,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Disconnetti gli altri dispositivi"
-          }
-        }
-      }
-    },
-    "Longitude (-180 to 180)": {
-      "localizations": {
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Longitudine (da -180 a 180)"
           }
         }
       }
@@ -5317,12 +5247,32 @@
         }
       }
     },
+    "No Large Files": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nessun file di grandi dimensioni"
+          }
+        }
+      }
+    },
     "No Notifications": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
             "value": "Nessuna notifica"
+          }
+        }
+      }
+    },
+    "No Partner Photos": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nessuna foto del compagno"
           }
         }
       }
@@ -5343,6 +5293,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nessuna foto"
+          }
+        }
+      }
+    },
+    "No Photos to Explore": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nessuna foto da esplorare"
+          }
+        }
+      }
+    },
+    "No Photos to Locate": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nessuna foto da localizzare"
           }
         }
       }
@@ -6427,46 +6397,6 @@
         }
       }
     },
-    "Replace the location of %lld selected items.": {
-      "localizations": {
-        "it": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Sostituisci la posizione di %lld elemento selezionato."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Sostituisci la posizione di %lld elementi selezionati."
-                }
-              }
-            }
-          }
-        },
-        "en": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Replace the location of %lld selected item."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Replace the location of %lld selected items."
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "Require password change at next login": {
       "localizations": {
         "it": {
@@ -6607,22 +6537,22 @@
         }
       }
     },
-    "Rotate View Left": {
+    "Rotate View Temporarily Left": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ruota vista a sinistra"
+            "value": "Ruota temporaneamente la vista a sinistra"
           }
         }
       }
     },
-    "Rotate View Right": {
+    "Rotate View Temporarily Right": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ruota vista a destra"
+            "value": "Ruota temporaneamente la vista a destra"
           }
         }
       }
