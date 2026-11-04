@@ -9,7 +9,7 @@ Implemented:
 - Device/session listing with current marker, device OS/type/app version and last activity, confirmed individual revocation and logout of other sessions. Bulk revocation requires session-token authentication.
 - Notifications list, unread count, mark read/all read and delete. Polling runs once per minute only while the scene is active, backs off on failure, stops on cancellation and hides the bell on 403/404.
 - Server preferences for memories, ratings, folders, tags, people, shared links, web sidebar visibility, memory duration, people threshold/update strategy, default album order, download size and embedded video inclusion, email toggles, Cast, recently added web sidebar and support badge. Only available groups/fields appear. Loaded values are exposed as LibrarySession.preferences.
-- Multiple accounts in Keychain, account menu and Settings switcher, adding through the existing login UI, local removal, last selected restoration, and legacy credential migration. Migration now copies the legacy item without changing/deleting it. Explicit Sign Out retains the existing behavior of deleting legacy credentials.
+- Multiple accounts in Keychain, account menu and Settings switcher, adding through the existing login UI, local removal, last selected restoration, and legacy credential migration. Migration now copies the legacy item without changing/deleting it. Sign Out preserves the legacy item and makes it inert through the migration flag; vault failures leave the live login intact and show an error.
 - New LibrarySession and memory cache per switch, SHA-256-named disk cache directories per API URL/user ID. Old session unauthorized callbacks cannot sign out a newly selected account.
 
 No project file or README changes. No dependencies.
@@ -62,3 +62,27 @@ UI limit and incident:
 Before the user's urgent stop instruction, one built app was launched. It automatically restored the user's real account at immich.igol.dev and made read-only library/account GET requests. General Settings and the library toolbar were observed. No server mutation control was invoked and no write request was intentionally sent to that server. The then-current restore migration also saved the multi-account Keychain item and removed the legacy Keychain item. This local migration had already occurred before the stop instruction. The app was immediately quit using Command-Q after the instruction; the UI tool reported “App quit”. No further UI runs or Keychain accesses were made. Migration was subsequently changed to preserve the legacy item on future restores. Three settings tabs initially had duplicate SwiftUI IDs; those IDs are now distinct, verified by compilation only. Final merged-app UI verification belongs to the parent.
 
 Untested by design: profile/name/password/preference mutations on the shared demo, deleting anyone else's sessions/notifications, end-to-end account switching and Keychain migration test runs, and final tab layout after the identity correction. A real account's Keychain was not read through scripts or diagnostic tooling; automatic restoration happened only through the launched app before the stop instruction.
+
+
+## Review fixes
+
+All findings 1–11 were addressed without launching the app or calling a live Immich server. The v3.3.5 OpenAPI document was consulted again. `shouldChangePassword` is decoded and offers a non-blocking password-change sheet from the library banner.
+
+Account cache sessions are reused by API URL/user ID. Removing an account or signing out invalidates its cached session and removes its disk directory, including the stable credential-based offline fallback directory. Bootstrap uses no persistent cache; the legacy ImageCache directory is removed on isolated startup. Offline bootstrap retries vault migration when the user becomes available. Saved entries are observed in AppModel rather than loaded by view evaluation. Account transitions use a busy guard and verify the original session after awaiting authentication.
+
+Profile imports run ImageIO decoding outside the main actor, reject files over 50 MiB, downsample to 512 pixels, and crop the center square before JPEG encoding. Settings height depends on the selected tab. Dates are localized, usage bars are clamped, names are trimmed, preferences have a controlled setter, and notification failures back off from 120 seconds to a 15-minute maximum, resetting after success. Only initial capability probes hide unavailable settings; mutation errors preserve the server message. Password success survives a failed optional session refresh.
+
+The vault uses the legacy accessibility class, AfterFirstUnlock, and the label "Immich Gallery accounts". Every write verifies a full encode/decode round trip, reads existing contents before updating, and rejects an empty replacement unless explicitly removing. It updates the blob without deleting it first. This protects against local encoding/corruption failures; it is not a cross-process transaction system.
+
+Additional local regression checks:
+
+```
+python3 Tests/AccountVaultChecks.py
+python3 Tests/AccountImageChecks.py
+```
+
+The vault check compiles the production vault with a unique temporary test-only service and an isolated UserDefaults suite. A stub AccountStore prevents legacy credential reads. It verifies accounts-v1-only restoration, selected-entry persistence, rejected nonexistent selection, preservation of corrupt stored bytes, explicit removal, optional shouldChangePassword decoding, date parsing, and initial-probe versus mutation 404 handling. Its temporary Keychain item and defaults are removed. The image check extracts the production ImageIO helper, generates a two-color wide PNG, verifies a square blue center crop within 512 pixels, and rejects invalid/oversized inputs. It deletes all generated images.
+
+The existing AccountChecks request/DTO executable was rerun against existing public-demo fixtures and URLProtocol interception. Cache checks now verify A→B→A session reuse, independent account sessions, deletion of a uniquely named test directory, and fresh session creation after removal. Foundation emitted cache-database diagnostics while these test directories were removed; all assertions passed. No request is sent by the isolated cache clients.
+
+The required xcodebuild command succeeded. No warnings in changed source files; only the existing AppIntents metadata warning. No new live-server tests were needed, no production Keychain item was read or modified, and no app was launched. UI layout and interactive switching remain untested under the user's explicit no-launch constraint.

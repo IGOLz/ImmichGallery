@@ -47,8 +47,22 @@ struct AccountChecks {
         precondition(multipart.value(forHTTPHeaderField: "Content-Type")!.hasPrefix("multipart/form-data; boundary="))
         precondition(AccountTestProtocol.lastBody!.range(of: Data("name=\"file\"".utf8)) != nil)
         precondition(multipart.value(forHTTPHeaderField: "Authorization") == "Bearer test")
-        let one = client.accountIsolated(userID: "one")
-        let two = client.accountIsolated(userID: "two")
+        let testID = "account-check-" + UUID().uuidString
+        let one = client.accountIsolated(userID: testID)
+        defer { try? ImmichClient.removeAccountCache(apiURL: client.apiURL, userID: testID) }
+        let again = client.accountIsolated(userID: testID)
+        precondition(one.session === again.session)
+        let cacheDirectory = ImmichClient.accountCacheDirectory(apiURL: client.apiURL, userID: testID)
+        try FileManager.default.createDirectory(at: cacheDirectory, withIntermediateDirectories: true)
+        try Data([1]).write(to: cacheDirectory.appendingPathComponent("test"))
+        try ImmichClient.removeAccountCache(apiURL: client.apiURL, userID: testID)
+        precondition(!FileManager.default.fileExists(atPath: cacheDirectory.path))
+        let replacement = client.accountIsolated(userID: testID)
+        precondition(replacement.session !== one.session)
+        let otherID = testID + "-other"
+        let two = client.accountIsolated(userID: otherID)
+        defer { try? ImmichClient.removeAccountCache(apiURL: client.apiURL, userID: otherID) }
+        precondition(client.accountIsolated(userID: testID).session === replacement.session)
         precondition(one.session !== two.session)
         precondition(one.session.configuration.urlCache !== two.session.configuration.urlCache)
         print("Account checks passed: live DTOs, older-server optionality, password/notification/multipart contracts, isolated caches.")

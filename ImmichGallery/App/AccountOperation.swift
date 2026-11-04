@@ -8,7 +8,7 @@ final class AccountOperation {
     var message: String?
     var unavailable = false
 
-    func run(_ work: @escaping @MainActor () async throws -> Void) {
+    func run(probe: Bool = false, _ work: @escaping @MainActor () async throws -> Void) {
         guard !busy else { return }
         busy = true
         error = nil
@@ -16,8 +16,17 @@ final class AccountOperation {
         Task {
             defer { busy = false }
             do { try await work() }
-            catch ImmichError.http(404, _) { unavailable = true; error = "This feature is unavailable on this server." }
+            catch ImmichError.http(404, _) where probe { unavailable = true; error = "This feature is unavailable on this server." }
             catch { self.error = error.localizedDescription }
         }
     }
+}
+
+/// Dates from Immich may include fractional seconds.
+func accountDate(_ value: String) -> String {
+    let formatter = ISO8601DateFormatter()
+    formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+    let date = formatter.date(from: value)
+    formatter.formatOptions = [.withInternetDateTime]
+    return (date ?? formatter.date(from: value))?.formatted(date: .abbreviated, time: .shortened) ?? value
 }

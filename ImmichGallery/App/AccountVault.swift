@@ -29,13 +29,26 @@ enum AccountVault {
         }
         return try JSONDecoder().decode(Contents.self, from: data)
     }
-    private static func write(_ contents: Contents) throws {
-        let data = try JSONEncoder().encode(contents)
-        var status = SecItemUpdate(query as CFDictionary, [kSecValueData as String: data] as CFDictionary)
+    private static func write(_ contents: Contents, removing: Bool = false) throws {
+        let previous = try read()
+        guard removing || !contents.entries.isEmpty || previous.entries.isEmpty else {
+            throw ImmichError.http(400, "Refusing to overwrite saved accounts with an empty list.")
+        }
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        let data = try encoder.encode(contents)
+        let verified = try JSONDecoder().decode(Contents.self, from: data)
+        guard try encoder.encode(verified) == data else {
+            throw ImmichError.http(400, "Could not verify saved accounts.")
+        }
+        let attributes: [String: Any] = [kSecValueData as String: data,
+            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlock,
+            kSecAttrLabel as String: "Immich Gallery accounts"]
+        var status = SecItemUpdate(query as CFDictionary, attributes as CFDictionary)
         if status == errSecItemNotFound {
             var item = query
             item[kSecValueData as String] = data
-            item[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
+            item.merge(attributes) { _, new in new }
             status = SecItemAdd(item as CFDictionary, nil)
         }
         guard status == errSecSuccess else {
@@ -47,10 +60,10 @@ enum AccountVault {
     static var legacyAccountForMigration: AccountStore.Account? {
         UserDefaults.standard.bool(forKey: "accountVaultMigrated") ? nil : AccountStore.load()
     }
-    static var entries: [Entry] { (try? read().entries) ?? [] }
-    static var selected: Entry? {
-        let contents = try? read()
-        return contents?.entries.first { $0.id == contents?.selected }
+    static func loadEntries() throws -> [Entry] { try read().entries }
+    static func selectedEntry() throws -> Entry? {
+        let contents = try read()
+        return contents.entries.first { $0.id == contents.selected }
     }
     static func save(account: AccountStore.Account, user: User) throws {
         var contents = try read()
@@ -65,6 +78,9 @@ enum AccountVault {
     }
     static func select(_ id: String) throws {
         var contents = try read()
+        guard contents.entries.contains(where: { $0.id == id }) else {
+            throw ImmichError.http(400, "This account is no longer saved.")
+        }
         contents.selected = id
         try write(contents)
     }
@@ -72,6 +88,6 @@ enum AccountVault {
         var contents = try read()
         contents.entries.removeAll { $0.id == id }
         if contents.selected == id { contents.selected = nil }
-        try write(contents)
+        try write(contents, removing: true)
     }
 }

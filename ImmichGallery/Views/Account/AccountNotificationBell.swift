@@ -42,7 +42,7 @@ struct AccountNotificationBell: View {
                                 Label(notification.title, systemImage: notification.readAt == nil ? "circle.fill" : "circle")
                                     .fontWeight(notification.readAt == nil ? .semibold : .regular)
                                 if let description = notification.description { Text(description).foregroundStyle(.secondary) }
-                                Text(notification.createdAt).font(.caption).foregroundStyle(.secondary)
+                                Text(accountDate(notification.createdAt)).font(.caption).foregroundStyle(.secondary)
                                 HStack {
                                     if notification.readAt == nil {
                                         Button("Mark Read") {
@@ -68,16 +68,19 @@ struct AccountNotificationBell: View {
             }
             .task(id: scenePhase) {
                 guard scenePhase == .active else { return }
+                var retryDelay = 60
                 while !Task.isCancelled && available {
                     do {
                         try await reload()
+                        retryDelay = 60
                         try await Task.sleep(for: .seconds(60))
                     } catch is CancellationError { return }
                     catch ImmichError.http(404, _) { available = false; return }
                     catch ImmichError.http(403, _) { available = false; return }
                     catch {
                         operation.error = error.localizedDescription
-                        do { try await Task.sleep(for: .seconds(60)) } catch { return }
+                        retryDelay = min(retryDelay * 2, 900)
+                        do { try await Task.sleep(for: .seconds(retryDelay)) } catch { return }
                     }
                 }
             }

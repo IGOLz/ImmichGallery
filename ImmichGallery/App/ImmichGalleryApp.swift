@@ -22,6 +22,7 @@ struct ImmichGalleryApp: App {
 }
 
 struct RootView: View {
+    @State private var changingPassword = false
     @Environment(AppModel.self) private var app
 
     var body: some View {
@@ -37,7 +38,26 @@ struct RootView: View {
                     .id(ObjectIdentifier(session))
             }
         }
+        .safeAreaInset(edge: .top) {
+            if app.session?.user?.shouldChangePassword == true {
+                HStack {
+                    Text("Your server asks you to change your password.")
+                    Button("Change Password…") { changingPassword = true }
+                }.padding(8).frame(maxWidth: .infinity).background(.bar)
+            }
+        }
+        .sheet(isPresented: $changingPassword) {
+            if let session = app.session {
+                VStack {
+                    AccountSecurityView(session: session)
+                    Button("Done") { changingPassword = false }.padding()
+                }.frame(width: 640, height: 650)
+            }
+        }
         .task { await app.restore() }
+        .alert("Account Error", isPresented: Binding(get: { app.accountError != nil }, set: { if !$0 { app.accountError = nil } })) {
+            Button("OK") { app.accountError = nil }
+        } message: { Text(app.accountError ?? "") }
     }
 }
 

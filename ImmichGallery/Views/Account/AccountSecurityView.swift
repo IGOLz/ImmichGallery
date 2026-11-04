@@ -28,7 +28,8 @@ struct AccountSecurityView: View {
                         operation.run {
                             try await session.client.changeAccountPassword(current: password, new: newPassword, invalidateSessions: invalidateSessions)
                             password = ""; newPassword = ""; confirmPassword = ""
-                            devices = try await session.client.accountDevices()
+                            if let refreshed = try? await session.client.accountDevices() { devices = refreshed }
+                            try? await session.refreshAccountUser()
                             operation.message = "Password changed."
                         }
                     }.disabled(password.isEmpty || newPassword.count < 8 || newPassword != confirmPassword)
@@ -61,8 +62,9 @@ struct AccountSecurityView: View {
                     ForEach(devices) { device in
                         HStack {
                             VStack(alignment: .leading) {
-                                Text([device.deviceType, device.deviceOS, device.appVersion ?? ""].filter { !$0.isEmpty }.joined(separator: " · "))
-                                Text("Last active: \(device.updatedAt)").font(.caption).foregroundStyle(.secondary)
+                                let title = [device.deviceType, device.deviceOS, device.appVersion ?? ""].map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }.joined(separator: " · ")
+                                Text(title.isEmpty ? "Unknown device" : title)
+                                Text("Last active: \(accountDate(device.updatedAt))").font(.caption).foregroundStyle(.secondary)
                             }
                             Spacer()
                             if device.current { Text("This device").foregroundStyle(.secondary) }
@@ -158,17 +160,17 @@ private struct AccountKeyEditor: View {
                     Button(key == nil ? "Create" : "Save") {
                         operation.run {
                             if let key {
-                                try await session.client.renameAccountKey(id: key.id, name: name)
+                                try await session.client.renameAccountKey(id: key.id, name: name.trimmingCharacters(in: .whitespacesAndNewlines))
                                 try await onSave()
                                 dismiss()
                             } else {
-                                let created = try await session.client.createAccountKey(name: name, permissions: permissions.sorted())
+                                let created = try await session.client.createAccountKey(name: name.trimmingCharacters(in: .whitespacesAndNewlines), permissions: permissions.sorted())
                                 secret = created.secret
                                 try await onSave()
                             }
                         }
                     }.keyboardShortcut(.defaultAction)
-                        .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || permissions.isEmpty || operation.busy)
+                        .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || (key != nil && name.trimmingCharacters(in: .whitespacesAndNewlines) == key?.name) || permissions.isEmpty || operation.busy)
                 }
             }
         }

@@ -63,7 +63,7 @@ struct AccountPreferencesView: View {
                 }
                 Button("Save Preferences") {
                     operation.run {
-                        session.preferences = try await session.client.updateAccountPreferences(draft)
+                        session.setPreferences(try await session.client.updateAccountPreferences(draft))
                         draft = session.preferences ?? draft
                         operation.message = "Preferences saved."
                     }
@@ -74,9 +74,9 @@ struct AccountPreferencesView: View {
         }
         .formStyle(.grouped).disabled(operation.busy)
         .task {
-            operation.run {
+            operation.run(probe: true) {
                 draft = try await session.client.accountPreferences()
-                session.preferences = draft
+                session.setPreferences(draft)
                 loaded = true
             }
         }

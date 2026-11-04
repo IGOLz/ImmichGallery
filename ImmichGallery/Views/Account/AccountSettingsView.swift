@@ -1,5 +1,6 @@
 import SwiftUI
 import UniformTypeIdentifiers
+import ImageIO
 
 struct AccountSettingsView: View {
     let session: LibrarySession
@@ -29,7 +30,7 @@ struct AccountSettingsView: View {
                         try await session.refreshAccountUser()
                         operation.message = "Name saved."
                     }
-                }.disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || name == session.user?.name)
+                }.disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || name.trimmingCharacters(in: .whitespacesAndNewlines) == session.user?.name)
                 HStack {
                     Button("Choose Profile Picture…") { importing = true }
                     Button("Remove Picture", role: .destructive) {
@@ -45,7 +46,7 @@ struct AccountSettingsView: View {
                 if let used = session.user?.quotaUsageInBytes {
                     LabeledContent("Used", value: used.formatted(.byteCount(style: .file)))
                     if let quota = session.user?.quotaSizeInBytes, quota > 0 {
-                        ProgressView(value: Double(used), total: Double(quota))
+                        ProgressView(value: Double(min(max(used, 0), quota)), total: Double(quota))
                         LabeledContent("Quota", value: quota.formatted(.byteCount(style: .file)))
                     } else { LabeledContent("Quota", value: "Unlimited") }
                 } else { Text("Storage usage is unavailable.").foregroundStyle(.secondary) }
@@ -63,10 +64,9 @@ struct AccountSettingsView: View {
                 let url = try result.get()
                 let access = url.startAccessingSecurityScopedResource()
                 defer { if access { url.stopAccessingSecurityScopedResource() } }
-                let data = try Data(contentsOf: url)
-                guard let image = ImagePipeline.decode(data, maxPixelSize: 512),
-                      let jpeg = NSBitmapImageRep(cgImage: image).representation(using: .jpeg, properties: [.compressionFactor: 0.9])
-                else { throw ImmichError.http(400, "Choose a supported image.") }
+                let jpeg = try await Task.detached(priority: .userInitiated) {
+                    try accountProfileJPEG(url: url)
+                }.value
                 try await session.client.uploadAccountPicture(jpeg)
                 try await session.refreshAccountUser()
                 await loadPicture()
@@ -96,19 +96,20 @@ struct AccountOperationStatus: View {
 
 struct AccountSettingsTabs: View {
     @Environment(AppModel.self) private var app
+    @State private var tab = "general"
     var body: some View {
-        TabView {
-            SettingsView().tabItem { Label("General", systemImage: "gearshape") }
+        TabView(selection: $tab) {
+            SettingsView().tabItem { Label("General", systemImage: "gearshape") }.tag("general")
             if let session = app.session {
                 AccountSettingsView(session: session).id("profile-\(ObjectIdentifier(session))")
-                    .tabItem { Label("Account", systemImage: "person.crop.circle") }
+                    .tabItem { Label("Account", systemImage: "person.crop.circle") }.tag("account")
                 AccountSecurityView(session: session).id("security-\(ObjectIdentifier(session))")
-                    .tabItem { Label("Security", systemImage: "lock") }
+                    .tabItem { Label("Security", systemImage: "lock") }.tag("security")
                 AccountPreferencesView(session: session).id("preferences-\(ObjectIdentifier(session))")
-                    .tabItem { Label("Preferences", systemImage: "switch.2") }
+                    .tabItem { Label("Preferences", systemImage: "switch.2") }.tag("preferences")
             }
-            AccountSwitcherView().tabItem { Label("Accounts", systemImage: "person.2") }
-        }.frame(width: 640, height: 650)
+            AccountSwitcherView().tabItem { Label("Accounts", systemImage: "person.2") }.tag("accounts")
+        }.frame(width: 640, height: tab == "general" ? 440 : 650)
     }
 }
 
@@ -116,24 +117,23 @@ struct AccountSwitcherView: View {
     @Environment(AppModel.self) private var app
     @State private var operation = AccountOperation()
     @State private var adding = false
-    @State private var entries = AccountVault.entries
     var body: some View {
         Form {
             Section("Saved Accounts") {
-                ForEach(entries) { entry in
+                ForEach(app.entries) { entry in
                     HStack {
                         VStack(alignment: .leading) {
                             Text(entry.name + " · " + entry.email)
                             Text(entry.account.serverURL.absoluteString).font(.caption).foregroundStyle(.secondary)
                         }
                         Spacer()
-                        if app.session?.client.apiURL == entry.account.apiURL && app.session?.user?.id == entry.userID {
+                        if app.currentAccountID == entry.id {
                             Image(systemName: "checkmark").accessibilityLabel("Current account")
                         } else {
                             Button("Switch") { operation.run { try await app.switchAccount(entry) } }
                         }
                         Button("Remove", role: .destructive) {
-                            operation.run { try app.removeAccount(entry); entries = AccountVault.entries }
+                            operation.run { try app.removeAccount(entry) }
                         }.help("Remove saved credentials from this Mac")
                     }
                 }
@@ -141,8 +141,8 @@ struct AccountSwitcherView: View {
             }
             AccountOperationStatus(operation: operation)
         }
-        .formStyle(.grouped).disabled(operation.busy)
-        .sheet(isPresented: $adding, onDismiss: { entries = AccountVault.entries }) {
+        .formStyle(.grouped).disabled(operation.busy || app.switching)
+        .sheet(isPresented: $adding) {
             VStack {
                 LoginView()
                 Button("Cancel") { adding = false }.keyboardShortcut(.cancelAction).padding()
@@ -155,20 +155,59 @@ struct AccountSwitcherView: View {
 struct AccountMenu: View {
     @Environment(AppModel.self) private var app
     @State private var error: String?
+    @State private var adding = false
     var body: some View {
         Menu {
             Text(app.session?.user?.email ?? "Account")
             SettingsLink { Text("Account Settings…") }
-            ForEach(AccountVault.entries) { entry in
-                Button("\(entry.email) · \(entry.account.serverURL.host() ?? "")") {
+            ForEach(app.entries) { entry in
+                Button {
                     Task { do { try await app.switchAccount(entry) } catch { self.error = error.localizedDescription } }
-                }
+                } label: {
+                    if app.currentAccountID == entry.id {
+                        Label("\(entry.email) · \(entry.account.serverURL.host() ?? "")", systemImage: "checkmark")
+                    } else { Text("\(entry.email) · \(entry.account.serverURL.host() ?? "")") }
+                }.disabled(app.currentAccountID == entry.id || app.switching)
             }
+            Divider()
+            Button("Add Account…") { adding = true }.disabled(app.switching)
+            Button("Sign Out", role: .destructive) { Task { await app.signOut() } }.disabled(app.switching)
         } label: {
             Label("Account", systemImage: "person.crop.circle")
+        }
+        .sheet(isPresented: $adding) {
+            VStack {
+                LoginView()
+                Button("Cancel") { adding = false }.keyboardShortcut(.cancelAction).padding()
+            }.frame(width: 500, height: 600).environment(app)
+                .onChange(of: app.session.map(ObjectIdentifier.init)) { _, _ in adding = false }
         }
         .alert("Could Not Switch Account", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) {
             Button("OK") { error = nil }
         } message: { Text(error ?? "") }
     }
+}
+
+nonisolated func accountProfileJPEG(url: URL) throws -> Data {
+    let size = try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
+    guard size <= 50 * 1024 * 1024,
+          let source = CGImageSourceCreateWithURL(url as CFURL, [kCGImageSourceShouldCache: false] as CFDictionary),
+          let image = CGImageSourceCreateThumbnailAtIndex(source, 0, [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceThumbnailMaxPixelSize: 512
+          ] as CFDictionary) else {
+        throw ImmichError.http(400, "Choose a supported image smaller than 50 MB.")
+    }
+    let side = min(image.width, image.height)
+    guard let square = image.cropping(to: CGRect(x: (image.width - side) / 2, y: (image.height - side) / 2, width: side, height: side)) else {
+        throw ImmichError.http(400, "Could not crop the profile picture.")
+    }
+    let data = NSMutableData()
+    guard let destination = CGImageDestinationCreateWithData(data, UTType.jpeg.identifier as CFString, 1, nil) else {
+        throw ImmichError.http(400, "Could not encode the profile picture.")
+    }
+    CGImageDestinationAddImage(destination, square, [kCGImageDestinationLossyCompressionQuality: 0.9] as CFDictionary)
+    guard CGImageDestinationFinalize(destination) else { throw ImmichError.http(400, "Could not encode the profile picture.") }
+    return data as Data
 }

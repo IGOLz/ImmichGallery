@@ -44,17 +44,49 @@ extension ImmichClient {
         try await data(for: request)
     }
 
-    /// Separate URLCache directories prevent media reuse across servers and users.
-    func accountIsolated(userID: String) -> ImmichClient {
+    private static let accountSessions = AccountSessionRegistry()
+
+    static func accountCacheDirectory(apiURL: URL, userID: String) -> URL {
         let key = SHA256.hash(data: Data("\(apiURL.absoluteString)|\(userID)".utf8))
             .map { String(format: "%02x", $0) }.joined()
-        let config = URLSessionConfiguration.default
-        let directory = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
+        return FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("AccountImages/\(key)", isDirectory: true)
-        config.urlCache = URLCache(memoryCapacity: 64 << 20, diskCapacity: 4 << 30, directory: directory)
-        config.httpAdditionalHeaders = ["User-Agent": Self.userAgent]
-        config.httpMaximumConnectionsPerHost = 8
-        config.timeoutIntervalForRequest = 30
-        return ImmichClient(serverURL: serverURL, apiURL: apiURL, credential: credential, session: URLSession(configuration: config))
     }
+
+    static func removeAccountCache(apiURL: URL, userID: String) throws {
+        let directory = accountCacheDirectory(apiURL: apiURL, userID: userID)
+        accountSessions.lock.lock()
+        defer { accountSessions.lock.unlock() }
+        if let session = accountSessions.sessions.removeValue(forKey: directory.path) {
+            session.invalidateAndCancel()
+            session.configuration.urlCache?.removeAllCachedResponses()
+        }
+        if FileManager.default.fileExists(atPath: directory.path) {
+            try FileManager.default.removeItem(at: directory)
+        }
+    }
+
+    /// One URLSession/URLCache per directory, including after switching back to an account.
+    func accountIsolated(userID: String) -> ImmichClient {
+        let directory = Self.accountCacheDirectory(apiURL: apiURL, userID: userID)
+        Self.accountSessions.lock.lock()
+        defer { Self.accountSessions.lock.unlock() }
+        let session: URLSession
+        if let existing = Self.accountSessions.sessions[directory.path] { session = existing }
+        else {
+            let config = URLSessionConfiguration.default
+            config.urlCache = URLCache(memoryCapacity: 64 << 20, diskCapacity: 4 << 30, directory: directory)
+            config.httpAdditionalHeaders = ["User-Agent": Self.userAgent]
+            config.httpMaximumConnectionsPerHost = 8
+            config.timeoutIntervalForRequest = 30
+            session = URLSession(configuration: config)
+            Self.accountSessions.sessions[directory.path] = session
+        }
+        return ImmichClient(serverURL: serverURL, apiURL: apiURL, credential: credential, session: session)
+    }
+}
+
+private final class AccountSessionRegistry: @unchecked Sendable {
+    let lock = NSLock()
+    var sessions: [String: URLSession] = [:]
 }
