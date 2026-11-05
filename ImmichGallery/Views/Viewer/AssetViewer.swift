@@ -8,6 +8,7 @@ struct AssetViewer: View {
     let item: AssetItem
     @Binding var playLive: Bool
     let onDelete: ([String]) -> Void
+    var onTags: ([String], Bool) -> Void = { _, _ in }
 
     @Environment(\.viewerContext) private var viewer
     var isPresentation = false
@@ -52,9 +53,23 @@ struct AssetViewer: View {
             }
         }
         .safeAreaInset(edge: .top) { if !isPresentation { AssetsStackButton(item: item, model: model).id(item.id) } }
-        .contextMenu {
-            if model.canMutate([item.id]) { // Explore
-                Button("Move to Locked Folder") { Task { await model.moveToLockedFolder([item.id]) } }
+        .deferredContextMenu {
+            if let viewer {
+                if !item.isVideo {
+                    Button("Copy Image") { viewer.copy() }
+                    Button("Copy Original Image") { viewer.copy(original: true) }
+                }
+                Button("Copy as File") { viewer.copy(asFile: true) }
+                Divider()
+            }
+            if isPresentation {
+                Button("Show in All Photos") { viewer?.showInLibrary() }
+                AssetsExportMenu(ids: [item.id])
+                if model.canMutate([item.id]) {
+                    Button("Move to Locked Folder") { Task { await model.moveToLockedFolder([item.id]) } }
+                }
+            } else {
+                AssetActionsMenu(model: model, asset: item, ids: [item.id], onDelete: onDelete, onTags: onTags)
             }
         }
         .focusable()

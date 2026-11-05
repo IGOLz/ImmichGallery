@@ -8,6 +8,10 @@ Edit offers Copy Image with Command-C handled by the focused grid/viewer, leavin
 
 View-only rotation is in View, without a keyboard shortcut. Rotation resets when navigating. No image or metadata is changed on the server. Show in All Photos works from View and grid context menus. It loads the target timeline month, switches to Library, selects the asset and scrolls to its cell. Assets excluded from the main timeline, including non-primary stack members, produce an explanatory message.
 
+The opened photo's context menu reuses the grid's asset actions, including Info, albums, favorites, sharing, metadata edits, tags, export, archive and confirmed deletion. It always targets the displayed asset, even if the grid still has a multiple selection. Grid actions retain their selection-aware targets. Ownership, partner and trash restrictions remain shared. Info opens the existing inspector. Copy actions use the viewer's existing clipboard implementation; full-screen presentations also offer copy, export and Show in All Photos without exposing actions that need the grid's sheets or confirmation dialogs.
+
+For issue #7, the updated isolated Dev app was built, installed and launched. Read-only UI checks against the public demo confirmed the opened-photo menu, Info opening the correct inspector, and the grid menu. The offline GridContextMenuChecks and localization checker passed. Server mutations, clipboard destinations, and the full-screen menu were not exercised; macOS 15 compatibility was reviewed from the APIs used without VM testing.
+
 Neighbour preview prefetching uses the slideshow sequence for selection/shuffle and the grid order otherwise, through the existing pipeline. Face overlays belong to the People feature. Optional filmstrips were omitted.
 
 ## HDR photos

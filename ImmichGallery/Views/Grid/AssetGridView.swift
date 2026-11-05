@@ -62,7 +62,10 @@ struct AssetGridHost<Header: View>: View {
                 .opacity(model.viewerID == nil ? 1 : 0)
                 .allowsHitTesting(model.viewerID == nil)
             if let item = viewerItem {
-                AssetViewer(model: model, item: item, playLive: $playLive, onDelete: requestDelete)
+                AssetViewer(model: model, item: item, playLive: $playLive, onDelete: requestDelete, onTags: { ids, removing in
+                    guard model.canMutate(ids) else { return }
+                    tagRequest = ExploreTagRequest(ids: ids, removing: removing)
+                })
                     .id("\(item.id)-\(session.metadata.imageRevision)") // Metadata
                     .transition(.opacity)
             }
@@ -353,31 +356,7 @@ struct AssetGridView: View {
     private func contextMenu(for asset: AssetItem) -> some View {
         let ids = model.selection.contains(asset.id) ? Array(model.selection) : [asset.id]
         Button("Open") { model.open(asset.id) }
-        ViewerContextMenu(model: model, asset: asset)
-        if model.source != .trash { WidgetChosenMenuItem(ids: ids) } // Widget
-        Divider()
-        if !model.canMutate(ids), model.source != .trash {
-            SharingMenuItems(assetIDs: ids, allowPublicLinks: false)
-            AssetsExportMenu(ids: ids)
-        } else if model.source == .trash {
-            Button("Restore") { Task { await model.restore(ids) } }.disabled(!model.canDelete(ids))
-            Button("Delete Permanently…", role: .destructive) { onDelete(ids) }.disabled(!model.canDelete(ids))
-        } else {
-            AlbumSelectionMenu(session: session, model: model, ids: ids) // Albums
-            Button(asset.isFavorite ? "Unfavorite" : "Favorite") { Task { await model.setFavorite(ids, !asset.isFavorite) } }
-            SharingMenu(assetIDs: ids) // Sharing
-            AssetsContextMenu(model: model, ids: [asset.id] + ids.filter { $0 != asset.id })
-            MetadataMenuItems(ids: ids, canEditImage: !asset.isVideo && asset.livePhotoVideoID == nil).disabled(session.metadata.busy) // Metadata
-            ExploreAssetActions(ids: ids, model: model, onTags: { onTags(ids, $0) }) // Explore
-            AssetsExportMenu(ids: ids)
-            Divider()
-            if model.source == .archive {
-                Button("Unarchive") { Task { await model.setArchived(ids, false) } }
-            } else {
-                Button(String(localized: "Archive Selected Photos")) { Task { await model.setArchived(ids, true) } }
-            }
-            Button("Delete…", role: .destructive) { onDelete(ids) }
-        }
+        AssetActionsMenu(model: model, asset: asset, ids: ids, onDelete: onDelete, onTags: onTags)
     }
 
     private func handleKey(_ press: KeyPress) -> KeyPress.Result {
@@ -525,6 +504,49 @@ struct ThumbnailCell: View {
             .background(alignment: .bottom) {
                 LinearGradient(colors: [.clear, .black.opacity(0.35)], startPoint: .top, endPoint: .bottom)
             }
+        }
+    }
+}
+
+/// Shared by the grid and the opened photo; callers choose the target IDs.
+struct AssetActionsMenu: View {
+    @Environment(LibrarySession.self) private var session
+    @AppStorage("showInspector") private var showInspector = false
+    let model: AssetGridModel
+    let asset: AssetItem
+    let ids: [String]
+    let onDelete: ([String]) -> Void
+    let onTags: ([String], Bool) -> Void
+
+    var body: some View {
+        Button("Info") {
+            model.selection = [asset.id]
+            showInspector = true
+        }
+        ViewerContextMenu(model: model, asset: asset)
+        if model.source != .trash { WidgetChosenMenuItem(ids: ids) } // Widget
+        Divider()
+        if !model.canMutate(ids), model.source != .trash {
+            SharingMenuItems(assetIDs: ids, allowPublicLinks: false)
+            AssetsExportMenu(ids: ids)
+        } else if model.source == .trash {
+            Button("Restore") { Task { await model.restore(ids) } }.disabled(!model.canDelete(ids))
+            Button("Delete Permanently…", role: .destructive) { onDelete(ids) }.disabled(!model.canDelete(ids))
+        } else {
+            AlbumSelectionMenu(session: session, model: model, ids: ids) // Albums
+            Button(asset.isFavorite ? "Unfavorite" : "Favorite") { Task { await model.setFavorite(ids, !asset.isFavorite) } }
+            SharingMenu(assetIDs: ids) // Sharing
+            AssetsContextMenu(model: model, ids: [asset.id] + ids.filter { $0 != asset.id })
+            MetadataMenuItems(ids: ids, canEditImage: !asset.isVideo && asset.livePhotoVideoID == nil).disabled(session.metadata.busy) // Metadata
+            ExploreAssetActions(ids: ids, model: model, onTags: { onTags(ids, $0) }) // Explore
+            AssetsExportMenu(ids: ids)
+            Divider()
+            if model.source == .archive {
+                Button("Unarchive") { Task { await model.setArchived(ids, false) } }
+            } else {
+                Button(String(localized: "Archive Selected Photos")) { Task { await model.setArchived(ids, true) } }
+            }
+            Button("Delete…", role: .destructive) { onDelete(ids) }
         }
     }
 }
