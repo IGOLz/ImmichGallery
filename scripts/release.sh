@@ -87,11 +87,7 @@ rm "$OUT/$APP-notarize.zip"
 ditto -c -k --keepParent "$OUT/$APP.app" "$OUT/$APP-$VERSION.zip"
 
 # 3. Drag-to-Applications disk image, signed, notarized and stapled.
-STAGING=$(mktemp -d)
-cp -R "$OUT/$APP.app" "$STAGING/"
-ln -s /Applications "$STAGING/Applications"
-hdiutil create -quiet -volname "Immich Gallery $VERSION" -srcfolder "$STAGING" -ov -format UDZO "$OUT/$APP-$VERSION.dmg"
-rm -rf "$STAGING"
+scripts/create-dmg.sh "$OUT/$APP.app" "$VERSION" "$OUT/$APP-$VERSION.dmg"
 codesign --sign "$IDENTITY" --timestamp "$OUT/$APP-$VERSION.dmg"
 notarize "$OUT/$APP-$VERSION.dmg"
 xcrun stapler staple "$OUT/$APP-$VERSION.dmg"

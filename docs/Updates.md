@@ -78,3 +78,8 @@ Building with `SPARKLE_FEED_URL=http://127.0.0.1:8765/appcast.xml` points a buil
 ID and app group, and remove its widget. The flow tested for 0.3.2: an older Developer ID build with
 a local feed found the newer `.zip`, verified its EdDSA signature, installed it in place when quit
 (automatic mode) and, in the default mode, showed the update window when brought to the front.
+
+The DMG uses a custom Finder icon view with a Retina background and an Applications shortcut.
+`scripts/create-dmg.sh` generates the background with AppKit and saves the window layout before
+compressing the image. Packaging requires a logged-in macOS desktop and permission for the
+terminal running the script to automate Finder. The app itself still supports macOS 15 and later.
