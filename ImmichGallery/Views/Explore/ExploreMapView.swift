@@ -6,6 +6,8 @@ struct ExploreMapView: View {
     @State private var markers: [ExploreMarker] = []
     @State private var clusters: [ExploreMapCluster] = []
     @State private var region = MKCoordinateRegion(center: .init(latitude: 0, longitude: 0), span: .init(latitudeDelta: 180, longitudeDelta: 360))
+    @State private var position: MapCameraPosition = .region(MKCoordinateRegion(center: .init(latitude: 0, longitude: 0), span: .init(latitudeDelta: 180, longitudeDelta: 360)))
+    @State private var didFitMarkers = false
     @State private var filters = ExploreMapFilters()
     @State private var error: String?
     @State private var selection: ExploreMapCluster?
@@ -15,7 +17,7 @@ struct ExploreMapView: View {
         let filters = filters
         let session = session
         let pipeline = session.pipeline
-        return Map {
+        return Map(position: $position) {
             ForEach(clusters) { cluster in
                 Annotation(String(localized: "\(cluster.assets.count) photos"), coordinate: .init(latitude: cluster.lat, longitude: cluster.lon)) {
                     ExploreMapAnnotation(cluster: cluster, pipeline: pipeline) { selection = cluster }
@@ -32,6 +34,14 @@ struct ExploreMapView: View {
                 guard !Task.isCancelled else { return }
                 markers = loaded
                 error = nil
+                if !didFitMarkers, let bounds = ExploreMapCluster.initialBounds(loaded) {
+                    didFitMarkers = true
+                    // Fit the source markers once; fitting clusters feeds camera changes back into clustering.
+                    if !position.positionedByUser {
+                        region = MKCoordinateRegion(bounds)
+                        position = .rect(bounds)
+                    }
+                }
                 recluster()
             } catch { if !Task.isCancelled { self.error = error.localizedDescription } }
         }
@@ -49,7 +59,7 @@ struct ExploreMapView: View {
         let latSpan = region.span.latitudeDelta, lonSpan = region.span.longitudeDelta
         clusterTask = Task {
             let result = await Task.detached { ExploreMapCluster.make(markers, latitude: latitude, longitude: longitude, latSpan: latSpan, lonSpan: lonSpan) }.value
-            if !Task.isCancelled { clusters = result }
+            if !Task.isCancelled, clusters != result { clusters = result }
         }
     }
 }

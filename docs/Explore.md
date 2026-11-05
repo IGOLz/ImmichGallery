@@ -1,5 +1,11 @@
 # Explore implementation and review verification
 
+## Map stability
+
+The map uses an explicit camera position and fits the original markers once on the first nonempty load, unless the user has already moved the map. Reclustering and filter changes preserve the camera. This avoids a feedback loop between automatic framing and viewport-dependent clusters. Grid steps change only at power-of-two zoom boundaries, so groups can be coarser than before; sorted asset IDs provide stable annotation identities and cover photos. Unchanged cluster results do not replace map content.
+
+`Tests/ExploreChecks.swift` covers small camera-span changes, reordered markers, identity across zoom levels, and initial bounds for empty, invalid, single-location and date-line data. Visual confirmation of issue #3 is left to the maintainer in the installed Dev app.
+
 Targets Immich v3.3.5 and macOS 26. This review pass never launched the app, read Keychain credentials, contacted the user's server, used a live demo session, or pushed the branch.
 
 ## Review findings

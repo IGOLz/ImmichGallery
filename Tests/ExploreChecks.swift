@@ -1,6 +1,7 @@
 import Foundation
 import CoreGraphics
 import ImageIO
+import MapKit
 
 @main struct ExploreChecks {
     static func main() async throws {
@@ -61,7 +62,36 @@ import ImageIO
         }
         let invalidMarkers = [ExploreMarker(id: "nan", lat: .nan, lon: 0), ExploreMarker(id: "infinity", lat: 0, lon: .infinity), ExploreMarker(id: "invalid", lat: 91, lon: 181)]
         precondition(ExploreMapCluster.make(invalidMarkers, latitude: 0, longitude: 0, latSpan: 180, lonSpan: 360).isEmpty)
-        print("Explore checks passed: preferences, auth, folder deduplication, 50,000-marker clustering, dateline")
+        let closeMarkers = [ExploreMarker(id: "b", lat: 45.01, lon: 9.01), ExploreMarker(id: "a", lat: 45.02, lon: 9.02),
+                            ExploreMarker(id: "c", lat: 46, lon: 10)]
+        let stable = ExploreMapCluster.make(closeMarkers, latitude: 45, longitude: 9, latSpan: 10, lonSpan: 10)
+        let rounded = ExploreMapCluster.make(closeMarkers.reversed(), latitude: 45, longitude: 9, latSpan: 10.001, lonSpan: 10.001)
+        precondition(stable == rounded, "Small camera changes and server ordering must not replace annotations")
+        let zoomed = ExploreMapCluster.make(closeMarkers, latitude: 45, longitude: 9, latSpan: 1, lonSpan: 1)
+        precondition(stable.first { $0.assets == ["a", "b"] }?.id == "a")
+        precondition(zoomed.first { $0.assets == ["a", "b"] }?.id == "a")
+        precondition(Set(zoomed.map(\.id)).count == zoomed.count)
+        let boundaryMarkers = [ExploreMarker(id: "left", lat: 44.165, lon: 9), ExploreMarker(id: "right", lat: 44.168, lon: 9)]
+        let boundary = ExploreMapCluster.make(boundaryMarkers, latitude: 44, longitude: 9, latSpan: 10, lonSpan: 10)
+        precondition(boundary.count == 1 && boundary[0].assets.count == 2)
+        precondition(boundary == ExploreMapCluster.make(boundaryMarkers, latitude: 44, longitude: 9, latSpan: 10.001, lonSpan: 10.001),
+                     "Camera rounding must not split markers across the old continuously moving grid boundary")
+        precondition(ExploreMapCluster.initialBounds([]) == nil)
+        precondition(ExploreMapCluster.initialBounds(invalidMarkers) == nil)
+        for input in [closeMarkers, [closeMarkers[0]], dateline] {
+            let bounds = ExploreMapCluster.initialBounds(input)!
+            precondition(!bounds.isNull && !bounds.isEmpty && bounds.width.isFinite && bounds.height.isFinite)
+            for marker in input {
+                let point = MKMapPoint(CLLocationCoordinate2D(latitude: marker.lat, longitude: marker.lon))
+                precondition(bounds.contains(point), "Initial fit must include source markers, not viewport clusters")
+            }
+        }
+        for latitude in [-90.0, -89, 89, 90] {
+            let bounds = ExploreMapCluster.initialBounds([ExploreMarker(id: "pole", lat: latitude, lon: 180)])!
+            precondition(!bounds.isNull && !bounds.isEmpty && bounds.origin.x.isFinite && bounds.origin.y.isFinite
+                         && bounds.width.isFinite && bounds.height.isFinite)
+        }
+        print("Explore checks passed: preferences, auth, folder deduplication, 50,000-marker clustering, stable identities/grid, initial bounds, poles and dateline")
     }
 }
 
