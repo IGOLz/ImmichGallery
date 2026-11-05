@@ -129,6 +129,7 @@ struct SidebarView: View {
                 if session.features.trash {
                     Label("Recently Deleted", systemImage: "trash").tag(SidebarItem.trash)
                 }
+                Label("Locked Folder", systemImage: "lock").tag(SidebarItem.explore(.locked))
             }
             AlbumSidebarSections() // Albums
         }

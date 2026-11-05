@@ -27,7 +27,6 @@ enum ExplorePage: String, CaseIterable, Hashable {
 struct ExploreSidebar: View {
     @Environment(LibrarySession.self) private var session
     private var preferences: ExplorePreferences? { session.services.explorePreferences }
-    private var lockedAvailable: Bool { session.services.lockedAvailable }
     var body: some View {
         Section("Explore") {
             ForEach(ExplorePage.allCases, id: \.self) { page in
@@ -41,7 +40,7 @@ struct ExploreSidebar: View {
         case .memories: preferences?.memories?.enabled == true
         case .tags: preferences?.tags?.enabled == true
         case .folders: preferences?.folders?.enabled == true
-        case .locked: lockedAvailable
+        case .locked: false // Locked Folder lives at the end of Utilities.
         default: true
         }
     }

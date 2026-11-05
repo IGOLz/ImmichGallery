@@ -208,7 +208,6 @@ final class AccountServices {
     private(set) var albums: [Album] = []
     private(set) var preferences: AccountPreferences? // Account: loaded preferences for feature consumers.
     var explorePreferences: ExplorePreferences?
-    var lockedAvailable = false
     var exploreTags: [ExploreTag] = []
     var exploreTagsEnabled = false
     @ObservationIgnored private var exploreTagsLoaded = false
@@ -292,7 +291,6 @@ final class AccountServices {
         await reloadAlbums()
         await sharing.reload() // Sharing
         await loadExploreTags()
-        if client.exploreSupportsLockedFolder { lockedAvailable = (try? await client.exploreAuth()) != nil }
     }
 
     var preferencesRevision = 0
