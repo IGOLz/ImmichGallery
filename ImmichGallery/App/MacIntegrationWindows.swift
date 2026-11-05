@@ -6,15 +6,17 @@ struct MacWindowRoute: Codable, Hashable {
     var albumID: String?
     var query: String?
     var asTab: Bool?
+    var photoID: String? // Widget: open this photo in All Photos.
 }
 
 struct MacWindowRoot: View {
     let app: AppModel
     let route: MacWindowRoute?
+    var photoOpened: () -> Void = {} // Widget
     var body: some View {
         Group {
             if let services = app.services {
-                MacSignedInWindow(services: services, route: route)
+                MacSignedInWindow(services: services, route: route, photoOpened: photoOpened)
                     .id(ObjectIdentifier(services))
             } else { RootView() }
         }
@@ -26,11 +28,13 @@ struct MacWindowRoot: View {
 struct MacSignedInWindow: View {
     let services: AccountServices
     let route: MacWindowRoute?
+    var photoOpened: () -> Void = {} // Widget
     @State private var session: LibrarySession?
     var body: some View {
         Group {
             if let session {
                 MainView(initialAlbumID: route?.albumID, initialSearch: route?.query).environment(session)
+                    .modifier(WidgetPhotoOpener(session: session, photoID: route?.photoID, opened: photoOpened)) // Widget
             } else { ProgressView() }
         }
         .task { if session == nil { session = LibrarySession(services: services) } }

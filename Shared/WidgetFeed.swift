@@ -205,7 +205,6 @@ enum WidgetFeed {
 
     static func isID(_ text: String) -> Bool { UUID(uuidString: text) != nil }
 
-    static func link(for photo: Photo) -> Link {
-        photo.memoryID.map(Link.memory) ?? .photo(photo.assetID)
-    }
+    /// Every photo, memories included, opens in the app's All Photos at its place in the timeline.
+    static func link(for photo: Photo) -> Link { .photo(photo.assetID) }
 }

@@ -15,7 +15,7 @@ struct ImmichGalleryApp: App {
 
     var body: some Scene {
         WindowGroup("Immich Gallery", id: "main", for: MacWindowRoute.self) { route in
-            MacWindowRoot(app: app, route: route.wrappedValue)
+            MacWindowRoot(app: app, route: route.wrappedValue, photoOpened: { route.wrappedValue?.photoID = nil })
                 .environment(app)
                 .frame(minWidth: 760, minHeight: 480)
         }
@@ -63,9 +63,30 @@ struct ImmichGalleryApp: App {
         for link in links {
             switch link {
             case .memory(let id): openWindow(id: "explore-memory", value: id)
-            case .photo(let id): openWindow(id: "widget-photo", value: id)
+            case .photo(let id): openWidgetPhoto(id)
             case .open: break
             }
+        }
+    }
+
+    /// Opens the photo in All Photos, in the frontmost library window or a new one.
+    private func openWidgetPhoto(_ id: String) {
+        Task {
+            // At launch, the first library window may still be setting up its session.
+            for attempt in 0..<10 {
+                let window = NSApp.orderedWindows.first {
+                    ($0.isVisible || $0.isMiniaturized) && $0.tabbingIdentifier == MacWindowRoute.tabbingIdentifier
+                }
+                if let window, let session = app.services?.windows.allObjects.first(where: { $0.macWindow === window }) {
+                    if window.isMiniaturized { window.deminiaturize(nil) }
+                    window.makeKeyAndOrderFront(nil)
+                    session.openFromWidget(id) { openWindow(id: "widget-photo", value: id) }
+                    return
+                }
+                if window == nil && attempt >= 4 { break }
+                try? await Task.sleep(for: .milliseconds(100))
+            }
+            openWindow(id: "main", value: MacWindowRoute(photoID: id))
         }
     }
 }

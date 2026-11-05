@@ -1,4 +1,4 @@
-import Foundation
+import AppKit
 import Observation
 
 @MainActor @Observable
@@ -340,6 +340,8 @@ final class LibrarySession {
     let services: AccountServices
     @ObservationIgnored var lockFolder: () -> Void = {}
     @ObservationIgnored var closeViewer: () -> Void = {}
+    /// The library window showing this session (Widget: clicks open photos in the frontmost one).
+    @ObservationIgnored weak var macWindow: NSWindow?
     func endSession() { lockFolder(); closeViewer(); lockFolder = {}; closeViewer = {} }
     let albumActions = AlbumsActions()
     let metadata: MetadataState

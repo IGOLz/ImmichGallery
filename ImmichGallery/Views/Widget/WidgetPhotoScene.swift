@@ -66,3 +66,66 @@ struct WidgetChosenMenuItem: View {
         }
     }
 }
+
+// MARK: Opening a widget photo in All Photos
+
+extension LibrarySession {
+    /// Shows All Photos scrolled to the photo, with the photo open as if double-clicked. Photos that
+    /// aren't in All Photos (archived, a partner's, from someone else's album) go to `fallback`.
+    func openFromWidget(_ id: String, fallback: @escaping () -> Void) {
+        NotificationCenter.default.post(name: .viewerShowLibrary, object: self)
+        Task {
+            do {
+                let asset = try await client.asset(id)
+                let library = gridModel(for: .library)
+                await library.loadIfNeeded()
+                if let index = library.sections.firstIndex(where: { $0.id.prefix(7) == asset.localDateTime.prefix(7) }) {
+                    await library.viewerLoadSection(index)
+                }
+                guard library.item(id) != nil else { fallback(); return }
+                closeViewer() // A full-screen viewer or slideshow from this window.
+                library.viewerScrollTarget = id
+                library.open(id)
+            } catch {
+                services.handle(error)
+                fallback()
+            }
+        }
+    }
+}
+
+/// Remembers the library window of a session, and opens the photo a new window was made for.
+/// `opened` clears the photo from the window's route, so a restored window or an account switch
+/// doesn't open it again.
+struct WidgetPhotoOpener: ViewModifier {
+    let session: LibrarySession
+    let photoID: String?
+    let opened: () -> Void
+    @Environment(\.openWindow) private var openWindow
+
+    func body(content: Content) -> some View {
+        content
+            .background(WindowReader { [weak session] in session?.macWindow = $0 })
+            .task {
+                guard let photoID else { return }
+                opened()
+                session.openFromWidget(photoID) { openWindow(id: "widget-photo", value: photoID) }
+            }
+    }
+}
+
+private struct WindowReader: NSViewRepresentable {
+    let onWindow: (NSWindow?) -> Void
+    func makeNSView(context: Context) -> NSView { ReaderView(onWindow: onWindow) }
+    func updateNSView(_ nsView: NSView, context: Context) {}
+
+    private final class ReaderView: NSView {
+        let onWindow: (NSWindow?) -> Void
+        init(onWindow: @escaping (NSWindow?) -> Void) { self.onWindow = onWindow; super.init(frame: .zero) }
+        required init?(coder: NSCoder) { nil }
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            onWindow(window)
+        }
+    }
+}

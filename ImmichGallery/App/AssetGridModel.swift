@@ -131,6 +131,8 @@ final class AssetGridModel {
     @ObservationIgnored private var nextPage: ImmichClient.SearchPage?
     @ObservationIgnored private var pageFailed = false
     @ObservationIgnored private var pageTask: Task<Void, Never>?
+    /// The first load, shared so a second caller waits for it instead of returning early (Widget).
+    @ObservationIgnored private var loadTask: Task<Void, Never>?
 
     init(source: GridSource, session: LibrarySession) {
         self.source = source
@@ -169,9 +171,13 @@ final class AssetGridModel {
     // MARK: Loading
 
     func loadIfNeeded() async {
+        if let loadTask { await loadTask.value }
         guard state == .idle || isStale else { return }
         // Unstructured so a view disappearing mid-load doesn't cancel the fetch.
-        await Task { await reload() }.value
+        let task = Task { await reload() }
+        loadTask = task
+        await task.value
+        if loadTask == task { loadTask = nil }
     }
 
     // Explore: remove sensitive items immediately from every cached grid and viewer.
