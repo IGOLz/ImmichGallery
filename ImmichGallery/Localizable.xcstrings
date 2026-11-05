@@ -8714,6 +8714,226 @@
           }
         }
       }
+    },
+    "Move Up": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sposta su"
+          }
+        }
+      }
+    },
+    "Move Down": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sposta giù"
+          }
+        }
+      }
+    },
+    "Move to Section": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sposta nella sezione"
+          }
+        }
+      }
+    },
+    "Customize Sidebar": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Personalizza barra laterale"
+          }
+        }
+      }
+    },
+    "Customize Sidebar…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Personalizza barra laterale…"
+          }
+        }
+      }
+    },
+    "Choose which items and sections appear on this Mac. Hiding them does not delete any photos or albums.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scegli quali voci e sezioni mostrare su questo Mac. Nasconderle non elimina foto o album."
+          }
+        }
+      }
+    },
+    "New section name": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nome della nuova sezione"
+          }
+        }
+      }
+    },
+    "Add Section": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aggiungi sezione"
+          }
+        }
+      }
+    },
+    "Unavailable on this server": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Non disponibile su questo server"
+          }
+        }
+      }
+    },
+    "Move items here using their Move to Section menu, or drag them into this section in the sidebar.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sposta qui le voci dal menu Sposta nella sezione, oppure trascinale in questa sezione nella barra laterale."
+          }
+        }
+      }
+    },
+    "Rename Section": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rinomina sezione"
+          }
+        }
+      }
+    },
+    "Reset Sidebar…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ripristina barra laterale…"
+          }
+        }
+      }
+    },
+    "Section name": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nome della sezione"
+          }
+        }
+      }
+    },
+    "Reset the sidebar?": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ripristinare la barra laterale?"
+          }
+        }
+      }
+    },
+    "Reset Sidebar": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ripristina barra laterale"
+          }
+        }
+      }
+    },
+    "This restores the default sections and item order, shows hidden items, and removes custom sections. Your photos and albums are not affected.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ripristina le sezioni e l’ordine delle voci predefiniti, mostra le voci nascoste e rimuove le sezioni personalizzate. Foto e album restano invariati."
+          }
+        }
+      }
+    },
+    "Hide from Sidebar": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nascondi dalla barra laterale"
+          }
+        }
+      }
+    },
+    "Hide Section": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nascondi sezione"
+          }
+        }
+      }
+    },
+    "Delete Section…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elimina sezione…"
+          }
+        }
+      }
+    },
+    "Delete Section": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elimina sezione"
+          }
+        }
+      }
+    },
+    "Delete this custom section?": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eliminare questa sezione personalizzata?"
+          }
+        }
+      }
+    },
+    "Items return to their default sections. Your photos and albums are not deleted.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le voci tornano nelle sezioni predefinite. Foto e album non vengono eliminati."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

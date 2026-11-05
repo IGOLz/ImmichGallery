@@ -1,16 +1,5 @@
 import SwiftUI
 
-struct AssetsSidebarItems: View {
-    @Environment(LibrarySession.self) private var session
-    var body: some View {
-        Group {
-            if session.features.duplicateDetection == true { Label("Duplicates", systemImage: "square.on.square").tag(SidebarItem.duplicates) }
-            Label("Large Files", systemImage: "externaldrive").tag(SidebarItem.largeFiles)
-            Label("Assign Location", systemImage: "mappin.and.ellipse").tag(SidebarItem.geolocation)
-        }
-    }
-}
-
 struct AssetsContextMenu: View {
     @Environment(LibrarySession.self) private var session
     let model: AssetGridModel

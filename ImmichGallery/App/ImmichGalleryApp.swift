@@ -148,8 +148,13 @@ struct SearchActions {
     var filters: () -> Void
 }
 
+struct SidebarActions {
+    var customize: () -> Void
+}
+
 extension FocusedValues {
     @Entry var searchActions: SearchActions?
+    @Entry var sidebarActions: SidebarActions?
     @Entry var librarySession: LibrarySession?
     @Entry var gridModel: AssetGridModel?
 }
@@ -157,6 +162,7 @@ extension FocusedValues {
 struct AppCommands: Commands {
     let app: AppModel
     @FocusedValue(\.searchActions) private var searchActions
+    @FocusedValue(\.sidebarActions) private var sidebarActions
     @FocusedValue(\.gridModel) private var grid
     @FocusedValue(\.librarySession) private var session
     @AppStorage("gridThumbnailSize") private var thumbnailSize = GridMetrics.defaultSize
@@ -196,6 +202,11 @@ struct AppCommands: Commands {
             Button("Select All Photos") { grid?.selectAll() }
                 .keyboardShortcut("a", modifiers: .command)
                 .disabled(grid == nil || grid?.viewerID != nil)
+        }
+
+        CommandGroup(after: .sidebar) {
+            Button("Customize Sidebar…") { sidebarActions?.customize() }
+                .disabled(sidebarActions == nil)
         }
 
         CommandGroup(before: .sidebar) {

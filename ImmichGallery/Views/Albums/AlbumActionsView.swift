@@ -94,32 +94,43 @@ struct AlbumNameSheet: View {
     }
 }
 
-struct AlbumSidebarSections: View {
+struct AlbumSidebarRows: View {
     @Environment(LibrarySession.self) private var session
 
+    let shared: Bool
+    @Binding var storedLayout: String
+    @Binding var selection: SidebarItem?
+
     var body: some View {
-        ForEach([false, true], id: \.self) { shared in
-            Section(shared ? "Shared Albums" : "My Albums") {
-                ForEach(session.albums.filter { $0.shared == shared }) { album in
-                    Label {
-                        Text(album.albumName)
-                    } icon: {
-                        if let assetID = album.albumThumbnailAssetId {
-                            RemoteThumbnail(pipeline: session.pipeline, assetID: assetID,
-                                            placeholderSystemImage: shared ? "person.2.crop.square.stack" : "rectangle.stack")
-                                .frame(width: 24, height: 24)
-                                .clipShape(.rect(cornerRadius: 4))
-                                .accessibilityHidden(true)
-                        } else {
-                            Image(systemName: shared ? "person.2.crop.square.stack" : "rectangle.stack")
-                        }
+        let layout = SidebarLayout(stored: storedLayout)
+        ForEach(session.albums.filter { $0.shared == shared && !layout.isDynamicItemHidden(session.sidebarItemKey("album:" + $0.id)) }) { album in
+            SidebarSelectionRow(item: .album(album.id), selection: $selection) {
+                Label {
+                    Text(album.albumName)
+                } icon: {
+                    if let assetID = album.albumThumbnailAssetId {
+                        RemoteThumbnail(pipeline: session.pipeline, assetID: assetID,
+                                        placeholderSystemImage: shared ? "person.2.crop.square.stack" : "rectangle.stack")
+                            .frame(width: 24, height: 24)
+                            .clipShape(.rect(cornerRadius: 4))
+                            .accessibilityHidden(true)
+                    } else {
+                        Image(systemName: shared ? "person.2.crop.square.stack" : "rectangle.stack")
                     }
-                        .modifier(AlbumRowUploadDrop(queue: session.upload, albumID: album.id, addAssets: { add($0, to: album) })) // Upload
-                        .tag(SidebarItem.album(album.id))
-                        .contextMenu { MacAlbumWindowMenu(albumID: album.id) } // MacIntegration
-                        .modifier(AlbumRowAssetDrop { add($0, to: album) })
                 }
             }
+                .modifier(AlbumRowUploadDrop(queue: session.upload, albumID: album.id, addAssets: { add($0, to: album) })) // Upload
+                .id(SidebarItem.album(album.id))
+                .contextMenu {
+                    MacAlbumWindowMenu(albumID: album.id)
+                    Divider()
+                    Button("Hide from Sidebar") {
+                        var layout = SidebarLayout(stored: storedLayout)
+                        layout.setDynamicItemHidden(true, key: session.sidebarItemKey("album:" + album.id))
+                        storedLayout = layout.stored
+                    }
+                }
+                .modifier(AlbumRowAssetDrop { add($0, to: album) })
         }
     }
 

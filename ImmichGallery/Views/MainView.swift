@@ -17,6 +17,8 @@ struct MainView: View {
     @State private var searchText = ""
     @State private var submittedSearch = ""
     @State private var showSearchFilters = false
+    @State private var customizingSidebar = false
+    @AppStorage("sidebarLayout") private var sidebarLayout = ""
     @FocusState private var searchFocused: Bool
 
     init(initialAlbumID: String? = nil, initialSearch: String? = nil) {
@@ -27,7 +29,7 @@ struct MainView: View {
 
     var body: some View {
         NavigationSplitView {
-            SidebarView(selection: $selection)
+            SidebarView(selection: $selection, customizing: $customizingSidebar)
                 .navigationSplitViewColumnWidth(min: 180, ideal: 220, max: 320)
         } detail: {
             NavigationStack {
@@ -49,6 +51,8 @@ struct MainView: View {
         .searchable(text: $searchText, placement: .toolbar, prompt: session.features.smartSearch ? "Search photos" : "Search file names")
         .searchSuggestions { SearchFieldSuggestions(text: searchText) }
         .searchFocused($searchFocused)
+        .sheet(isPresented: $customizingSidebar) { SidebarCustomizationView(storedLayout: $sidebarLayout) }
+        .focusedSceneValue(\.sidebarActions, SidebarActions(customize: { customizingSidebar = true }))
         .focusedSceneValue(\.librarySession, session)
         .focusedSceneValue(\.searchActions, SearchActions(
             find: { selection = .search; searchFocused = true },
@@ -100,40 +104,6 @@ struct MainView: View {
         case .search:
             SearchView(text: submittedSearch, chooseText: { searchText = $0; submittedSearch = $0 }, showFilters: $showSearchFilters)
         }
-    }
-}
-
-struct SidebarView: View {
-    @Environment(LibrarySession.self) private var session
-    @Binding var selection: SidebarItem?
-
-    var body: some View {
-        List(selection: $selection) {
-            Section("Photos") {
-                Label("Search", systemImage: "magnifyingglass").tag(SidebarItem.search) // Search
-                Label("Library", systemImage: "photo.on.rectangle").tag(SidebarItem.library)
-                Label("Favorites", systemImage: "heart").tag(SidebarItem.favorites)
-                Label("Videos", systemImage: "video").tag(SidebarItem.videos)
-            }
-            ExploreSidebar() // Explore
-            Section("Collections") {
-                Label("Albums", systemImage: "rectangle.stack").tag(SidebarItem.albums)
-                if session.features.facialRecognition {
-                    Label("People", systemImage: "person.crop.square").tag(SidebarItem.people)
-                }
-            }
-            SharingSidebar() // Sharing
-            Section("Utilities") {
-                AssetsSidebarItems()
-                Label("Archive", systemImage: "archivebox").tag(SidebarItem.archive)
-                if session.features.trash {
-                    Label("Recently Deleted", systemImage: "trash").tag(SidebarItem.trash)
-                }
-                Label("Locked Folder", systemImage: "lock").tag(SidebarItem.explore(.locked))
-            }
-            AlbumSidebarSections() // Albums
-        }
-        .listStyle(.sidebar)
     }
 }
 

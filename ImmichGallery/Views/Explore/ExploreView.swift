@@ -24,28 +24,6 @@ enum ExplorePage: String, CaseIterable, Hashable {
     }
 }
 
-struct ExploreSidebar: View {
-    @Environment(LibrarySession.self) private var session
-    private var preferences: ExplorePreferences? { session.services.explorePreferences }
-    var body: some View {
-        Section("Explore") {
-            ForEach(ExplorePage.allCases, id: \.self) { page in
-                if enabled(page) { Label(String(localized: page.title), systemImage: page.icon).tag(SidebarItem.explore(page)) }
-            }
-        }
-    }
-    private func enabled(_ page: ExplorePage) -> Bool {
-        switch page {
-        case .map: session.features.map
-        case .memories: preferences?.memories?.enabled == true
-        case .tags: preferences?.tags?.enabled == true
-        case .folders: preferences?.folders?.enabled == true
-        case .locked: false // Locked Folder lives at the end of Utilities.
-        default: true
-        }
-    }
-}
-
 struct ExploreView: View {
     let page: ExplorePage
     var body: some View {

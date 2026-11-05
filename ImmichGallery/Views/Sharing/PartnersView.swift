@@ -1,20 +1,5 @@
 import SwiftUI
 
-struct SharingSidebar: View {
-    @Environment(LibrarySession.self) private var session
-    var body: some View {
-        Section("Sharing") {
-            if session.sharing.linksAvailable { Label("Shared Links", systemImage: "link").tag(SidebarItem.sharedLinks) }
-            if session.sharing.partnersAvailable {
-                Label("Partner Sharing", systemImage: "person.2").tag(SidebarItem.partners)
-                ForEach(session.sharing.receivedPartners) { partner in
-                    Label(partner.name, systemImage: "person.2").tag(SidebarItem.partner(partner.id))
-                }
-            }
-        }
-    }
-}
-
 struct PartnersView: View {
     @Environment(LibrarySession.self) private var session
     @State private var users: [User] = []
