@@ -16,7 +16,11 @@ enum WidgetFeed {
     static let mosaicKind = "PhotoMosaic"
     static let libraryKind = "LibraryStats"
     static let photoKinds: Set<String> = [featuredKind, favoritesKind, albumKind, personKind, placeKind, chosenKind, mosaicKind]
+    #if DEBUG
+    static let urlScheme = "immichgallery-dev"
+    #else
     static let urlScheme = "immichgallery"
+    #endif
     /// How long each photo stays on the widget before the next one.
     static let rotation: TimeInterval = 3600
 

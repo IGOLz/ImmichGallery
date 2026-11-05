@@ -166,6 +166,8 @@ open build/DerivedData/Build/Products/Release/ImmichGallery.app
 
 Debug builds are signed ad hoc ("Sign to Run Locally"), so macOS may ask for Keychain access again after each rebuild. To sign with your own identity, set a team in *Signing & Capabilities*. The project uses Xcode's folder-synced groups: any file you add under `ImmichGallery/` is picked up automatically.
 
+Debug builds are **Immich Gallery Dev**, with a separate identity, saved accounts, widget storage, and a blue DEV icon. To install and keep a local Dev app updated from this checkout, run `python3 scripts/dev-app.py` with a local Developer ID Application signing certificate. See [local development](docs/Development.md) for automatic updates and the demo account.
+
 <details>
 <summary><b>Project layout</b></summary>
 

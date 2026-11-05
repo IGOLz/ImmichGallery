@@ -8496,6 +8496,106 @@
           }
         }
       }
+    },
+    "Default Order": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ordine predefinito"
+          }
+        }
+      }
+    },
+    "Sort Results": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ordina risultati"
+          }
+        }
+      }
+    },
+    "Default order uses relevance for smart search and newest first for other searches. Sorting smart results by date loads all results first.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L’ordine predefinito usa la rilevanza per la ricerca intelligente e mostra prima i più recenti per le altre ricerche. L’ordinamento per data della ricerca intelligente carica prima tutti i risultati."
+          }
+        }
+      }
+    },
+    "Sorting by date loads all smart search results first. Large searches may take time and use more memory.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L’ordinamento per data carica prima tutti i risultati della ricerca intelligente. Le ricerche ampie possono richiedere tempo e più memoria."
+          }
+        }
+      }
+    },
+    "Loaded %lld search results": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Loaded %lld search result"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Loaded %lld search results"
+                }
+              }
+            }
+          }
+        },
+        "it": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Caricato %lld risultato della ricerca"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Caricati %lld risultati della ricerca"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Invalid search pagination": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paginazione della ricerca non valida"
+          }
+        }
+      }
+    },
+    "Development builds update automatically from the local source code.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le build di sviluppo si aggiornano automaticamente dal codice sorgente locale."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

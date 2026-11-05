@@ -109,6 +109,8 @@ final class AssetGridModel {
     var albumOrder = "desc" // Albums
     private(set) var sections: [GridSection] = []
     private(set) var state: LoadState = .idle
+    private(set) var searchResultsLoaded = 0
+    @ObservationIgnored private var sortedSmartResults: [AssetResponse]?
     var selection: Set<String> = []
     var viewerID: String?
     var viewerScrollTarget: String? // Viewer
@@ -134,9 +136,20 @@ final class AssetGridModel {
     /// The first load, shared so a second caller waits for it instead of returning early (Widget).
     @ObservationIgnored private var loadTask: Task<Void, Never>?
 
-    init(source: GridSource, session: LibrarySession) {
+    init(source: GridSource, session: LibrarySession, reusing previous: AssetGridModel? = nil) {
         self.source = source
         self.session = session
+        if case .filteredSearch(var query) = source, query.sort != .automatic,
+           case .filteredSearch(var oldQuery) = previous?.source, oldQuery.sort != .automatic,
+           previous?.isStale == false, let items = previous?.sortedSmartResults {
+            let order = query.sort
+            query.sort = .automatic; oldQuery.sort = .automatic
+            if query == oldQuery {
+                sortedSmartResults = items
+                append(ImmichClient.sortSearchAssets(items, order: order).items.map(AssetItem.init))
+                state = .loaded
+            }
+        }
     }
 
     var totalCount: Int { sections.reduce(0) { $0 + $1.count } }
@@ -173,11 +186,7 @@ final class AssetGridModel {
     func loadIfNeeded() async {
         if let loadTask { await loadTask.value }
         guard state == .idle || isStale else { return }
-        // Unstructured so a view disappearing mid-load doesn't cancel the fetch.
-        let task = Task { await reload() }
-        loadTask = task
-        await task.value
-        if loadTask == task { loadTask = nil }
+        await reload()
     }
 
     // Explore: remove sensitive items immediately from every cached grid and viewer.
@@ -194,9 +203,28 @@ final class AssetGridModel {
 
     func markStale() { isStale = true }
 
+    func cancelLoading() {
+        loadTask?.cancel()
+        pageTask?.cancel()
+        sectionTasks.values.forEach { $0.cancel() }
+    }
+
     func reload() async {
+        if let previous = loadTask {
+            previous.cancel()
+            await previous.value
+        }
+        let task = Task { await performReload() }
+        loadTask = task
+        await task.value
+        if loadTask == task { loadTask = nil }
+    }
+
+    private func performReload() async {
         guard let session else { return }
         isStale = false
+        sortedSmartResults = nil
+        searchResultsLoaded = 0
         pageFailed = false
         sectionTasks.values.forEach { $0.cancel() }
         sectionTasks = [:]
@@ -300,7 +328,14 @@ final class AssetGridModel {
                 result = try await session.client.metadataSearch(fileName: text, page: page)
             }
         case .filteredSearch(let query):
-            result = try await session.client.advancedSearch(query, smartEnabled: session.features.smartSearch, page: page)
+            result = try await session.client.advancedSearch(query, smartEnabled: session.features.smartSearch, page: page) { [weak self] count in
+                self?.searchResultsLoaded = count
+            }
+            if query.mode == .context, session.features.smartSearch,
+               !query.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+               query.sort != .automatic, result.nextPage == nil, result.nextCursor == nil {
+                sortedSmartResults = result.items.filter { $0.visibility != "locked" }
+            }
         case .explore(let source):
             result = try await session.client.exploreAssets(source, page: page)
         case .videos:
@@ -322,7 +357,7 @@ final class AssetGridModel {
         }
     }
 
-    /// Appends paged results. Search keeps relevance order in one section;
+    /// Appends paged results. Search keeps the requested order in one section;
     /// other paged sources are grouped by month like the timeline.
     private func append(_ items: [AssetItem]) {
         guard !items.isEmpty else { return }
@@ -489,6 +524,7 @@ final class AssetGridModel {
     }
 
     private func update(_ ids: [String], _ change: (inout AssetItem) -> Void) {
+        sortedSmartResults = nil
         for id in ids {
             guard let pos = index[id] else { continue }
             change(&sections[pos.section].assets![pos.item])
@@ -496,6 +532,7 @@ final class AssetGridModel {
     }
 
     private func remove(_ ids: [String]) {
+        sortedSmartResults = nil
         let removed = Set(ids)
         // Move the viewer to a neighbour before the current asset disappears.
         if let viewerID, removed.contains(viewerID), let pos = index[viewerID] {

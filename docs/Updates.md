@@ -83,3 +83,7 @@ The DMG uses a custom Finder icon view with a Retina background and an Applicati
 `scripts/create-dmg.sh` generates the background with AppKit and saves the window layout before
 compressing the image. Packaging requires a logged-in macOS desktop and permission for the
 terminal running the script to automate Finder. The app itself still supports macOS 15 and later.
+
+## Release issue completion
+
+Stable releases also complete their ready issues through GitHub Actions. Use a milestone matching the release tag and mark reviewed, verified fixes with `ready-for-release`. See [the release issue workflow](ReleaseIssues.md) for preparation, simulation, activation, and recovery. Prereleases leave issues open.

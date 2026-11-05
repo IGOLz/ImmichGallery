@@ -185,7 +185,13 @@ struct AssetGridView: View {
             if model.sections.isEmpty {
                 switch model.state {
                 case .idle, .loading:
-                    ProgressView().controlSize(.large).frame(maxWidth: .infinity, maxHeight: .infinity)
+                    VStack(spacing: 12) {
+                        ProgressView().controlSize(.large)
+                        if model.searchResultsLoaded > 0 {
+                            Text("Loaded \(model.searchResultsLoaded) search results")
+                                .font(.caption).foregroundStyle(.secondary)
+                        }
+                    }.frame(maxWidth: .infinity, maxHeight: .infinity)
                 case .failed(let message):
                     ContentUnavailableView {
                         Label("Couldn't Load Photos", systemImage: "wifi.exclamationmark")

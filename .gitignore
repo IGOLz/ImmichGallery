@@ -4,3 +4,6 @@ DerivedData/
 *.xcuserstate
 xcuserdata/
 .release.env
+
+# Local agent instructions
+/[Aa][Gg][Ee][Nn][Tt][Ss].[Mm][Dd]

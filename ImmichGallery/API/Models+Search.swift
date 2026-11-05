@@ -13,9 +13,22 @@ enum SearchMode: String, Codable, CaseIterable, Identifiable {
     var id: Self { self }
 }
 
+enum SearchSort: String, Codable, CaseIterable, Identifiable {
+    case automatic, newest, oldest
+    var id: Self { self }
+    var title: LocalizedStringResource {
+        switch self {
+        case .automatic: "Default Order"
+        case .newest: "Newest First"
+        case .oldest: "Oldest First"
+        }
+    }
+}
+
 struct SearchQuery: Codable, Hashable, Sendable {
     var text = ""
     var mode: SearchMode = .context
+    var sort: SearchSort = .automatic
     var personIDs: Set<String> = []
     var personNames: [String: String] = [:]
     var country = ""
@@ -90,7 +103,7 @@ struct SearchQuery: Codable, Hashable, Sendable {
     init() {}
 
     private enum CodingKeys: String, CodingKey {
-        case text, mode, personIDs, personNames, country, state, city, make, model, lensModel
+        case text, mode, sort, personIDs, personNames, country, state, city, make, model, lensModel
         case takenAfter, takenBefore, mediaType, archived, favorites, notInAlbum, rating
     }
 
@@ -98,6 +111,7 @@ struct SearchQuery: Codable, Hashable, Sendable {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         text = try c.decodeIfPresent(String.self, forKey: .text) ?? ""
         mode = try c.decodeIfPresent(SearchMode.self, forKey: .mode) ?? .context
+        sort = try c.decodeIfPresent(SearchSort.self, forKey: .sort) ?? .automatic
         personIDs = try c.decodeIfPresent(Set<String>.self, forKey: .personIDs) ?? []
         personNames = try c.decodeIfPresent([String: String].self, forKey: .personNames) ?? [:]
         country = try c.decodeIfPresent(String.self, forKey: .country) ?? ""
@@ -146,14 +160,17 @@ struct AdvancedSearchRequest: Encodable {
     init(_ search: SearchQuery, smart: Bool, page: ImmichClient.SearchPage) {
         func value(_ text: String) -> String? { text.isEmpty ? nil : text }
         let text = value(search.text.trimmingCharacters(in: .whitespacesAndNewlines))
-        if smart { query = text }
+        if smart {
+            query = text
+            if search.sort != .automatic { size = 1000 }
+        }
         else {
             switch search.mode {
             case .context, .fileName: originalFileName = text
             case .description: description = text
             case .ocr: ocr = text
             }
-            order = "desc"
+            order = search.sort == .oldest ? "asc" : "desc"
         }
         personIds = search.personIDs.isEmpty ? nil : search.personIDs.sorted()
         country = value(search.country); state = value(search.state); city = value(search.city)

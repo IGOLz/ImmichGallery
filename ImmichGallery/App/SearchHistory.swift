@@ -14,7 +14,11 @@ final class SearchHistory {
 
     func remember(_ query: SearchQuery) {
         guard !key.isEmpty, !query.text.isEmpty || !query.chips.isEmpty else { return }
-        entries.removeAll { $0 == query }
+        entries.removeAll {
+            var previous = $0
+            previous.sort = query.sort
+            return previous == query
+        }
         entries.insert(query, at: 0)
         entries = Array(entries.prefix(20))
         persist()

@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CFBundleName</key>
+	<string>$(IMMICH_APP_NAME)</string>
 	<key>UTExportedTypeDeclarations</key>
 	<array>
 		<dict>
@@ -18,9 +20,9 @@
 		<dict>
 			<!-- Clicks on the desktop widget. -->
 			<key>CFBundleURLName</key>
-			<string>dev.igol.ImmichGallery.widget</string>
+			<string>$(PRODUCT_BUNDLE_IDENTIFIER).widget</string>
 			<key>CFBundleURLSchemes</key>
-			<array><string>immichgallery</string></array>
+			<array><string>$(IMMICH_URL_SCHEME)</string></array>
 		</dict>
 	</array>
 	<key>ImmichAppGroup</key>

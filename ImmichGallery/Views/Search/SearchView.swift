@@ -24,6 +24,13 @@ struct SearchView: View {
                     Label("Filters", systemImage: "line.3.horizontal.decrease")
                 }
                 Spacer()
+                Picker("Sort Results", selection: $query.sort) {
+                    ForEach(SearchSort.allCases) { sort in
+                        Text(String(localized: sort.title)).tag(sort)
+                    }
+                }
+                .fixedSize()
+                .help("Default order uses relevance for smart search and newest first for other searches. Sorting smart results by date loads all results first.")
                 Menu("Recent Searches") {
                     ForEach(Array(history.entries.enumerated()), id: \.offset) { _, entry in
                         Button(([entry.text] + entry.chips).filter { !$0.isEmpty }.joined(separator: ", ")) { query = entry; query.clampMode(smartEnabled: session.features.smartSearch, ocrEnabled: session.features.ocr); chooseText(entry.text) }
@@ -46,11 +53,15 @@ struct SearchView: View {
                             .buttonStyle(.plain).padding(6).background(.quaternary, in: Capsule())
                         }
                         Button("Clear Filters") {
-                            let text = query.text; let mode = query.mode
-                            query = SearchQuery(); query.text = text; query.mode = mode
+                            let text = query.text; let mode = query.mode; let sort = query.sort
+                            query = SearchQuery(); query.text = text; query.mode = mode; query.sort = sort
                         }
                     }.padding(.horizontal, 12).padding(.bottom, 8)
                 }
+            }
+            if query.mode == .context && session.features.smartSearch && !query.text.isEmpty && query.sort != .automatic {
+                Text("Sorting by date loads all smart search results first. Large searches may take time and use more memory.")
+                    .font(.caption).foregroundStyle(.secondary).padding(.horizontal, 12).padding(.bottom, 8)
             }
             Divider()
             if query.text.isEmpty && query.chips.isEmpty {

@@ -19,8 +19,8 @@ struct SearchFiltersView: View {
                 Text("Search Filters").font(.title2.bold())
                 Spacer()
                 Button("Reset") {
-                    let text = query.text; let mode = query.mode
-                    query = SearchQuery(); query.text = text; query.mode = mode
+                    let text = query.text; let mode = query.mode; let sort = query.sort
+                    query = SearchQuery(); query.text = text; query.mode = mode; query.sort = sort
                 }
             }.padding()
             Form {

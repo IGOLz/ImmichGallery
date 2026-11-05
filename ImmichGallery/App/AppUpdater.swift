@@ -7,9 +7,10 @@ import SwiftUI
 @MainActor @Observable
 final class AppUpdater {
     static let shared = AppUpdater()
+    static let isDevelopment = Bundle.main.bundleIdentifier == "dev.igol.ImmichGallery.Dev"
 
     @ObservationIgnored private let controller = SPUStandardUpdaterController(
-        startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
+        startingUpdater: !AppUpdater.isDevelopment, updaterDelegate: nil, userDriverDelegate: nil)
     @ObservationIgnored private var canCheckObservation: NSKeyValueObservation?
     private var updater: SPUUpdater { controller.updater }
 
@@ -43,6 +44,7 @@ final class AppUpdater {
     }
 
     private init() {
+        guard !Self.isDevelopment else { return }
         canCheckObservation = updater.observe(\.canCheckForUpdates, options: [.initial, .new]) { [weak self] updater, _ in
             MainActor.assumeIsolated { self?.canCheckForUpdates = updater.canCheckForUpdates }
         }
@@ -51,18 +53,19 @@ final class AppUpdater {
 
     /// Re-reads the preferences, which Sparkle's update window can also change.
     func refresh() {
+        guard !Self.isDevelopment else { return }
         automaticallyChecks = updater.automaticallyChecksForUpdates
         automaticallyDownloads = updater.automaticallyDownloadsUpdates
     }
 
     /// Shows the progress and the result, including "You're up to date".
-    func checkForUpdates() { updater.checkForUpdates() }
+    func checkForUpdates() { if !Self.isDevelopment { updater.checkForUpdates() } }
 
     /// Called once at launch. Unless updates install automatically, a new version opens
     /// Sparkle's window with the release notes and Install / Remind Me Later / Skip.
     /// With automatic updates, it is downloaded quietly and installed when the app quits.
     func checkAtLaunch() {
-        guard updater.automaticallyChecksForUpdates else { return }
+        guard !Self.isDevelopment, updater.automaticallyChecksForUpdates else { return }
         Task {
             // Let the library window appear first.
             try? await Task.sleep(for: .seconds(3))
@@ -88,14 +91,20 @@ struct UpdateSettingsView: View {
         Form {
             Section {
                 Toggle("Check for Updates Automatically", isOn: $updater.automaticallyChecks)
+                    .disabled(AppUpdater.isDevelopment)
                 if updater.allowsAutomaticDownloads {
                     Toggle("Download and Install Updates Automatically", isOn: $updater.automaticallyDownloads)
                         .disabled(!updater.automaticallyChecks)
                 }
             } footer: {
-                Text("Immich Gallery looks for a new version when it opens and once a day. Unless updates install automatically, it asks you before updating. Automatic updates are installed the next time you quit the app.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                if AppUpdater.isDevelopment {
+                    Text("Development builds update automatically from the local source code.")
+                        .font(.caption).foregroundStyle(.secondary)
+                } else {
+                    Text("Immich Gallery looks for a new version when it opens and once a day. Unless updates install automatically, it asks you before updating. Automatic updates are installed the next time you quit the app.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
             Section {
                 LabeledContent("Current Version", value: updater.versionDescription)

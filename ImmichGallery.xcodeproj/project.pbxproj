@@ -253,8 +253,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CURRENT_PROJECT_VERSION = 12;
-				IMMICH_APP_GROUP = "$(TeamIdentifierPrefix)dev.igol.ImmichGallery";
+				IMMICH_APP_GROUP = "$(TeamIdentifierPrefix)dev.igol.ImmichGallery.Dev";
 				SPARKLE_FEED_URL = "https://github.com/IGOLz/ImmichGallery/releases/latest/download/appcast.xml";
+				IMMICH_APP_NAME = "Immich Gallery Dev";
+				IMMICH_URL_SCHEME = immichgallery-dev;
 				MARKETING_VERSION = 0.4.2;
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -289,6 +291,8 @@
 				CURRENT_PROJECT_VERSION = 12;
 				IMMICH_APP_GROUP = "$(TeamIdentifierPrefix)dev.igol.ImmichGallery";
 				SPARKLE_FEED_URL = "https://github.com/IGOLz/ImmichGallery/releases/latest/download/appcast.xml";
+				IMMICH_APP_NAME = ImmichGallery;
+				IMMICH_URL_SCHEME = immichgallery;
 				MARKETING_VERSION = 0.4.2;
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -312,7 +316,7 @@
 		1A000000000000000000000E /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIconDev;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Config/ImmichGallery.entitlements;
 				CODE_SIGN_IDENTITY = "-";
@@ -323,14 +327,14 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Config/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Immich Gallery";
+				INFOPLIST_KEY_CFBundleDisplayName = "Immich Gallery Dev";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.photography";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = dev.igol.ImmichGallery;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.igol.ImmichGallery.Dev;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 6.0;
@@ -376,14 +380,14 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Config/ImmichGalleryWidget-Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = "Immich Gallery";
+				INFOPLIST_KEY_CFBundleDisplayName = "Immich Gallery Dev";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 					"@executable_path/../../../../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = dev.igol.ImmichGallery.Widget;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.igol.ImmichGallery.Dev.Widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;

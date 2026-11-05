@@ -21,18 +21,33 @@ enum AccountVault {
     static let shared = MacIntegrationRouter()
     weak var app: AppModel?
     var pending: [String] = []
+    var widgetLinks: [String] = []
 }
 @MainActor final class MacQuickLook {
     static let shared = MacQuickLook()
     func dismiss() {}
 }
 struct SharingPresentation {}
+@MainActor final class WidgetFeedUpdater {
+    static let shared = WidgetFeedUpdater()
+    func start(_ services: AccountServices) {}
+    func clear() {}
+}
 
 final class PagingProtocol: URLProtocol, @unchecked Sendable {
     static let requests = Mutex(0)
+    static let completeSearch = Mutex(false)
     override class func canInit(with request: URLRequest) -> Bool { true }
     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
     override func startLoading() {
+        if request.httpMethod == "GET" {
+            let features = request.url!.path.hasSuffix("server/features")
+            let response = HTTPURLResponse(url: request.url!, statusCode: features ? 200 : 404, httpVersion: nil, headerFields: nil)!
+            client!.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+            client!.urlProtocol(self, didLoad: Data((features ? #"{"smartSearch":true}"# : #"{"message":"Not available"}"#).utf8))
+            client!.urlProtocolDidFinishLoading(self)
+            return
+        }
         Self.requests.withLock { $0 += 1 }
         var requestData = request.httpBody ?? Data()
         if requestData.isEmpty, let stream = request.httpBodyStream {
@@ -50,7 +65,19 @@ final class PagingProtocol: URLProtocol, @unchecked Sendable {
         let data = Data((firstPage ? #"{"assets":{"items":[{"id":"asset-a","ownerId":"owner","type":"IMAGE","originalFileName":"a.jpg","fileCreatedAt":"2025-01-01T00:00:00Z","localDateTime":"2025-01-01T00:00:00Z","isFavorite":false,"isTrashed":false}],"nextPage":"2"}}"# : #"{"message":"Simulated page failure"}"#).utf8)
         let response = HTTPURLResponse(url: request.url!, statusCode: firstPage ? 200 : 500, httpVersion: nil, headerFields: nil)!
         client!.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
-        client!.urlProtocol(self, didLoad: data)
+        var responseData = data
+        if Self.completeSearch.withLock({ $0 }) {
+            var object = try! JSONSerialization.jsonObject(with: data) as! [String: Any]
+            var assets = object["assets"] as! [String: Any]
+            assets.removeValue(forKey: "nextPage")
+            var items = assets["items"] as! [[String: Any]]
+            var locked = items[0]
+            locked["id"] = "locked-asset"; locked["visibility"] = "locked"
+            items.append(locked)
+            assets["items"] = items; object["assets"] = assets
+            responseData = try! JSONSerialization.data(withJSONObject: object)
+        }
+        client!.urlProtocol(self, didLoad: responseData)
         client!.urlProtocolDidFinishLoading(self)
     }
     override func stopLoading() {}
@@ -112,6 +139,25 @@ final class PagingProtocol: URLProtocol, @unchecked Sendable {
             for _ in 0..<100 where model.lastError == nil { try await Task.sleep(for: .milliseconds(10)) }
             assert(model.lastError != nil && PagingProtocol.requests.withLock { $0 } == 4)
         }
+        await services.bootstrap()
+        services.notificationTask?.cancel()
+        assert(session.features.smartSearch)
+        PagingProtocol.completeSearch.withLock { $0 = true }
+        var sortedQuery = SearchQuery()
+        sortedQuery.text = "cached"
+        sortedQuery.sort = .newest
+        let newest = session.gridModel(for: .filteredSearch(sortedQuery))
+        await newest.reload()
+        assert(newest.state == .loaded && newest.totalCount == 1)
+        let requestCount = PagingProtocol.requests.withLock { $0 }
+        sortedQuery.sort = .oldest
+        let oldest = session.gridModel(for: .filteredSearch(sortedQuery))
+        await oldest.loadIfNeeded()
+        assert(oldest.state == .loaded && oldest.totalCount == 1)
+        assert(PagingProtocol.requests.withLock { $0 } == requestCount, "Changing date direction must reuse completed results")
+        await oldest.reload()
+        assert(PagingProtocol.requests.withLock { $0 } == requestCount + 1, "Refresh must bypass the reused results")
+        PagingProtocol.completeSearch.withLock { $0 = false }
         let foreignServices = AccountServices(client: client, user: User(id: "other", email: "", name: ""), cacheUserID: "foreign")
         let foreignWindow = LibrarySession(services: foreignServices)
         let foreignGrid = foreignWindow.gridModel(for: .search("cat"))

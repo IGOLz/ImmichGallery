@@ -2,9 +2,52 @@
 // swiftc -parse-as-library ImmichGallery/API/{Models,Models+Search,ImmichClient,ImmichClient+Search}.swift scripts/check-search.swift -o build/check-search && build/check-search
 // Optional argument: folder containing search-live-*.json responses from the demo.
 import Foundation
+import Synchronization
+
+final class SearchSortProtocol: URLProtocol, @unchecked Sendable {
+    static let pages = Mutex<[Int]>([])
+    static let failSecondPage = Mutex(false)
+    static let repeatPage = Mutex(false)
+    static let fallback = Mutex(false)
+    override class func canInit(with request: URLRequest) -> Bool { true }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    override func startLoading() {
+        var data = request.httpBody ?? Data()
+        if let stream = request.httpBodyStream {
+            stream.open()
+            defer { stream.close() }
+            var buffer = [UInt8](repeating: 0, count: 4096)
+            while stream.hasBytesAvailable {
+                let count = stream.read(&buffer, maxLength: buffer.count)
+                guard count > 0 else { break }
+                data.append(contentsOf: buffer.prefix(count))
+            }
+        }
+        let body = try! JSONSerialization.jsonObject(with: data) as! [String: Any]
+        let page = body["page"] as! Int
+        Self.pages.withLock { $0.append(page) }
+        let metadata = request.url!.path.hasSuffix("metadata")
+        if metadata { assert(body["order"] as? String == "asc") }
+        else { assert(body["order"] == nil, "Upstream smart search must not receive unsupported order") }
+        let dates = page == 1 ? [("a", "2020-01-01T00:00:00Z"), ("b", "2025-01-01T01:00:00+01:00")] : [("c", "2025-01-01T00:00:00.500Z"), ("d", "2010-01-01T00:00:00Z")]
+        let items = dates.map { id, date in
+            ["id": id, "type": "IMAGE", "originalFileName": id + ".jpg", "fileCreatedAt": date, "localDateTime": date, "isFavorite": false, "isTrashed": false] as [String: Any]
+        }
+        var assets: [String: Any] = ["items": items]
+        if page == 1 { assets["nextPage"] = "2" }
+        if Self.repeatPage.withLock({ $0 }) { assets["nextPage"] = "1" }
+        let notFound = !metadata && Self.fallback.withLock { $0 }
+        let failed = page == 2 && Self.failSecondPage.withLock { $0 }
+        let response = HTTPURLResponse(url: request.url!, statusCode: notFound ? 404 : failed ? 500 : 200, httpVersion: nil, headerFields: nil)!
+        client!.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        client!.urlProtocol(self, didLoad: try! JSONSerialization.data(withJSONObject: failed ? ["message": "Page failure"] : ["assets": assets]))
+        client!.urlProtocolDidFinishLoading(self)
+    }
+    override func stopLoading() {}
+}
 
 @main struct CheckSearch {
-    static func main() throws {
+    static func main() async throws {
         var query = SearchQuery()
         query.text = "mountains"
         query.country = "Italy"
@@ -47,7 +90,7 @@ import Foundation
         }
         let legacy = try JSONDecoder().decode(SearchQuery.self, from: Data(#"{"text":"cat","personIDs":["person-a"]}"#.utf8))
         assert(legacy.text == "cat" && legacy.personIDs == ["person-a"] && legacy.personNames.isEmpty)
-        assert(legacy.mode == .context && !legacy.favorites)
+        assert(legacy.mode == .context && !legacy.favorites && legacy.sort == .automatic)
         var filters = original
         filters.state = "Lazio"; filters.make = "Apple"; filters.model = "iPhone"
         for type in ["country", "state", "city", "camera-make", "camera-model", "camera-lens-model"] {
@@ -77,6 +120,64 @@ import Foundation
             assert(metadata[field] as? String == "mountains")
             assert(metadata["query"] == nil && metadata["page"] as? Int == 2)
             assert(metadata["rating"] as? Int == 3)
+        }
+        for sort in SearchSort.allCases {
+            query.sort = sort
+            let metadata = try body(false)
+            let smart = try body(true)
+            assert(metadata["order"] as? String == (sort == .oldest ? "asc" : "desc"))
+            assert(smart["order"] == nil)
+            assert(smart["size"] as? Int == (sort == .automatic ? 100 : 1000))
+            let restored = try JSONDecoder().decode(SearchQuery.self, from: JSONEncoder().encode(query))
+            assert(restored == query)
+        }
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [SearchSortProtocol.self]
+        let url = URL(string: "https://search.invalid/api")!
+        let client = ImmichClient(serverURL: url, apiURL: url, credential: nil, session: URLSession(configuration: configuration))
+        var sortedQuery = SearchQuery()
+        sortedQuery.text = "mountains"
+        for (sort, expected) in [(SearchSort.automatic, ["a", "b"]), (.newest, ["c", "b", "a", "d"]), (.oldest, ["d", "a", "b", "c"])] {
+            SearchSortProtocol.pages.withLock { $0 = [] }
+            sortedQuery.sort = sort
+            let result = try await client.advancedSearch(sortedQuery, smartEnabled: true, page: .init(page: 1))
+            assert(result.items.map(\.id) == expected)
+            assert(SearchSortProtocol.pages.withLock { $0 } == (sort == .automatic ? [1] : [1, 2]))
+            assert(result.nextPage == (sort == .automatic ? "2" : nil))
+        }
+        SearchSortProtocol.failSecondPage.withLock { $0 = true }
+        do {
+            _ = try await client.advancedSearch(sortedQuery, smartEnabled: true, page: .init(page: 1))
+            assertionFailure("An incomplete date-sorted result must not be returned")
+        } catch ImmichError.http(500, _) {}
+        SearchSortProtocol.failSecondPage.withLock { $0 = false }
+        SearchSortProtocol.repeatPage.withLock { $0 = true }
+        do {
+            _ = try await client.advancedSearch(sortedQuery, smartEnabled: true, page: .init(page: 1))
+            assertionFailure("Repeated pages must fail")
+        } catch ImmichError.http(502, _) {}
+        SearchSortProtocol.repeatPage.withLock { $0 = false }
+        SearchSortProtocol.fallback.withLock { $0 = true }
+        let fallback = try await client.advancedSearch(sortedQuery, smartEnabled: true, page: .init(page: 1))
+        assert(fallback.items.map(\.id) == ["a", "b"] && fallback.nextPage == "2")
+        SearchSortProtocol.fallback.withLock { $0 = false }
+        sortedQuery.text = ""
+        let metadata = try await client.advancedSearch(sortedQuery, smartEnabled: true, page: .init(page: 1))
+        assert(metadata.nextPage == "2")
+        sortedQuery.text = "mountains"
+        let task = Task {
+            try await client.advancedSearch(sortedQuery, smartEnabled: true, page: .init(page: 1)) { count in
+                if count > 0 { withUnsafeCurrentTask { $0?.cancel() } }
+            }
+        }
+        do {
+            _ = try await task.value
+            assertionFailure("Cancellation must stop collecting pages")
+        } catch is CancellationError {} catch let error as URLError where error.code == .cancelled {}
+        let data = Data(#"{"assets":{"items":[{"id":"b","type":"IMAGE","originalFileName":"b.jpg","fileCreatedAt":"2025-01-01T00:00:00Z","localDateTime":"2025-01-01T00:00:00Z","isFavorite":false,"isTrashed":false},{"id":"a","type":"IMAGE","originalFileName":"a.jpg","fileCreatedAt":"2025-01-01T00:00:00.000Z","localDateTime":"2025-01-01T00:00:00Z","isFavorite":false,"isTrashed":false},{"id":"z","type":"IMAGE","originalFileName":"z.jpg","fileCreatedAt":"invalid","localDateTime":"invalid","isFavorite":false,"isTrashed":false}]}}"#.utf8)
+        let ties = try JSONDecoder().decode(SearchResponse.self, from: data).assets.items
+        for sort in [SearchSort.newest, .oldest] {
+            assert(ImmichClient.sortSearchAssets(ties, order: sort).items.map(\.id) == ["a", "b", "z"])
         }
         query.takenBefore = query.takenAfter!.addingTimeInterval(-86400)
         assert(!query.validDates)

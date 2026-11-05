@@ -370,15 +370,21 @@ final class LibrarySession {
     /// Grid models are cached per source so switching sidebar items keeps loaded data.
     func gridModel(for source: GridSource) -> AssetGridModel {
         if let model = gridModels[source] { return model }
+        let previousSearch = gridModels.first { key, _ in
+            if case .filteredSearch = key { return true }; return false
+        }?.value
         // Only retain the current search, including its loaded pages.
         switch source {
         case .search, .filteredSearch:
-            gridModels = gridModels.filter { key, _ in
-                switch key { case .search, .filteredSearch: false; default: true }
+            gridModels = gridModels.filter { key, model in
+                switch key {
+                case .search, .filteredSearch: model.cancelLoading(); return false
+                default: return true
+                }
             }
         default: break
         }
-        let model = AssetGridModel(source: source, session: self)
+        let model = AssetGridModel(source: source, session: self, reusing: previousSearch)
         gridModels[source] = model
         return model
     }

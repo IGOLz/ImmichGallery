@@ -7,7 +7,11 @@ struct LoginView: View {
     private enum Method: String, CaseIterable { case password = "Email & Password", apiKey = "API Key" }
 
     @State private var step = Step.server
+    #if DEBUG
+    @State private var serverText = AccountStore.lastServer ?? "https://demo.immich.app"
+    #else
     @State private var serverText = AccountStore.lastServer ?? ""
+    #endif
     @State private var email = ""
     @State private var password = ""
     @State private var apiKey = ""
@@ -24,7 +28,7 @@ struct LoginView: View {
                 Image(nsImage: NSApp.applicationIconImage)
                     .resizable()
                     .frame(width: 96, height: 96)
-                Text("Immich Gallery")
+                Text(Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String ?? "Immich Gallery")
                     .font(.largeTitle.weight(.semibold))
                 Text(subtitle)
                     .foregroundStyle(.secondary)
