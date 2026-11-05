@@ -125,14 +125,18 @@ struct AssetViewer: View {
 }
 
 /// Shows the cached thumbnail instantly, then the preview, and fetches the original once the
-/// user zooms in past 1×. Pinch or double-click to zoom, drag to pan.
+/// user zooms in past 1×. Pinch or double-click to zoom, drag to pan. On an HDR display, HDR
+/// originals are drawn in extended dynamic range over the SDR preview.
 private struct ZoomableImage: View {
     @Environment(LibrarySession.self) private var session
     let item: AssetItem
     let rotation: Int
     var showsFaces = true
+    @AppStorage(HDRPhotos.enabledKey) private var showHDR = true
 
     @State private var image: CGImage?
+    @State private var hdrImage: CGImage?
+    @State private var hdrCandidate: Bool?
     @State private var hasOriginal = false
     @State private var scale: CGFloat = 1
     @State private var gestureScale: CGFloat = 1
@@ -148,6 +152,9 @@ private struct ZoomableImage: View {
                         .resizable()
                         .interpolation(.high)
                         .scaledToFit()
+                        .overlay {
+                            if let hdrImage { HDRImageLayer(image: hdrImage).allowsHitTesting(false) }
+                        }
                         .macOriginalDraggable(OriginalTransfer(id: item.id, client: session.client),
                                               isEnabled: scale * gestureScale <= 1)
                 } else if let hash = item.thumbhash, let placeholder = ThumbHash.image(base64: hash) {
@@ -179,11 +186,9 @@ private struct ZoomableImage: View {
         }
         .clipped()
         .task { await load() }
+        .task(id: [showHDR, hasOriginal]) { await loadDetail() }
         .onChange(of: scale) { _, newValue in
-            if newValue > 1.1 && !hasOriginal {
-                hasOriginal = true
-                Task { if let original = await session.pipeline.original(item.id, edited: true) { image = original } }
-            }
+            if newValue > 1.1 { hasOriginal = true }
         }
     }
 
@@ -212,6 +217,33 @@ private struct ZoomableImage: View {
         let pipeline = session.pipeline
         image = pipeline.cachedThumbnail(item.id, size: .preview) ?? pipeline.cachedThumbnail(item.id, size: .thumbnail)
         if let preview = await pipeline.thumbnail(item.id, size: .preview) { image = preview }
+    }
+
+    /// Caps a zoomed HDR bitmap (8 bytes per pixel) at about 230 MB.
+    private static let zoomedHDRPixelSize = 6144
+
+    /// HDR original when the setting, display and photo allow it (re-decoded larger once zoomed),
+    /// otherwise the SDR original once zoomed. One task, restarted when either input changes,
+    /// so a zoom during the HDR load doesn't download the original twice.
+    private func loadDetail() async {
+        var hdr: CGImage?
+        if showHDR, HDRPhotos.displaySupportsHDR, await isHDRCandidate() {
+            let size = hasOriginal ? Self.zoomedHDRPixelSize : HDRPhotos.screenPixelSize
+            hdr = await session.pipeline.hdrOriginal(item.id, maxPixelSize: size)
+        }
+        guard !Task.isCancelled else { return }
+        hdrImage = hdr
+        if hdr == nil, hasOriginal, let original = await session.pipeline.original(item.id, edited: true), !Task.isCancelled {
+            image = original
+        }
+    }
+
+    /// Immich doesn't flag HDR photos; skip formats that can't be HDR before downloading.
+    private func isHDRCandidate() async -> Bool {
+        if let hdrCandidate { return hdrCandidate }
+        guard let asset = try? await session.client.asset(item.id), !Task.isCancelled else { return false }
+        hdrCandidate = HDRPhotos.mayContainHDR(mimeType: asset.originalMimeType)
+        return hdrCandidate ?? false
     }
 }
 

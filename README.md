@@ -69,6 +69,7 @@ The demo is shared with everyone and doesn't accept uploads.
 | Timeline grouped by month, with ThumbHash placeholders           | ✅ |
 | Favorites, Videos, Archive, Recently Deleted                     | ✅ |
 | Viewer with zoom, video, Live Photos, slideshow and full screen  | ✅ |
+| HDR photos on HDR displays (gain-map HEIC/JPEG, HLG, PQ)        | ✅ |
 | Info inspector: camera, exposure, location map, people, albums   | ✅ |
 | Upload files and folders, with duplicate detection               | ✅ |
 | Download originals, or a selection or album as a ZIP             | ✅ |

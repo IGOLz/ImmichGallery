@@ -4,6 +4,7 @@ struct SettingsView: View {
     @Environment(AppModel.self) private var app
     @State private var cacheSize: Int64 = 0
     @AppStorage(WheelScroll.multiplierKey) private var wheelMultiplier = WheelScroll.defaultMultiplier
+    @AppStorage(HDRPhotos.enabledKey) private var showHDR = true
 
     var body: some View {
         Form {
@@ -35,6 +36,13 @@ struct SettingsView: View {
                     }
                 } footer: {
                     Text("How far each notch of a mouse wheel scrolls the photo grid. Trackpads are not affected.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Section {
+                    Toggle("Show Photos in High Dynamic Range", isOn: $showHDR)
+                } footer: {
+                    Text("On an HDR display, photos with HDR highlights are shown at their full brightness. To find them, the viewer downloads the original of each photo you open.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

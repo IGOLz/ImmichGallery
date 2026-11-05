@@ -5527,6 +5527,16 @@
         }
       }
     },
+    "On an HDR display, photos with HDR highlights are shown at their full brightness. To find them, the viewer downloads the original of each photo you open.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Su uno schermo HDR, le foto con luci HDR vengono mostrate alla piena luminosità. Per trovarle, il visore scarica l'originale di ogni foto che apri."
+          }
+        }
+      }
+    },
     "Only This Person": {
       "localizations": {
         "it": {
@@ -7133,6 +7143,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mostra informazioni (⌘I)"
+          }
+        }
+      }
+    },
+    "Show Photos in High Dynamic Range": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostra le foto in High Dynamic Range"
           }
         }
       }

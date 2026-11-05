@@ -13,6 +13,8 @@ final class ImagePipeline: Sendable {
     private let evictionLock = NSLock()
     nonisolated(unsafe) private var revisions: [String: Int] = [:]
     nonisolated(unsafe) private var revision = 0
+    /// Originals already found to be SDR, so the viewer doesn't download them again.
+    nonisolated(unsafe) private var sdrOriginals: Set<String> = []
 
     init(client: ImmichClient) {
         self.client = client
@@ -61,9 +63,31 @@ final class ImagePipeline: Sendable {
         await load(client.originalRequest(id, edited: edited), key: "\(id)-original-\(edited)", maxPixelSize: maxPixelSize)
     }
 
+    /// The original decoded to HDR, or nil when it has no gain map or HDR transfer function.
+    /// Not cached in memory: an HDR bitmap uses 8 bytes per pixel. The compressed original
+    /// stays in the URL cache, so returning to the photo only decodes it again.
+    func hdrOriginal(_ id: String, maxPixelSize: Int) async -> CGImage? {
+        let key = "\(id)-hdr"
+        let started = evictionLock.withLock { sdrOriginals.contains(id) ? nil : (revision, revisions[key, default: 0]) }
+        let request = client.originalRequest(id, edited: true)
+        guard let started, let data = try? await client.data(for: request) else { return nil }
+        let image = Task.isCancelled ? nil : Self.decode(data, maxPixelSize: maxPixelSize, hdr: true)
+        return evictionLock.withLock {
+            // As in `load`: a download that outlived an eviction mustn't leave the old original cached.
+            guard started == (revision, revisions[key, default: 0]) else {
+                client.session.configuration.urlCache?.removeCachedResponse(for: request)
+                return nil
+            }
+            guard !Task.isCancelled else { return nil }
+            guard let image, image.contentHeadroom > 1 else { sdrOriginals.insert(id); return nil }
+            return image
+        }
+    }
+
     func removeAll() {
         evictionLock.withLock {
             revision += 1
+            sdrOriginals.removeAll()
             cache.removeAllObjects()
             client.session.configuration.urlCache?.removeAllCachedResponses()
         }
@@ -73,6 +97,8 @@ final class ImagePipeline: Sendable {
         evictionLock.withLock {
             // Metadata adds edited/unedited variants, so evict both.
             for id in ids {
+                sdrOriginals.remove(id)
+                revisions["\(id)-hdr", default: 0] += 1
                 for edited in [true, false] {
                     for size in [ImmichClient.ThumbnailSize.thumbnail, .preview, .fullsize] {
                         evict(key: "\(id)-\(size.rawValue)-\(edited)", request: client.thumbnailRequest(id, size: size, edited: edited))
@@ -106,7 +132,8 @@ final class ImagePipeline: Sendable {
         }
     }
 
-    static func decode(_ data: Data, maxPixelSize: Int?) -> CGImage? {
+    /// `hdr` applies gain maps and keeps HLG/PQ highlights (extended range, 16 bits per channel).
+    static func decode(_ data: Data, maxPixelSize: Int?, hdr: Bool = false) -> CGImage? {
         guard let source = CGImageSourceCreateWithData(data as CFData, [kCGImageSourceShouldCache: false] as CFDictionary)
         else { return nil }
         var options: [CFString: Any] = [
@@ -114,6 +141,7 @@ final class ImagePipeline: Sendable {
             kCGImageSourceCreateThumbnailWithTransform: true,
             kCGImageSourceShouldCacheImmediately: true,
         ]
+        if hdr { options[kCGImageSourceDecodeRequest] = kCGImageSourceDecodeToHDR }
         if let maxPixelSize { options[kCGImageSourceThumbnailMaxPixelSize] = maxPixelSize }
         else if let props = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
                 let w = props[kCGImagePropertyPixelWidth] as? Int, let h = props[kCGImagePropertyPixelHeight] as? Int {

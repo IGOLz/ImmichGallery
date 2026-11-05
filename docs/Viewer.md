@@ -10,6 +10,14 @@ View-only rotation is in View, without a keyboard shortcut. Rotation resets when
 
 Neighbour preview prefetching uses the slideshow sequence for selection/shuffle and the grid order otherwise, through the existing pipeline. Face overlays belong to the People feature. Optional filmstrips were omitted.
 
+## HDR photos
+
+Immich previews are SDR (the server tone maps HDR originals), so on a Mac with an EDR-capable display the viewer downloads the original and decodes it with `kCGImageSourceDecodeToHDR` (macOS 14+). That decode applies Apple and ISO 21496-1 gain maps (HEIC, JPEG, AVIF) and keeps HLG/PQ highlights. Only photos whose decoded image has a content headroom above 1 are shown in HDR; the others keep the SDR preview, and the pipeline remembers them for the session so their original isn't downloaded again. Before downloading, the viewer reads the asset's `originalMimeType` and skips RAW, GIF and other formats that can't carry HDR. On SDR-only displays, or with Settings › Show Photos in High Dynamic Range off, nothing changes.
+
+The HDR bitmap is drawn by `HDRImageLayer`, a layer-backed view over the SDR preview. On macOS 26 the layer sets `preferredDynamicRange = .high`; on macOS 15 it sets `wantsExtendedDynamicRangeContent`. SwiftUI's `Image` tone maps `CGImage` content to SDR even with `allowedDynamicRange(.high)`, which is why a layer is used. The layer ignores mouse events, so zoom, pan, drag-out and face overlays still work on the SDR image underneath. Rotation, zoom and slideshow transitions apply to both. The HDR bitmap uses 8 bytes per pixel, so it's sized to the largest screen, re-decoded at up to 6144 px when zooming in, and not kept in the memory cache; the compressed original stays in the URL cache.
+
+`scripts/check-hdr.sh` compiles the production `ImagePipeline` and `HDRImage` against an in-memory client, generates a gain-map HEIC and an SDR JPEG, and checks the HDR decode, the SDR memo, eviction, failed downloads and the layer's EDR settings. It doesn't launch the app or contact a server.
+
 ## Protocol and platform references
 
 Checked the v3.3.5 OpenAPI document at https://raw.githubusercontent.com/immich-app/immich/v3.3.5/open-api/immich-openapi-specs.json:
