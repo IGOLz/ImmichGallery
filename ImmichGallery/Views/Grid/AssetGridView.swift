@@ -441,7 +441,10 @@ struct ThumbnailCell: View {
     let size: ImmichClient.ThumbnailSize
 
     @State private var image: CGImage?
+    @State private var placeholder: CGImage?
+    @State private var imageID: String?
     @State private var failed = false
+    @State private var isVisible = false
 
     var body: some View {
         Rectangle()
@@ -450,7 +453,7 @@ struct ThumbnailCell: View {
             .overlay {
                 if let image {
                     Image(decorative: image, scale: 1).resizable().scaledToFill()
-                } else if let hash = asset?.thumbhash, let placeholder = ThumbHash.image(base64: hash) {
+                } else if let placeholder {
                     Image(decorative: placeholder, scale: 1).resizable().scaledToFill()
                 } else if failed {
                     Image(systemName: asset?.isVideo == true ? "video.slash" : "photo")
@@ -467,18 +470,34 @@ struct ThumbnailCell: View {
                 }
             }
             .contentShape(Rectangle())
-            .task(id: TaskKey(id: asset?.id, size: size, revision: session.metadata.imageRevision)) { await load() }
+            .onScrollVisibilityChange(threshold: 0.01) { isVisible = $0 }
+            .task(id: TaskKey(id: asset?.id, size: size, revision: session.metadata.imageRevision, visible: isVisible)) { await load() }
     }
 
-    private struct TaskKey: Equatable { let id: String?; let size: ImmichClient.ThumbnailSize; let revision: Int }
+    private struct TaskKey: Equatable { let id: String?; let size: ImmichClient.ThumbnailSize; let revision: Int; let visible: Bool }
 
     private func load() async {
         failed = false
-        guard let id = asset?.id else { image = nil; return }
+        if imageID != asset?.id {
+            image = nil
+            placeholder = nil
+            imageID = asset?.id
+        }
+        guard isVisible, !Task.isCancelled, let id = asset?.id else { return }
         let pipeline = session.pipeline
         if let cached = pipeline.cachedThumbnail(id, size: size) { image = cached; return }
-        image = pipeline.cachedThumbnail(id, size: .thumbnail) ?? pipeline.cachedThumbnail(id, size: .preview)
-        if let loaded = await pipeline.thumbnail(id, size: size) { image = loaded }
+        image = pipeline.cachedThumbnail(id, size: .thumbnail) ?? pipeline.cachedThumbnail(id, size: .preview) ?? image
+        if image == nil, let hash = asset?.thumbhash {
+            placeholder = ThumbHash.cachedImage(base64: hash)
+            if placeholder == nil {
+                let decoded = await ThumbHash.placeholder(base64: hash)
+                guard !Task.isCancelled else { return }
+                placeholder = decoded
+            }
+        }
+        let loaded = await pipeline.gridThumbnail(id, size: size)
+        guard !Task.isCancelled else { return }
+        if let loaded { image = loaded; placeholder = nil }
         else if !Task.isCancelled && image == nil { failed = true }
     }
 

@@ -7,6 +7,7 @@ import ImageIO
 /// fast scrolling responsive.
 final class ImagePipeline: Sendable {
     let client: ImmichClient
+    private let thumbnailSlots = ThumbnailLoadSlots(limit: 6)
     // NSCache is thread-safe.
     nonisolated(unsafe) private let cache: NSCache<NSString, CGImage>
 
@@ -29,6 +30,16 @@ final class ImagePipeline: Sendable {
 
     func thumbnail(_ id: String, size: ImmichClient.ThumbnailSize, edited: Bool = true) async -> CGImage? {
         await load(client.thumbnailRequest(id, size: size, edited: edited), key: "\(id)-\(size.rawValue)-\(edited)", maxPixelSize: nil)
+    }
+
+    /// Grid work must not queue viewer or editor requests behind hundreds of cells.
+    func gridThumbnail(_ id: String, size: ImmichClient.ThumbnailSize) async -> CGImage? {
+        guard !Task.isCancelled else { return nil }
+        if let cached = cachedThumbnail(id, size: size) { return cached }
+        guard await thumbnailSlots.acquire() else { return nil }
+        let image = await thumbnail(id, size: size)
+        await thumbnailSlots.release()
+        return image
     }
 
     func personThumbnail(_ id: String) async -> CGImage? {
@@ -115,10 +126,12 @@ final class ImagePipeline: Sendable {
         client.session.configuration.urlCache?.removeCachedResponse(for: request)
     }
 
-    private func load(_ request: URLRequest, key: String, maxPixelSize: Int?) async -> CGImage? {
+    @concurrent private func load(_ request: URLRequest, key: String, maxPixelSize: Int?) async -> CGImage? {
+        guard !Task.isCancelled else { return nil }
         let started = evictionLock.withLock { (revision, revisions[key, default: 0]) }
         if let cached = cache.object(forKey: key as NSString) { return cached }
         let data = try? await client.data(for: request)
+        guard !Task.isCancelled else { return nil }
         let image = data.flatMap { Self.decode($0, maxPixelSize: maxPixelSize) }
         return evictionLock.withLock {
             // A request started before eviction may finish after the delayed purge.
@@ -148,5 +161,40 @@ final class ImagePipeline: Sendable {
             options[kCGImageSourceThumbnailMaxPixelSize] = max(w, h)
         }
         return CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary)
+    }
+}
+
+/// Bound downloads and decoding even over HTTP/2, where the connection limit isn't a request limit.
+actor ThumbnailLoadSlots {
+    private var available: Int
+    private var waiters: [(UUID, CheckedContinuation<Bool, Never>)] = []
+
+    init(limit: Int) { precondition(limit > 0); available = limit }
+
+    func acquire() async -> Bool {
+        guard !Task.isCancelled else { return false }
+        let id = UUID()
+        return await withTaskCancellationHandler {
+            await withCheckedContinuation { continuation in
+                if available > 0 {
+                    available -= 1
+                    continuation.resume(returning: true)
+                } else {
+                    waiters.append((id, continuation))
+                }
+            }
+        } onCancel: {
+            Task { await self.cancel(id) }
+        }
+    }
+
+    func release() {
+        if waiters.isEmpty { available += 1 }
+        else { waiters.removeFirst().1.resume(returning: true) }
+    }
+
+    private func cancel(_ id: UUID) {
+        guard let index = waiters.firstIndex(where: { $0.0 == id }) else { return }
+        waiters.remove(at: index).1.resume(returning: false)
     }
 }

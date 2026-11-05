@@ -6,6 +6,16 @@ import Foundation
 enum ThumbHash {
     nonisolated(unsafe) private static let cache = NSCache<NSString, CGImage>() // thread-safe
 
+    /// Keep placeholder decoding off the UI executor.
+    @concurrent static func placeholder(base64: String) async -> CGImage? {
+        guard !Task.isCancelled else { return nil }
+        return image(base64: base64)
+    }
+
+    static func cachedImage(base64: String) -> CGImage? {
+        cache.object(forKey: base64 as NSString)
+    }
+
     static func image(base64: String) -> CGImage? {
         if let cached = cache.object(forKey: base64 as NSString) { return cached }
         guard let data = Data(base64Encoded: base64), let image = decode([UInt8](data)) else { return nil }
