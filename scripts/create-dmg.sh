@@ -30,7 +30,8 @@ mkdir -p "$WORK/staging/.background"
 ditto "$APP_PATH" "$WORK/staging/ImmichGallery.app"
 ln -s /Applications "$WORK/staging/Applications"
 xcrun swift "$SCRIPTS/dmg/background.swift" "$WORK/staging/.background/install.tiff"
-hdiutil create -quiet -volname "Immich Gallery $VERSION" -srcfolder "$WORK/staging" \
+# A unique working name keeps Finder from targeting another mounted installer.
+hdiutil create -quiet -volname "Immich Gallery ${WORK:t}" -srcfolder "$WORK/staging" \
   -fs HFS+ -format UDRW "$WORK/writable.dmg"
 hdiutil attach -quiet -nobrowse -mountpoint "$MOUNT" "$WORK/writable.dmg"
 /usr/bin/osascript - "$MOUNT" <<'APPLESCRIPT'
@@ -51,15 +52,16 @@ on run argv
     set position of item "ImmichGallery.app" of mountFolder to {170, 205}
     set position of item "Applications" of mountFolder to {470, 205}
     set extension hidden of item "ImmichGallery.app" of mountFolder to true
-    close installerWindow
+    close window id (id of installerWindow)
     open mountFolder
     update mountFolder without registering applications
     delay 2
-    close container window of mountFolder
+    close window id (id of container window of mountFolder)
   end tell
 end run
 APPLESCRIPT
 [[ -s "$MOUNT/.DS_Store" ]] || { echo "Finder did not save the installer layout." >&2; exit 1; }
+diskutil rename "$MOUNT" "Immich Gallery $VERSION" >/dev/null
 sync
 detach_image
 hdiutil convert -quiet "$WORK/writable.dmg" -format UDZO -o "$OUTPUT"
