@@ -66,7 +66,6 @@ struct SettingsView: View {
         }
         .formStyle(.grouped)
         .frame(maxWidth: .infinity)
-        .fixedSize(horizontal: false, vertical: true)
         .onAppear {
             cacheSize = Int64(app.services?.client.session.configuration.urlCache?.currentDiskUsage ?? 0)
         }
