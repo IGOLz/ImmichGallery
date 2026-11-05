@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 🖥️ Problem with the Immich server itself
+    url: https://github.com/immich-app/immich/issues
+    about: Issues with the server, web app or mobile app belong to the official Immich project.
