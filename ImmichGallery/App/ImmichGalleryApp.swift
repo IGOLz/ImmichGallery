@@ -208,6 +208,7 @@ struct AppCommands: Commands {
             }
             let ids = grid?.viewerID.map { [$0] } ?? grid?.selectedItems.map(\.id) ?? []
             if let session = session { AlbumSelectionMenu(session: session, model: grid, ids: ids) } // Albums
+            if session != nil, grid?.source != .trash { WidgetChosenMenuItem(ids: ids) } // Widget
             Button("Move to Locked Folder") { if let grid { Task { await grid.moveToLockedFolder(ids) } } }
                 .disabled(ids.isEmpty || grid?.canMutate(ids) != true) // Explore
             // "." and ⌘⌫ are handled by the grid/viewer so they don't steal keys from text fields.

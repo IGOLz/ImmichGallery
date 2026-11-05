@@ -60,19 +60,22 @@ def load_extraction(path):
 
 
 def main():
-    # The widget extension has its own catalogs; tables of the same name are checked together.
-    catalogs = {}
-    for p in [*Path('ImmichGallery').glob('*.xcstrings'), *Path('ImmichGalleryWidget').glob('*.xcstrings')]:
-        catalogs.setdefault(p.stem, {}).update(json.loads(p.read_text())['strings'])
+    # The widget extension reads only its own catalogs, so its strings must be there. Shared/ is
+    # compiled into the app too; the app never shows those strings, so either catalog covers them.
+    def load(folder):
+        return {p.stem: json.loads(p.read_text())['strings'] for p in Path(folder).glob('*.xcstrings')}
+    app, widget = load('ImmichGallery'), load('ImmichGalleryWidget')
+    catalogs = {table: {**app.get(table, {}), **widget.get(table, {})} for table in {*app, *widget}}
     checked = set()
     for path in Path('build/DerivedData').rglob('*.stringsdata'):
+        own = widget if 'ImmichGalleryWidget.build' in path.parts else catalogs
         for table, entries in load_extraction(path).get('tables', {}).items():
             for entry in entries:
                 key = entry['key']
-                assert key in catalogs.get(table, {}), f'Missing catalog key: {table}: {key}'
+                assert key in own.get(table, {}), f'Missing catalog key: {table}: {key} ({path.name})'
                 checked.add((table, key))
     assert checked, 'Build first to extract localizable strings'
-    for table, catalog in catalogs.items():
+    for table, catalog in [*app.items(), *widget.items()]:
         for key, entry in catalog.items():
             localizations = entry.get('localizations', {})
             assert 'it' in localizations, f'Missing Italian translation: {table}: {key}'
@@ -80,7 +83,7 @@ def main():
                 assert 'en' in localizations, f'Missing English count forms: {key}'
             for localization in localizations.values():
                 check(key, localization)
-    print(f'Checked {len(checked)} extracted keys and {sum(map(len, catalogs.values()))} catalog keys: '
+    print(f'Checked {len(checked)} extracted keys and {sum(map(len, [*app.values(), *widget.values()]))} catalog keys: '
           'Italian coverage, placeholders, and count plurals passed.')
 
 

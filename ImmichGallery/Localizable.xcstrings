@@ -6427,6 +6427,16 @@
         }
       }
     },
+    "Remove from Widget": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rimuovi dal widget"
+          }
+        }
+      }
+    },
     "Remove saved credentials from this Mac": {
       "localizations": {
         "it": {
@@ -7283,6 +7293,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mostra nella barra laterale web"
+          }
+        }
+      }
+    },
+    "Show in Widget": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostra nel widget"
           }
         }
       }

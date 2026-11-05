@@ -1,12 +1,50 @@
 import Foundation
 
-/// Photos the app prepares for the desktop widget, kept in the shared App Group container.
-/// The widget only reads these files: it never contacts the server and never sees a credential.
+/// What the app prepares for the desktop widgets, kept in the shared App Group container:
+/// downscaled photos for each source a widget shows, the albums, people and places to choose
+/// from, and library statistics. The widgets only read these files: they never contact the
+/// server and never see a credential.
 enum WidgetFeed {
-    static let kind = "FeaturedPhotos"
+    /// The configurable photo widget. The kind is the 0.3.1 one, so widgets added then keep working.
+    static let photosKind = "FeaturedPhotos"
+    static let mosaicKind = "PhotoMosaic"
+    static let libraryKind = "LibraryStats"
+    static let photoKinds: Set<String> = [photosKind, mosaicKind]
     static let urlScheme = "immichgallery"
     /// How long each photo stays on the widget before the next one.
     static let rotation: TimeInterval = 3600
+
+    // MARK: Sources
+
+    enum Source: Hashable, Sendable {
+        case featured, favorites, chosen
+        case album(String), person(String), place(String)
+
+        init?(key: String) {
+            let (kind, value) = key.firstIndex(of: ":").map { (String(key[..<$0]), String(key[key.index(after: $0)...])) } ?? (key, "")
+            switch kind {
+            case "featured": self = .featured
+            case "favorites": self = .favorites
+            case "chosen": self = .chosen
+            case "album" where WidgetFeed.isID(value): self = .album(value)
+            case "person" where WidgetFeed.isID(value): self = .person(value)
+            case "place" where !value.isEmpty: self = .place(value)
+            default: return nil
+            }
+        }
+
+        /// Stable key of the photo pool this source fills.
+        var key: String {
+            switch self {
+            case .featured: "featured"
+            case .favorites: "favorites"
+            case .chosen: "chosen"
+            case .album(let id): "album:" + id
+            case .person(let id): "person:" + id
+            case .place(let city): "place:" + city
+            }
+        }
+    }
 
     struct Photo: Codable, Hashable, Sendable {
         var assetID: String
@@ -15,38 +53,113 @@ enum WidgetFeed {
         var file: String
     }
 
-    struct Manifest: Codable, Sendable {
-        /// Hash of the account the photos come from (never the credential itself).
-        var account: String
+    struct Pool: Codable, Sendable {
         var updated: Date
         var photos: [Photo]
     }
 
+    struct Catalog: Codable, Sendable {
+        struct Item: Codable, Hashable, Sendable {
+            var id: String
+            var name: String
+        }
+        var updated: Date
+        var albums: [Item]
+        var people: [Item]
+        var places: [Item]
+    }
+
+    struct Stats: Codable, Sendable {
+        var updated: Date
+        var photos: Int
+        var videos: Int
+        var albums: Int
+        var people: Int?
+        var libraryBytes: Int64?
+        var diskUsed: Int64?
+        var diskSize: Int64?
+    }
+
+    struct Manifest: Codable, Sendable {
+        /// Hash of the account the data comes from (never the credential itself).
+        var account: String
+        var pools: [String: Pool] = [:]
+        var catalog: Catalog?
+        var stats: Stats?
+    }
+
+    // MARK: Files
+
     /// `<group container>/Widget`. Nil when the App Group is missing from the signature.
     static let directory: URL? = {
-        guard let group = Bundle.main.object(forInfoDictionaryKey: "ImmichAppGroup") as? String, !group.isEmpty,
+        guard let group = appGroup,
               let container = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: group)
         else { return nil }
         return container.appendingPathComponent("Widget", isDirectory: true)
     }()
 
-    static var manifestURL: URL? { directory?.appendingPathComponent("manifest.json") }
+    static let appGroup: String? = {
+        guard let group = Bundle.main.object(forInfoDictionaryKey: "ImmichAppGroup") as? String, !group.isEmpty else { return nil }
+        return group
+    }()
+
+    static var manifestURL: URL? { directory?.appendingPathComponent("feed.json") }
+    static var imagesURL: URL? { directory?.appendingPathComponent("images", isDirectory: true) }
 
     static func load() -> Manifest? {
         guard let url = manifestURL, let data = try? Data(contentsOf: url) else { return nil }
         return try? JSONDecoder().decode(Manifest.self, from: data)
     }
 
-    static func fileURL(_ photo: Photo) -> URL? { directory?.appendingPathComponent(photo.file) }
+    static func fileURL(_ photo: Photo) -> URL? { imagesURL?.appendingPathComponent(photo.file) }
 
-    /// The photo shown at `date`. Rotation follows the clock, so reloads don't restart it.
-    static func photo(at date: Date, in photos: [Photo]) -> Photo? {
-        guard !photos.isEmpty else { return nil }
-        let slot = Int((date.timeIntervalSince1970 / rotation).rounded(.down))
-        return photos[((slot % photos.count) + photos.count) % photos.count]
+    // MARK: Shared defaults
+
+    private static var defaults: UserDefaults? { appGroup.flatMap { UserDefaults(suiteName: $0) } }
+
+    /// The widgets note which sources they show, so the app prepares exactly those.
+    /// (The app can't always resolve an album or person from a widget's configuration itself.)
+    static func noteRequested(_ source: Source) {
+        guard let defaults else { return }
+        var requested = defaults.dictionary(forKey: "requested") as? [String: Double] ?? [:]
+        requested[source.key] = Date().timeIntervalSince1970
+        defaults.set(requested, forKey: "requested")
     }
 
-    // MARK: Links opened by a click on the widget
+    /// Sources a widget asked for within `age`.
+    static func requested(within age: TimeInterval) -> [Source] {
+        let requested = defaults?.dictionary(forKey: "requested") as? [String: Double] ?? [:]
+        let cutoff = Date().timeIntervalSince1970 - age
+        return requested.filter { $0.value > cutoff }.keys.sorted().compactMap(Source.init(key:))
+    }
+
+    // MARK: Rotation
+
+    /// "Next Photo" clicks per pool, added to the clock-based position.
+    static func offset(_ pool: String) -> Int {
+        defaults?.integer(forKey: "offset." + pool) ?? 0
+    }
+
+    static func advance(_ pool: String) {
+        guard let defaults else { return }
+        defaults.set(defaults.integer(forKey: "offset." + pool) + 1, forKey: "offset." + pool)
+    }
+
+    /// `count` consecutive photos for `date`. Rotation follows the clock, so reloads don't restart it.
+    static func photos(at date: Date, in photos: [Photo], count: Int = 1, offset: Int = 0) -> [Photo] {
+        guard !photos.isEmpty, count > 0 else { return [] }
+        let slot = Int((date.timeIntervalSince1970 / rotation).rounded(.down)) + offset
+        let start = slot &* count
+        return (0..<min(count, photos.count)).map { i in
+            photos[(((start &+ i) % photos.count) + photos.count) % photos.count]
+        }
+    }
+
+    static func photo(at date: Date, in photos: [Photo], offset: Int = 0) -> Photo? {
+        self.photos(at: date, in: photos, offset: offset).first
+    }
+
+    // MARK: Links opened by a click on a widget
 
     enum Link: Equatable, Sendable {
         case open

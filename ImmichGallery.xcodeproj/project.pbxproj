@@ -252,10 +252,10 @@
 		1A000000000000000000000C /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CURRENT_PROJECT_VERSION = 9;
+				CURRENT_PROJECT_VERSION = 10;
 				IMMICH_APP_GROUP = "$(TeamIdentifierPrefix)dev.igol.ImmichGallery";
 				SPARKLE_FEED_URL = "https://github.com/IGOLz/ImmichGallery/releases/latest/download/appcast.xml";
-				MARKETING_VERSION = 0.3.3;
+				MARKETING_VERSION = 0.4.0;
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ENABLE_MODULES = YES;
@@ -286,10 +286,10 @@
 		1A000000000000000000000D /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CURRENT_PROJECT_VERSION = 9;
+				CURRENT_PROJECT_VERSION = 10;
 				IMMICH_APP_GROUP = "$(TeamIdentifierPrefix)dev.igol.ImmichGallery";
 				SPARKLE_FEED_URL = "https://github.com/IGOLz/ImmichGallery/releases/latest/download/appcast.xml";
-				MARKETING_VERSION = 0.3.3;
+				MARKETING_VERSION = 0.4.0;
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ENABLE_MODULES = YES;

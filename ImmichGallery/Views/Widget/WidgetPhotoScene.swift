@@ -52,3 +52,17 @@ private struct WidgetPhotoWindow: View {
         }
     }
 }
+
+/// Adds photos to, or removes them from, the widget source "Chosen Photos".
+struct WidgetChosenMenuItem: View {
+    let ids: [String]
+    var body: some View {
+        let updater = WidgetFeedUpdater.shared
+        if updater.isChosen(ids) {
+            Button("Remove from Widget") { updater.setChosen(ids, false) }
+        } else {
+            Button("Show in Widget") { updater.setChosen(ids, true) }
+                .disabled(ids.isEmpty)
+        }
+    }
+}

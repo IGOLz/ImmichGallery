@@ -1,22 +1,152 @@
 {
   "sourceLanguage": "en",
   "strings": {
-    "Featured Photos": {
+    "%@": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Foto in evidenza"
+            "value": "%@"
           }
         }
       }
     },
-    "Memories and highlights from your Immich library.": {
+    "Album": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ricordi e momenti dalla tua libreria Immich."
+            "value": "Album"
+          }
+        }
+      }
+    },
+    "Albums": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Album"
+          }
+        }
+      }
+    },
+    "Choose photos in Immich Gallery with Show in Widget.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scegli le foto in Immich Gallery con Mostra nel widget."
+          }
+        }
+      }
+    },
+    "Choose which photos the widget shows.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scegli quali foto mostra il widget."
+          }
+        }
+      }
+    },
+    "Chosen Photos": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Foto scelte"
+          }
+        }
+      }
+    },
+    "Edit the widget to choose what it shows.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modifica il widget per scegliere cosa mostrare."
+          }
+        }
+      }
+    },
+    "Favorites": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preferiti"
+          }
+        }
+      }
+    },
+    "Featured": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In evidenza"
+          }
+        }
+      }
+    },
+    "Featured photos and memories, or photos from an album, a person, a place or your favorites.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Foto in evidenza e ricordi, oppure le foto di un album, di una persona, di un luogo o i tuoi preferiti."
+          }
+        }
+      }
+    },
+    "How many photos and videos you have, and how full the server is.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quante foto e video hai e quanto è pieno il server."
+          }
+        }
+      }
+    },
+    "Library": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Libreria"
+          }
+        }
+      }
+    },
+    "Next Photo": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Foto successiva"
+          }
+        }
+      }
+    },
+    "Open Immich Gallery to load these photos.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apri Immich Gallery per caricare queste foto."
+          }
+        }
+      }
+    },
+    "Open Immich Gallery to see your library here.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apri Immich Gallery per vedere qui la tua libreria."
           }
         }
       }
@@ -27,6 +157,166 @@
           "stringUnit": {
             "state": "translated",
             "value": "Apri Immich Gallery per vedere qui le tue foto."
+          }
+        }
+      }
+    },
+    "People": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Persone"
+          }
+        }
+      }
+    },
+    "Person": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Persona"
+          }
+        }
+      }
+    },
+    "Photo Mosaic": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mosaico di foto"
+          }
+        }
+      }
+    },
+    "Photos": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Foto"
+          }
+        }
+      }
+    },
+    "Place": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Luogo"
+          }
+        }
+      }
+    },
+    "Server %@": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Server %@"
+          }
+        }
+      }
+    },
+    "Server storage: %@ of %@": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spazio sul server: %@ di %@"
+          }
+        }
+      }
+    },
+    "Several photos at once from the source you choose.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Più foto insieme, dalla fonte che scegli."
+          }
+        }
+      }
+    },
+    "Show": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostra"
+          }
+        }
+      }
+    },
+    "Show ${source}": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostra ${source}"
+          }
+        }
+      }
+    },
+    "Show ${source}: ${album}": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostra ${source}: ${album}"
+          }
+        }
+      }
+    },
+    "Show ${source}: ${person}": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostra ${source}: ${person}"
+          }
+        }
+      }
+    },
+    "Show ${source}: ${place}": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostra ${source}: ${place}"
+          }
+        }
+      }
+    },
+    "There are no photos to show here.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Non ci sono foto da mostrare qui."
+          }
+        }
+      }
+    },
+    "Videos": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Video"
+          }
+        }
+      }
+    },
+    "Your library: %@": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La tua libreria: %@"
           }
         }
       }

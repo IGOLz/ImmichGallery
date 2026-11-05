@@ -314,6 +314,7 @@ struct AssetGridView: View {
         let ids = model.selection.contains(asset.id) ? Array(model.selection) : [asset.id]
         Button("Open") { model.open(asset.id) }
         ViewerContextMenu(model: model, asset: asset)
+        if model.source != .trash { WidgetChosenMenuItem(ids: ids) } // Widget
         Divider()
         if !model.canMutate(ids), model.source != .trash {
             SharingMenuItems(assetIDs: ids, allowPublicLinks: false)
