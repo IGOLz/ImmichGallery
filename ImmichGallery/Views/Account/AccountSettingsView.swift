@@ -109,7 +109,8 @@ struct AccountSettingsTabs: View {
                     .tabItem { Label("Preferences", systemImage: "switch.2") }.tag("preferences")
             }
             AccountSwitcherView().tabItem { Label("Accounts", systemImage: "person.2") }.tag("accounts")
-        }.frame(width: 640, height: tab == "general" ? 440 : 650)
+            UpdateSettingsView().tabItem { Label("Updates", systemImage: "arrow.triangle.2.circlepath") }.tag("updates")
+        }.frame(width: 640, height: tab == "general" ? 440 : tab == "updates" ? 320 : 650)
     }
 }
 

@@ -43,6 +43,8 @@ Immich has a great web app and mobile apps, but on the Mac you live in a browser
 
 The app is signed with a Developer ID and notarized by Apple, so it opens without Gatekeeper warnings.
 
+From version 0.3.2 the app updates itself: it looks for a new version when it opens and once a day, and asks before installing it. Choose **Immich Gallery › Check for Updates…** to check now, or turn on automatic installs in **Settings › Updates**. Versions up to 0.3.1 need one last manual download.
+
 **Requirements:** macOS 15 Sequoia or later, and an Immich server v2.0 or later (tested with v3.3). The app is a universal binary for Apple silicon and Intel Macs.
 
 On macOS 15 everything works, with a few differences from macOS 26 Tahoe:
@@ -91,6 +93,7 @@ The demo is shared with everyone and doesn't accept uploads.
 | Several windows and tabs, Quick Look, drag and drop              | ✅ |
 | Shortcuts actions and the macOS share sheet                      | ✅ |
 | Desktop widget with featured photos and memories                 | ✅ |
+| In-app updates, optionally automatic                             | ✅ |
 | English and Italian                                              | ✅ |
 | OAuth sign-in                                                    | Via API key |
 | Automatic background backup                                      | ❌ |
@@ -187,7 +190,7 @@ The app targets the Immich v3.3 API ([OpenAPI spec](https://github.com/immich-ap
 <details>
 <summary><b>Releasing</b></summary>
 
-`scripts/release.sh` archives the app with your Developer ID certificate, notarizes and staples it, and writes a DMG and a zip to `build/release/`. Bump `MARKETING_VERSION` in the project first.
+`scripts/release.sh` archives the app with your Developer ID certificate, notarizes and staples it, and writes a DMG, a zip and the in-app update feed (`appcast.xml`) to `build/release/`. Bump `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION` in the project first. `scripts/publish.sh` then publishes them as the latest GitHub release. See [docs/Updates.md](docs/Updates.md) for the update feed and its signing key.
 
 For repeat releases on the same Mac, save the notarization configuration in `.release.env` at the repository root. The script loads it automatically; Git ignores it. Store only the key path and identifiers there, keeping the private key outside the repository. Use shell defaults so environment overrides still work:
 
@@ -197,7 +200,7 @@ For repeat releases on the same Mac, save the notarization configuration in `.re
 : "${NOTARY_ISSUER:=YOUR_ISSUER_ID}"
 ```
 
-Alternatively, set `NOTARY_PROFILE` to an existing notarytool Keychain profile. Once configured, run `scripts/release.sh` directly. Also increment `CURRENT_PROJECT_VERSION`, run the offline checks and localization check, and publish the DMG and ZIP with their SHA-256 checksums from `build/release/SHA256SUMS.txt`.
+Alternatively, set `NOTARY_PROFILE` to an existing notarytool Keychain profile. Once configured, run `scripts/release.sh` directly. Also increment `CURRENT_PROJECT_VERSION`, run the offline checks and localization check, and publish with `scripts/publish.sh`, which uploads the DMG, ZIP, `appcast.xml` and `SHA256SUMS.txt`.
 
 ```sh
 NOTARY_PROFILE=my-profile scripts/release.sh

@@ -2327,6 +2327,26 @@
         }
       }
     },
+    "Check for Updates Automatically": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verifica automaticamente gli aggiornamenti"
+          }
+        }
+      }
+    },
+    "Check for Updates…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verifica aggiornamenti…"
+          }
+        }
+      }
+    },
     "Choose Profile Picture…": {
       "localizations": {
         "it": {
@@ -2907,6 +2927,16 @@
         }
       }
     },
+    "Current Version": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Versione attuale"
+          }
+        }
+      }
+    },
     "Current account": {
       "localizations": {
         "it": {
@@ -3323,6 +3353,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Scarica ZIP"
+          }
+        }
+      }
+    },
+    "Download and Install Updates Automatically": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scarica e installa automaticamente gli aggiornamenti"
           }
         }
       }
@@ -4193,6 +4233,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Immich Gallery"
+          }
+        }
+      }
+    },
+    "Immich Gallery looks for a new version when it opens and once a day. Unless updates install automatically, it asks you before updating. Automatic updates are installed the next time you quit the app.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Immich Gallery cerca una nuova versione quando si apre e una volta al giorno. Se gli aggiornamenti non vengono installati automaticamente, ti chiede conferma prima di aggiornare. Gli aggiornamenti automatici vengono installati la prossima volta che chiudi l'app."
           }
         }
       }
@@ -8133,6 +8183,16 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Updates": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aggiornamenti"
           }
         }
       }

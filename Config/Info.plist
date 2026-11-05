@@ -31,6 +31,15 @@
 		<key>NSAllowsArbitraryLoads</key>
 		<true/>
 	</dict>
+	<!-- In-app updates with Sparkle: see docs/Updates.md. -->
+	<key>SUFeedURL</key>
+	<string>$(SPARKLE_FEED_URL)</string>
+	<key>SUPublicEDKey</key>
+	<string>scKrtpmMLiB4fMerYd81b/TZ8Q5WJVEz1OPG627zYzA=</string>
+	<key>SUEnableAutomaticChecks</key>
+	<true/>
+	<key>SUEnableInstallerLauncherService</key>
+	<true/>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Immich Gallery connects to your Immich server, which may be on your local network.</string>
 </dict>
