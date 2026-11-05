@@ -13,12 +13,8 @@ body:
     attributes:
       label: Immich Gallery version
       placeholder: "0.4.2"
-    validations:
-      required: true
 
   - type: input
     attributes:
       label: macOS version
       placeholder: "macOS 15.5"
-    validations:
-      required: true
