@@ -5,6 +5,7 @@ struct RemoteThumbnail: View {
     let pipeline: ImagePipeline
     let assetID: String?
     var size: ImmichClient.ThumbnailSize = .thumbnail
+    var placeholderSystemImage: String? = nil
     @State private var image: CGImage?
 
     var body: some View {
@@ -13,8 +14,10 @@ struct RemoteThumbnail: View {
             .overlay {
                 if let image {
                     Image(decorative: image, scale: 1).resizable().scaledToFill()
-                } else if assetID == nil {
-                    Image(systemName: "photo.on.rectangle").font(.largeTitle).foregroundStyle(.tertiary)
+                } else if assetID == nil || placeholderSystemImage != nil {
+                    Image(systemName: placeholderSystemImage ?? "photo.on.rectangle")
+                        .font(placeholderSystemImage == nil ? .largeTitle : .body)
+                        .foregroundStyle(.tertiary)
                 }
             }
             .clipped()

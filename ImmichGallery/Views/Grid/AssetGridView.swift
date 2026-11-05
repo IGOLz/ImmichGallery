@@ -42,6 +42,7 @@ struct AssetGridHost<Header: View>: View {
     @AppStorage("showInspector") private var showInspector = false
     @AppStorage("gridThumbnailSize") private var thumbnailSize = GridMetrics.defaultSize
     @State private var pendingDelete: [String]?
+    @State private var tagRequest: ExploreTagRequest?
     @State private var playLive = false
 
     private var viewerItem: AssetItem? {
@@ -54,7 +55,10 @@ struct AssetGridHost<Header: View>: View {
 
     var body: some View {
         ZStack {
-            AssetGridView(model: model, onDelete: requestDelete)
+            AssetGridView(model: model, onDelete: requestDelete, onTags: { ids, removing in
+                guard model.canMutate(ids) else { return }
+                tagRequest = ExploreTagRequest(ids: ids, removing: removing)
+            })
                 .opacity(model.viewerID == nil ? 1 : 0)
                 .allowsHitTesting(model.viewerID == nil)
             if let item = viewerItem {
@@ -68,6 +72,20 @@ struct AssetGridHost<Header: View>: View {
         .navigationTitle(viewerItem?.date.map { Text(ImmichDate.day($0)) } ?? title)
         .navigationSubtitle(subtitle)
         .toolbar { toolbar }
+        .sheet(item: $tagRequest) { request in
+            ExploreTagPicker(tags: session.exploreTags, removing: request.removing) { tag in
+                do {
+                    try await session.client.exploreTagAssets(request.ids, tag: tag.id, remove: request.removing)
+                } catch {
+                    session.handle(error)
+                    session.invalidateGrids()
+                    await model.reload()
+                    throw error
+                }
+                session.invalidateGrids()
+                await model.reload()
+            }
+        }
         .sharingPresentation() // Sharing
         .modifier(AssetsGridUtilities(model: model))
         .gridHeader(header)
@@ -191,6 +209,7 @@ struct AssetGridView: View {
     @Environment(LibrarySession.self) private var session
     @Bindable var model: AssetGridModel
     let onDelete: ([String]) -> Void
+    let onTags: ([String], Bool) -> Void
 
     @AppStorage("gridThumbnailSize") private var thumbnailSize = GridMetrics.defaultSize
     @State private var zoomBase: Double?
@@ -325,7 +344,7 @@ struct AssetGridView: View {
         .onAppear { model.cellAppeared(section: s, item: i) }
         .onTapGesture(count: 2) { if let asset { model.open(asset.id) } }
         .simultaneousGesture(TapGesture().onEnded { if let asset { model.click(asset.id) } })
-        .contextMenu {
+        .deferredContextMenu {
             if let asset { contextMenu(for: asset) }
         }
     }
@@ -349,7 +368,7 @@ struct AssetGridView: View {
             SharingMenu(assetIDs: ids) // Sharing
             AssetsContextMenu(model: model, ids: [asset.id] + ids.filter { $0 != asset.id })
             MetadataMenuItems(ids: ids, canEditImage: !asset.isVideo && asset.livePhotoVideoID == nil).disabled(session.metadata.busy) // Metadata
-            ExploreAssetActions(ids: ids, model: model) // Explore
+            ExploreAssetActions(ids: ids, model: model, onTags: { onTags(ids, $0) }) // Explore
             AssetsExportMenu(ids: ids)
             Divider()
             if model.source == .archive {

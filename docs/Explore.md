@@ -29,6 +29,12 @@ Targets Immich v3.3.5 and macOS 26. This review pass never launched the app, rea
 
 Additional checks addressed: tag/preferences requests moved out of context menus into a coalesced session cache refreshed after tag edits; map date controls moved into a popover; successful initial marker loading explicitly reclusters; restored memory windows show a sign-in explanation when no session exists.
 
+## Grid tag actions
+
+The grid's Tags menu offers Add Tag… and Remove Tag… commands. Each opens a searchable list of full tag paths for the photos captured when the command was chosen. The sheet stays open and reports failures; affected grids refresh after partial failures too. Tag rows and their actions are no longer materialized as nested context-menu items. A sample of the installed Dev app captured the slow path inside `ContextMenuResponder.items` and the tag `ForEach` before the root menu appeared.
+
+`Tests/ExploreTagPickerChecks.swift` covers search by full path, case and accents, whitespace, empty results, and a source guard against rebuilding the tag catalog in the context menu. The integration runner includes this check and the deferred-menu regression. The maintainer confirmed responsive context menus in the updated Dev app. Tag mutations remain unverified interactively; no demo-server writes are used by these checks.
+
 ## Privacy and limits
 
 Ordinary media uses the existing 4 GB HTTP disk cache and 512 MB decoded-image cache. Locked media uses only the view's ephemeral session and SwiftUI image state. Per-ID eviction removes ordinary cached media when moving it into Locked Folder, including stale in-flight completions. Other cached assets are retained.

@@ -101,7 +101,19 @@ struct AlbumSidebarSections: View {
         ForEach([false, true], id: \.self) { shared in
             Section(shared ? "Shared Albums" : "My Albums") {
                 ForEach(session.albums.filter { $0.shared == shared }) { album in
-                    Label(album.albumName, systemImage: shared ? "person.2.crop.square.stack" : "rectangle.stack")
+                    Label {
+                        Text(album.albumName)
+                    } icon: {
+                        if let assetID = album.albumThumbnailAssetId {
+                            RemoteThumbnail(pipeline: session.pipeline, assetID: assetID,
+                                            placeholderSystemImage: shared ? "person.2.crop.square.stack" : "rectangle.stack")
+                                .frame(width: 24, height: 24)
+                                .clipShape(.rect(cornerRadius: 4))
+                                .accessibilityHidden(true)
+                        } else {
+                            Image(systemName: shared ? "person.2.crop.square.stack" : "rectangle.stack")
+                        }
+                    }
                         .modifier(AlbumRowUploadDrop(queue: session.upload, albumID: album.id, addAssets: { add($0, to: album) })) // Upload
                         .tag(SidebarItem.album(album.id))
                         .contextMenu { MacAlbumWindowMenu(albumID: album.id) } // MacIntegration

@@ -67,24 +67,17 @@ struct ExploreAssetActions: View {
     @Environment(LibrarySession.self) private var session
     let ids: [String]
     let model: AssetGridModel
+    let onTags: (Bool) -> Void
+
     var body: some View {
         Menu("Tags") {
-            if !session.exploreTagsEnabled { Text("Enable Tags in Immich Account Settings") }
-            ForEach(session.exploreTags) { tag in
-                Menu(tag.value) {
-                    Button("Add Tag") { update(tag, remove: false) }
-                    Button("Remove Tag") { update(tag, remove: true) }
-                }
+            if !session.exploreTagsEnabled {
+                Text("Enable Tags in Immich Account Settings")
+            } else {
+                Button("Add Tag…") { onTags(false) }
+                Button("Remove Tag…") { onTags(true) }
             }
         }
         Button("Move to Locked Folder") { Task { await model.moveToLockedFolder(ids) } }
-    }
-    private func update(_ tag: ExploreTag, remove: Bool) {
-        Task {
-            do { try await session.client.exploreTagAssets(ids, tag: tag.id, remove: remove) }
-            catch { model.lastError = error.localizedDescription }
-            session.invalidateGrids()
-            await model.reload()
-        }
     }
 }

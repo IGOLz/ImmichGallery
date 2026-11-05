@@ -1691,6 +1691,22 @@
         }
       }
     },
+    "Add Tag…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add Tag…"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aggiungi tag…"
+          }
+        }
+      }
+    },
     "Add User": {
       "localizations": {
         "it": {
@@ -4077,6 +4093,16 @@
         }
       }
     },
+    "Filtered Search": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ricerca con filtri"
+          }
+        }
+      }
+    },
     "Filters": {
       "localizations": {
         "it": {
@@ -4093,6 +4119,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "Trova"
+          }
+        }
+      }
+    },
+    "Find a scene, a place, or a detail you remember.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trova una scena, un luogo o un dettaglio che ricordi."
+          }
+        }
+      }
+    },
+    "Find text captured in your photos.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trova il testo presente nelle tue foto."
+          }
+        }
+      }
+    },
+    "Find words in your photo descriptions.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trova parole nelle descrizioni delle tue foto."
           }
         }
       }
@@ -6067,6 +6123,16 @@
         }
       }
     },
+    "Places in Your Library": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Luoghi nella tua libreria"
+          }
+        }
+      }
+    },
     "Play": {
       "localizations": {
         "it": {
@@ -6383,6 +6449,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Rimuovi tag"
+          }
+        }
+      }
+    },
+    "Remove Tag…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove Tag…"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rimuovi tag…"
           }
         }
       }
@@ -6797,12 +6879,48 @@
         }
       }
     },
+    "Search Tags": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search Tags"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cerca tag"
+          }
+        }
+      }
+    },
     "Search Your Photos": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
             "value": "Cerca le tue foto"
+          }
+        }
+      }
+    },
+    "Search by": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cerca per"
+          }
+        }
+      }
+    },
+    "Search by file name or extension.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cerca per nome o estensione del file."
           }
         }
       }

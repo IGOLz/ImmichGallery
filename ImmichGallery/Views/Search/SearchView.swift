@@ -14,23 +14,10 @@ struct SearchView: View {
     var body: some View {
         VStack(spacing: 0) {
             if query.text.isEmpty && query.chips.isEmpty {
-                searchControls
-                ContentUnavailableView("Search Your Photos", systemImage: "magnifyingglass", description: Text("Enter text in the toolbar or choose filters."))
-                    .modifier(SearchEmptyStateLayout())
-                if !explore.isEmpty {
-                    ScrollView(.horizontal) {
-                        HStack {
-                            ForEach(explore, id: \.fieldName) { group in
-                                ForEach(group.items.prefix(12), id: \.value) { item in
-                                    Button(item.value) {
-                                        if group.fieldName == "exifInfo.city" { query.city = item.value }
-                                        else { query.text = item.value }
-                                    }
-                                }
-                            }
-                        }.padding()
-                    }
-                }
+                SearchLandingView(
+                    pipeline: session.pipeline, query: query,
+                    recent: history.entries, places: Array(explore.flatMap(\.items).filter { $0.data.visibility != "locked" }.prefix(12)),
+                    controls: searchScopeControls, select: selectQuery, clearHistory: history.clear)
             } else {
                 AssetGridContainer(source: .filteredSearch(query), title: Text("Search")) {
                     searchControls
@@ -61,36 +48,71 @@ struct SearchView: View {
         .onChange(of: query) { _, value in history.remember(value) }
     }
 
-    private var searchControls: some View {
-        VStack(spacing: 0) {
-            HStack {
-                Picker("Search mode", selection: $query.mode) {
-                    ForEach(SearchMode.allCases.filter { ($0 != .context || session.features.smartSearch) && ($0 != .ocr || session.features.ocr) }) { mode in
-                        Text(String(localized: mode.title)).tag(mode)
-                    }
+    private func selectQuery(_ value: SearchQuery) {
+        query = value
+        query.clampMode(smartEnabled: session.features.smartSearch, ocrEnabled: session.features.ocr)
+        chooseText(query.text)
+    }
+
+    private var searchScopeControls: some View {
+        HStack(spacing: 10) {
+            Text("Search by").foregroundStyle(.secondary)
+            Picker("Search mode", selection: $query.mode) {
+                ForEach(SearchMode.allCases.filter { ($0 != .context || session.features.smartSearch) && ($0 != .ocr || session.features.ocr) }) { mode in
+                    Text(String(localized: mode.title)).tag(mode)
                 }
-                .frame(width: 230)
-                Button { draft = query; showFilters = true } label: {
-                    Label("Filters", systemImage: "line.3.horizontal.decrease")
-                }
-                Spacer()
+            }
+            .labelsHidden().frame(width: 170)
+            .accessibilityLabel("Search mode")
+            Button { draft = query; showFilters = true } label: {
+                Label("Filters", systemImage: "line.3.horizontal.decrease")
+            }
+        }
+    }
+
+    private var resultOptions: some View {
+        HStack(spacing: 12) {
+            Menu {
                 Picker("Sort Results", selection: $query.sort) {
                     ForEach(SearchSort.allCases) { sort in
                         Text(String(localized: sort.title)).tag(sort)
                     }
                 }
-                .fixedSize()
-                .help("Default order uses relevance for smart search and newest first for other searches. Sorting smart results by date loads all results first.")
-                Menu("Recent Searches") {
-                    ForEach(Array(history.entries.enumerated()), id: \.offset) { _, entry in
-                        Button(([entry.text] + entry.chips).filter { !$0.isEmpty }.joined(separator: ", ")) { query = entry; query.clampMode(smartEnabled: session.features.smartSearch, ocrEnabled: session.features.ocr); chooseText(entry.text) }
-                    }
-                    Divider()
-                    Button("Clear History", role: .destructive) { history.clear() }
-                }
-                .disabled(history.entries.isEmpty)
+                .pickerStyle(.inline)
+            } label: {
+                Label(String(localized: query.sort.title), systemImage: "arrow.up.arrow.down")
             }
-            .padding(12)
+            .fixedSize()
+            .accessibilityLabel("Sort Results")
+            .help("Default order uses relevance for smart search and newest first for other searches. Sorting smart results by date loads all results first.")
+            Menu {
+                ForEach(Array(history.entries.enumerated()), id: \.offset) { _, entry in
+                    Button(([entry.text] + entry.chips).filter { !$0.isEmpty }.joined(separator: ", ")) { selectQuery(entry) }
+                }
+                Divider()
+                Button("Clear History", role: .destructive) { history.clear() }
+            } label: {
+                Label("Recent Searches", systemImage: "clock").labelStyle(.iconOnly)
+            }
+            .disabled(history.entries.isEmpty)
+            .help("Recent Searches")
+        }
+    }
+
+    private var searchControls: some View {
+        VStack(spacing: 0) {
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 12) {
+                    searchScopeControls
+                    Spacer(minLength: 16)
+                    resultOptions
+                }
+                VStack(alignment: .leading, spacing: 10) {
+                    searchScopeControls
+                    HStack { Spacer(); resultOptions }
+                }
+            }
+            .padding(.horizontal, 16).padding(.vertical, 10)
             if !query.chips.isEmpty {
                 ScrollView(.horizontal) {
                     HStack {
@@ -106,12 +128,12 @@ struct SearchView: View {
                             let text = query.text; let mode = query.mode; let sort = query.sort
                             query = SearchQuery(); query.text = text; query.mode = mode; query.sort = sort
                         }
-                    }.padding(.horizontal, 12).padding(.bottom, 8)
+                    }.padding(.horizontal, 16).padding(.bottom, 8)
                 }
             }
             if query.mode == .context && session.features.smartSearch && !query.text.isEmpty && query.sort != .automatic {
                 Text("Sorting by date loads all smart search results first. Large searches may take time and use more memory.")
-                    .font(.caption).foregroundStyle(.secondary).padding(.horizontal, 12).padding(.bottom, 8)
+                    .font(.caption).foregroundStyle(.secondary).padding(.horizontal, 16).padding(.bottom, 8)
             }
             Divider()
         }
@@ -137,12 +159,5 @@ struct SearchFieldSuggestions: View {
             Text(text).searchCompletion(text)
         }
         .onAppear { history.load(session: session) }
-    }
-}
-
-/// macOS 15 doesn't expand the empty state, which pushed the search controls to the middle.
-private struct SearchEmptyStateLayout: ViewModifier {
-    func body(content: Content) -> some View {
-        if #available(macOS 26, *) { content } else { content.frame(maxHeight: .infinity) }
     }
 }
