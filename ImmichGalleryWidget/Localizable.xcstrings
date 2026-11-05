@@ -1,0 +1,36 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "Featured Photos": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Foto in evidenza"
+          }
+        }
+      }
+    },
+    "Memories and highlights from your Immich library.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ricordi e momenti dalla tua libreria Immich."
+          }
+        }
+      }
+    },
+    "Open Immich Gallery to see your photos here.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apri Immich Gallery per vedere qui le tue foto."
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

@@ -13,6 +13,18 @@
 			<array><string>public.data</string></array>
 		</dict>
 	</array>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<!-- Clicks on the desktop widget. -->
+			<key>CFBundleURLName</key>
+			<string>dev.igol.ImmichGallery.widget</string>
+			<key>CFBundleURLSchemes</key>
+			<array><string>immichgallery</string></array>
+		</dict>
+	</array>
+	<key>ImmichAppGroup</key>
+	<string>$(IMMICH_APP_GROUP)</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<!-- Self-hosted Immich servers are often reached over plain HTTP on a LAN or VPN. -->

@@ -42,4 +42,4 @@ No live server was contacted, no Keychain item was read, and no app was launched
 
 ## Deliberate omissions
 
-Widgets require another target, an App Group and a credential/signing design, so they remain omitted. A menu bar extra and unattended export intent remain outside this change. No project settings were changed by the review fixes.
+Widgets are covered in `Widget.md`. A menu bar extra and unattended export intent remain outside this change. No project settings were changed by the review fixes.

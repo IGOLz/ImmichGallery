@@ -8,7 +8,15 @@ final class AppModel {
         case signedOut
         case signedIn(AccountServices)
     }
-    private(set) var phase: Phase = .launching
+    private(set) var phase: Phase = .launching {
+        didSet { // Widget
+            switch phase {
+            case .signedIn(let services): WidgetFeedUpdater.shared.start(services)
+            case .signedOut: WidgetFeedUpdater.shared.clear()
+            case .launching: break
+            }
+        }
+    }
     private(set) var entries: [AccountVault.Entry] = []
     private(set) var switching = false
     private(set) var currentAccountID: String?
@@ -135,6 +143,7 @@ final class AppModel {
         for window in services.windows.allObjects { window.endSession() }
         services.pipeline.removeAll()
         MacIntegrationRouter.shared.pending.removeAll()
+        MacIntegrationRouter.shared.widgetLinks.removeAll() // Widget
         MacQuickLook.shared.dismiss()
     }
 

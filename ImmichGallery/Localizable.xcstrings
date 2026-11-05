@@ -4397,6 +4397,16 @@
         }
       }
     },
+    "It may have been deleted, or it belongs to another account.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Potrebbe essere stata eliminata o appartenere a un altro account."
+          }
+        }
+      }
+    },
     "Items are deleted after %lld days.": {
       "localizations": {
         "it": {
@@ -5937,12 +5947,32 @@
         }
       }
     },
+    "Photo": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Foto"
+          }
+        }
+      }
+    },
     "Photo Activity": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
             "value": "Attività della foto"
+          }
+        }
+      }
+    },
+    "Photo Unavailable": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Foto non disponibile"
           }
         }
       }
@@ -7253,6 +7283,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Accedi per visualizzare i ricordi"
+          }
+        }
+      }
+    },
+    "Sign In to View This Photo": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accedi per vedere questa foto"
           }
         }
       }

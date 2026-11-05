@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct MacWindowRoute: Codable, Hashable {
+    static let tabbingIdentifier = "ImmichGallery.library"
     var instance = UUID()
     var albumID: String?
     var query: String?
@@ -48,7 +49,7 @@ private struct MacWindowConfiguration: NSViewRepresentable {
         required init?(coder: NSCoder) { nil }
         override func viewDidMoveToWindow() {
             super.viewDidMoveToWindow()
-            window?.tabbingIdentifier = "ImmichGallery.library"
+            window?.tabbingIdentifier = MacWindowRoute.tabbingIdentifier
             window?.tabbingMode = asTab ? .preferred : .automatic
         }
     }
@@ -81,8 +82,24 @@ struct MacIntegrationCommands: Commands {
 
 final class MacIntegrationLifecycle: NSObject, NSApplicationDelegate {
     private var cleanupTimer: Timer?
+
+    /// Clicks on the desktop widget arrive as `immichgallery://` URLs. Handling the Apple event
+    /// directly stops SwiftUI from opening an extra library window for every click.
+    func applicationWillFinishLaunching(_ notification: Notification) {
+        NSAppleEventManager.shared().setEventHandler(self, andSelector: #selector(handleURL(_:reply:)),
+                                                     forEventClass: AEEventClass(kInternetEventClass), andEventID: AEEventID(kAEGetURL))
+    }
+
+    @objc private func handleURL(_ event: NSAppleEventDescriptor, reply: NSAppleEventDescriptor) {
+        guard let text = event.paramDescriptor(forKeyword: keyDirectObject)?.stringValue,
+              let url = URL(string: text), let link = WidgetFeed.Link(url) else { return }
+        MainActor.assumeIsolated { MacIntegrationRouter.shared.widgetLinks.append(link) }
+    }
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         cleanupTimer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { _ in MacTransferCache.prune() }
+        // A widget click can launch the app without a library window, whose view would restore the account.
+        Task { await MacIntegrationRouter.shared.app?.restore() } // Widget
     }
     func applicationWillTerminate(_ notification: Notification) {
         MacQuickLook.shared.dismiss()

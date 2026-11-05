@@ -6,6 +6,7 @@ final class MacIntegrationRouter {
     static let shared = MacIntegrationRouter()
     weak var app: AppModel?
     var pending: [MacWindowRoute] = []
+    var widgetLinks: [WidgetFeed.Link] = [] // Widget
 }
 
 struct SearchPhotosIntent: AppIntent {

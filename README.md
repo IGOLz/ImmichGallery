@@ -90,6 +90,7 @@ The demo is shared with everyone and doesn't accept uploads.
 | Administration: stats, jobs, users, external libraries           | ✅ |
 | Several windows and tabs, Quick Look, drag and drop              | ✅ |
 | Shortcuts actions and the macOS share sheet                      | ✅ |
+| Desktop widget with featured photos and memories                 | ✅ |
 | English and Italian                                              | ✅ |
 | OAuth sign-in                                                    | Via API key |
 | Automatic background backup                                      | ❌ |

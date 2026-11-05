@@ -22,12 +22,15 @@ struct ImmichGalleryApp: App {
         .defaultSize(width: 1280, height: 820)
         .windowToolbarStyle(.unified)
         .onChange(of: MacIntegrationRouter.shared.pending, initial: true) { openPendingIntents() }
-        .onChange(of: app.services.map(ObjectIdentifier.init)) { openPendingIntents() }
+        .onChange(of: MacIntegrationRouter.shared.widgetLinks, initial: true) { openWidgetLinks() } // Widget
+        .onChange(of: app.services.map(ObjectIdentifier.init)) { openPendingIntents(); openWidgetLinks() }
         .commands { AppCommands(app: app); AdminCommands(app: app); UploadCommands(app: app); ViewerCommands(); MacIntegrationCommands() }
 
         AdminScene(app: app) // Admin
 
         ExploreMemoryScene(app: app) // Explore
+
+        WidgetPhotoScene(app: app) // Widget
 
         Settings {
             AccountSettingsTabs() // Account
@@ -40,6 +43,30 @@ struct ImmichGalleryApp: App {
         let routes = MacIntegrationRouter.shared.pending
         MacIntegrationRouter.shared.pending.removeAll()
         for route in routes { openWindow(id: "main", value: route) }
+    }
+
+    // Widget
+    private func openWidgetLinks() {
+        let router = MacIntegrationRouter.shared
+        if router.widgetLinks.contains(.open) {
+            router.widgetLinks.removeAll { $0 == .open }
+            // Let a window SwiftUI opens at launch appear first, so we don't add a second one.
+            Task {
+                try? await Task.sleep(for: .milliseconds(400))
+                let hasLibrary = NSApp.windows.contains { $0.isVisible && $0.tabbingIdentifier == MacWindowRoute.tabbingIdentifier }
+                if !hasLibrary { openWindow(id: "main", value: MacWindowRoute()) }
+            }
+        }
+        guard app.services != nil, !router.widgetLinks.isEmpty else { return }
+        let links = router.widgetLinks
+        router.widgetLinks.removeAll()
+        for link in links {
+            switch link {
+            case .memory(let id): openWindow(id: "explore-memory", value: id)
+            case .photo(let id): openWindow(id: "widget-photo", value: id)
+            case .open: break
+            }
+        }
     }
 }
 

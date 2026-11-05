@@ -60,8 +60,10 @@ def load_extraction(path):
 
 
 def main():
-    catalogs = {p.stem: json.loads(p.read_text())['strings']
-                for p in Path('ImmichGallery').glob('*.xcstrings')}
+    # The widget extension has its own catalogs; tables of the same name are checked together.
+    catalogs = {}
+    for p in [*Path('ImmichGallery').glob('*.xcstrings'), *Path('ImmichGalleryWidget').glob('*.xcstrings')]:
+        catalogs.setdefault(p.stem, {}).update(json.loads(p.read_text())['strings'])
     checked = set()
     for path in Path('build/DerivedData').rglob('*.stringsdata'):
         for table, entries in load_extraction(path).get('tables', {}).items():
