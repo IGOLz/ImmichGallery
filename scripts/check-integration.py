@@ -24,6 +24,7 @@ cases = {
     'explore': api + [support('ImagePipeline'), app('ExploreClustering'), app('ExploreFolders'), 'Tests/ExploreChecks.swift'],
     'people-cache': api + [support('ImagePipeline'), 'scripts/checks/people-network.swift'],
     'search': api + ['scripts/check-search.swift'],
+    'search-layout': ['ImmichGallery/Views/Grid/GridHeaderLayout.swift', 'Tests/SearchLayoutChecks.swift'],
     'metadata': models + ['ImmichGallery/API/Models+Metadata.swift', 'scripts/verify-metadata.swift'],
     'transfer-cache': api + ['scripts/check-mac-transfer-cache.swift'],
     'album-review': api + [app('AlbumsActions'), 'ImmichGallery/Views/Albums/AlbumAssetTransfer.swift', 'scripts/verify-album-review.swift'],

@@ -9,21 +9,35 @@ enum GridMetrics {
 }
 
 /// Resolves the grid model for a source and hosts the grid, the viewer, toolbar and inspector.
-struct AssetGridContainer: View {
+struct AssetGridContainer<Header: View>: View {
     @Environment(LibrarySession.self) private var session
     let source: GridSource
     let title: Text
+    let header: Header
+
+    init(source: GridSource, title: Text, @ViewBuilder header: () -> Header) {
+        self.source = source
+        self.title = title
+        self.header = header()
+    }
 
     var body: some View {
-        AssetGridHost(model: session.gridModel(for: source), title: title)
+        AssetGridHost(model: session.gridModel(for: source), title: title, header: header)
             .id(source)
     }
 }
 
-struct AssetGridHost: View {
+extension AssetGridContainer where Header == EmptyView {
+    init(source: GridSource, title: Text) {
+        self.init(source: source, title: title) { EmptyView() }
+    }
+}
+
+struct AssetGridHost<Header: View>: View {
     @Environment(LibrarySession.self) private var session
     @Bindable var model: AssetGridModel
     let title: Text
+    let header: Header
 
     @AppStorage("showInspector") private var showInspector = false
     @AppStorage("gridThumbnailSize") private var thumbnailSize = GridMetrics.defaultSize
@@ -56,6 +70,7 @@ struct AssetGridHost: View {
         .toolbar { toolbar }
         .sharingPresentation() // Sharing
         .modifier(AssetsGridUtilities(model: model))
+        .gridHeader(header)
         .inspector(isPresented: $showInspector) {
             AssetInspector(assetID: inspectedID)
                 .inspectorColumnWidth(min: 260, ideal: 300, max: 420)

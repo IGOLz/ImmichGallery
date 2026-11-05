@@ -13,6 +13,56 @@ struct SearchView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            if query.text.isEmpty && query.chips.isEmpty {
+                searchControls
+                ContentUnavailableView("Search Your Photos", systemImage: "magnifyingglass", description: Text("Enter text in the toolbar or choose filters."))
+                    .modifier(SearchEmptyStateLayout())
+                if !explore.isEmpty {
+                    ScrollView(.horizontal) {
+                        HStack {
+                            ForEach(explore, id: \.fieldName) { group in
+                                ForEach(group.items.prefix(12), id: \.value) { item in
+                                    Button(item.value) {
+                                        if group.fieldName == "exifInfo.city" { query.city = item.value }
+                                        else { query.text = item.value }
+                                    }
+                                }
+                            }
+                        }.padding()
+                    }
+                }
+            } else {
+                AssetGridContainer(source: .filteredSearch(query), title: Text("Search")) {
+                    searchControls
+                }
+            }
+        }
+        .navigationTitle("Search")
+        .navigationSubtitle(query.text)
+        .onChange(of: showFilters) { _, showing in if showing { draft = query } }
+        .sheet(isPresented: $showFilters) {
+            SearchFiltersView(query: $draft, ratingsEnabled: ratingsEnabled) {
+                query = draft; showFilters = false
+            }
+        }
+        .task {
+            query.text = text
+            query.clampMode(smartEnabled: session.features.smartSearch, ocrEnabled: session.features.ocr)
+            if showFilters { draft = query }
+            history.load(session: session)
+            history.remember(query)
+            async let preferences = try? session.client.searchPreferences()
+            async let suggestions = try? session.client.searchExplore()
+            ratingsEnabled = await preferences?.ratings?.enabled ?? false
+            // Explore is places in v3.3.5; only expose fields we can search accurately.
+            explore = await suggestions?.filter { $0.fieldName == "exifInfo.city" } ?? []
+        }
+        .onChange(of: text) { _, value in query.text = value }
+        .onChange(of: query) { _, value in history.remember(value) }
+    }
+
+    private var searchControls: some View {
+        VStack(spacing: 0) {
             HStack {
                 Picker("Search mode", selection: $query.mode) {
                     ForEach(SearchMode.allCases.filter { ($0 != .context || session.features.smartSearch) && ($0 != .ocr || session.features.ocr) }) { mode in
@@ -64,49 +114,7 @@ struct SearchView: View {
                     .font(.caption).foregroundStyle(.secondary).padding(.horizontal, 12).padding(.bottom, 8)
             }
             Divider()
-            if query.text.isEmpty && query.chips.isEmpty {
-                ContentUnavailableView("Search Your Photos", systemImage: "magnifyingglass", description: Text("Enter text in the toolbar or choose filters."))
-                    .modifier(SearchEmptyStateLayout())
-                if !explore.isEmpty {
-                    ScrollView(.horizontal) {
-                        HStack {
-                            ForEach(explore, id: \.fieldName) { group in
-                                ForEach(group.items.prefix(12), id: \.value) { item in
-                                    Button(item.value) {
-                                        if group.fieldName == "exifInfo.city" { query.city = item.value }
-                                        else { query.text = item.value }
-                                    }
-                                }
-                            }
-                        }.padding()
-                    }
-                }
-            } else {
-                AssetGridContainer(source: .filteredSearch(query), title: Text("Search"))
-            }
         }
-        .navigationTitle("Search")
-        .navigationSubtitle(query.text)
-        .onChange(of: showFilters) { _, showing in if showing { draft = query } }
-        .sheet(isPresented: $showFilters) {
-            SearchFiltersView(query: $draft, ratingsEnabled: ratingsEnabled) {
-                query = draft; showFilters = false
-            }
-        }
-        .task {
-            query.text = text
-            query.clampMode(smartEnabled: session.features.smartSearch, ocrEnabled: session.features.ocr)
-            if showFilters { draft = query }
-            history.load(session: session)
-            history.remember(query)
-            async let preferences = try? session.client.searchPreferences()
-            async let suggestions = try? session.client.searchExplore()
-            ratingsEnabled = await preferences?.ratings?.enabled ?? false
-            // Explore is places in v3.3.5; only expose fields we can search accurately.
-            explore = await suggestions?.filter { $0.fieldName == "exifInfo.city" } ?? []
-        }
-        .onChange(of: text) { _, value in query.text = value }
-        .onChange(of: query) { _, value in history.remember(value) }
     }
 }
 
