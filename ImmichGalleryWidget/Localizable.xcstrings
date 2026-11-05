@@ -41,6 +41,36 @@
         }
       }
     },
+    "Choose the album to show.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scegli l’album da mostrare."
+          }
+        }
+      }
+    },
+    "Choose the person or pet to show.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scegli la persona o l’animale da mostrare."
+          }
+        }
+      }
+    },
+    "Choose the place to show.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scegli il luogo da mostrare."
+          }
+        }
+      }
+    },
     "Choose which photos the widget shows.": {
       "localizations": {
         "it": {
@@ -91,12 +121,12 @@
         }
       }
     },
-    "Featured photos and memories, or photos from an album, a person, a place or your favorites.": {
+    "Featured Photos": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Foto in evidenza e ricordi, oppure le foto di un album, di una persona, di un luogo o i tuoi preferiti."
+            "value": "Foto in evidenza"
           }
         }
       }
@@ -201,6 +231,46 @@
         }
       }
     },
+    "Photos from an album. Right-click the widget to choose which one.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le foto di un album. Fai clic con il tasto destro sul widget per scegliere quale."
+          }
+        }
+      }
+    },
+    "Photos of a person or pet. Right-click the widget to choose who.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le foto di una persona o di un animale. Fai clic con il tasto destro sul widget per scegliere chi."
+          }
+        }
+      }
+    },
+    "Photos taken in a place. Right-click the widget to choose where.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le foto scattate in un luogo. Fai clic con il tasto destro sul widget per scegliere dove."
+          }
+        }
+      }
+    },
+    "Photos you add with Show in Widget in Immich Gallery.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le foto che aggiungi con Mostra nel widget in Immich Gallery."
+          }
+        }
+      }
+    },
     "Place": {
       "localizations": {
         "it": {
@@ -231,12 +301,12 @@
         }
       }
     },
-    "Several photos at once from the source you choose.": {
+    "Several photos at once. Right-click the widget to choose which ones.": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Più foto insieme, dalla fonte che scegli."
+            "value": "Più foto insieme. Fai clic con il tasto destro sul widget per scegliere quali."
           }
         }
       }
@@ -301,12 +371,32 @@
         }
       }
     },
+    "Today's memories and highlights from your library.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I ricordi di oggi e i momenti migliori della tua libreria."
+          }
+        }
+      }
+    },
     "Videos": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
             "value": "Video"
+          }
+        }
+      }
+    },
+    "Your favorite photos.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le tue foto preferite."
           }
         }
       }

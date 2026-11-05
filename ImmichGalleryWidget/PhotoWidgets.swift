@@ -6,38 +6,97 @@ import WidgetKit
 @main
 struct ImmichGalleryWidgets: WidgetBundle {
     var body: some Widget {
-        PhotosWidget()
+        FeaturedPhotosWidget()
+        FavoritePhotosWidget()
+        AlbumPhotosWidget()
+        PersonPhotosWidget()
+        PlacePhotosWidget()
+        ChosenPhotosWidget()
         PhotoMosaicWidget()
         LibraryWidget()
     }
 }
 
-/// Apple Photos–style desktop widget: one photo at a time from the source chosen in its settings.
-/// The widgets read only what the app prepared (see `WidgetFeedUpdater`); they have no network access.
-struct PhotosWidget: Widget {
+// Apple Photos–style desktop widgets, one per source so the widget gallery lists them all.
+// The widgets read only what the app prepared (see `WidgetFeedUpdater`); they have no network access.
+
+private let photoFamilies: [WidgetFamily] = [.systemSmall, .systemMedium, .systemLarge, .systemExtraLarge]
+
+private extension WidgetConfiguration {
+    func photoWidget() -> some WidgetConfiguration {
+        contentMarginsDisabled()
+            // Keep the photo when the desktop widget turns vibrant behind windows.
+            .containerBackgroundRemovable(false)
+    }
+}
+
+struct FeaturedPhotosWidget: Widget {
     var body: some WidgetConfiguration {
-        AppIntentConfiguration(kind: WidgetFeed.photosKind, intent: PhotoWidgetIntent.self, provider: PhotosProvider(mosaic: false)) { entry in
-            PhotoWidgetView(entry: entry)
-        }
-        .configurationDisplayName("Photos")
-        .description("Featured photos and memories, or photos from an album, a person, a place or your favorites.")
-        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge, .systemExtraLarge])
-        .contentMarginsDisabled()
-        // Keep the photo when the desktop widget turns vibrant behind windows.
-        .containerBackgroundRemovable(false)
+        StaticConfiguration(kind: WidgetFeed.featuredKind, provider: FixedPhotosProvider(source: .featured)) { PhotoWidgetView(entry: $0) }
+            .configurationDisplayName("Featured Photos")
+            .description("Today's memories and highlights from your library.")
+            .supportedFamilies(photoFamilies)
+            .photoWidget()
+    }
+}
+
+struct FavoritePhotosWidget: Widget {
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: WidgetFeed.favoritesKind, provider: FixedPhotosProvider(source: .favorites)) { PhotoWidgetView(entry: $0) }
+            .configurationDisplayName("Favorites")
+            .description("Your favorite photos.")
+            .supportedFamilies(photoFamilies)
+            .photoWidget()
+    }
+}
+
+struct AlbumPhotosWidget: Widget {
+    var body: some WidgetConfiguration {
+        AppIntentConfiguration(kind: WidgetFeed.albumKind, intent: AlbumWidgetIntent.self, provider: IntentPhotosProvider<AlbumWidgetIntent>()) { PhotoWidgetView(entry: $0) }
+            .configurationDisplayName("Album")
+            .description("Photos from an album. Right-click the widget to choose which one.")
+            .supportedFamilies(photoFamilies)
+            .photoWidget()
+    }
+}
+
+struct PersonPhotosWidget: Widget {
+    var body: some WidgetConfiguration {
+        AppIntentConfiguration(kind: WidgetFeed.personKind, intent: PersonWidgetIntent.self, provider: IntentPhotosProvider<PersonWidgetIntent>()) { PhotoWidgetView(entry: $0) }
+            .configurationDisplayName("Person")
+            .description("Photos of a person or pet. Right-click the widget to choose who.")
+            .supportedFamilies(photoFamilies)
+            .photoWidget()
+    }
+}
+
+struct PlacePhotosWidget: Widget {
+    var body: some WidgetConfiguration {
+        AppIntentConfiguration(kind: WidgetFeed.placeKind, intent: PlaceWidgetIntent.self, provider: IntentPhotosProvider<PlaceWidgetIntent>()) { PhotoWidgetView(entry: $0) }
+            .configurationDisplayName("Place")
+            .description("Photos taken in a place. Right-click the widget to choose where.")
+            .supportedFamilies(photoFamilies)
+            .photoWidget()
+    }
+}
+
+struct ChosenPhotosWidget: Widget {
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: WidgetFeed.chosenKind, provider: FixedPhotosProvider(source: .chosen)) { PhotoWidgetView(entry: $0) }
+            .configurationDisplayName("Chosen Photos")
+            .description("Photos you add with Show in Widget in Immich Gallery.")
+            .supportedFamilies(photoFamilies)
+            .photoWidget()
     }
 }
 
 struct PhotoMosaicWidget: Widget {
     var body: some WidgetConfiguration {
-        AppIntentConfiguration(kind: WidgetFeed.mosaicKind, intent: PhotoWidgetIntent.self, provider: PhotosProvider(mosaic: true)) { entry in
-            PhotoMosaicView(entry: entry)
-        }
-        .configurationDisplayName("Photo Mosaic")
-        .description("Several photos at once from the source you choose.")
-        .supportedFamilies([.systemMedium, .systemLarge, .systemExtraLarge])
-        .contentMarginsDisabled()
-        .containerBackgroundRemovable(false)
+        AppIntentConfiguration(kind: WidgetFeed.mosaicKind, intent: PhotoWidgetIntent.self, provider: IntentPhotosProvider<PhotoWidgetIntent>(mosaic: true)) { PhotoMosaicView(entry: $0) }
+            .configurationDisplayName("Photo Mosaic")
+            .description("Several photos at once. Right-click the widget to choose which ones.")
+            .supportedFamilies([.systemMedium, .systemLarge, .systemExtraLarge])
+            .photoWidget()
     }
 }
 
@@ -51,19 +110,24 @@ struct PhotoEntry: TimelineEntry {
     var pool = ""
 }
 
-struct PhotosProvider: AppIntentTimelineProvider {
+/// Entries for one source; shared by the fixed and the configurable widgets.
+struct PhotoTimeline {
     let mosaic: Bool
 
-    func placeholder(in context: Context) -> PhotoEntry { PhotoEntry(date: Date(), state: .placeholder) }
-
-    func snapshot(for configuration: PhotoWidgetIntent, in context: Context) async -> PhotoEntry {
-        let entry = entries(configuration, family: context.family, from: Date(), count: 1).first ?? PhotoEntry(date: Date(), state: .signedOut)
-        return entry.state == .ready || !context.isPreview ? entry : PhotoEntry(date: Date(), state: .placeholder)
+    func snapshot(_ source: WidgetFeed.Source?, family: WidgetFamily, isPreview: Bool) -> PhotoEntry {
+        let now = Date()
+        let entry = entries(source, family: family, from: now, count: 1, isPreview: isPreview).first ?? PhotoEntry(date: now, state: .signedOut)
+        guard entry.state != .ready, isPreview else { return entry }
+        // The widget gallery: show any photo the app prepared rather than an empty widget.
+        if let pool = WidgetFeed.load()?.pools.values.first(where: { !$0.photos.isEmpty }) {
+            return PhotoEntry(date: now, state: .ready, photos: WidgetFeed.photos(at: now, in: pool.photos, count: tiles(family)))
+        }
+        return PhotoEntry(date: now, state: .placeholder)
     }
 
-    func timeline(for configuration: PhotoWidgetIntent, in context: Context) async -> Timeline<PhotoEntry> {
+    func timeline(_ source: WidgetFeed.Source?, family: WidgetFamily) -> Timeline<PhotoEntry> {
         let now = Date()
-        let entries = entries(configuration, family: context.family, from: now, count: 6)
+        let entries = entries(source, family: family, from: now, count: 6, isPreview: false)
         guard entries.count > 1 || entries.first?.state == .ready else {
             // The app reloads the widgets as soon as it has photos.
             return Timeline(entries: entries, policy: .never)
@@ -72,7 +136,7 @@ struct PhotosProvider: AppIntentTimelineProvider {
         return Timeline(entries: entries, policy: .after(Date(timeIntervalSince1970: slot + Double(entries.count) * WidgetFeed.rotation)))
     }
 
-    private func tiles(_ family: WidgetFamily) -> Int {
+    func tiles(_ family: WidgetFamily) -> Int {
         guard mosaic else { return 1 }
         return switch family {
         case .systemMedium: 3
@@ -81,11 +145,15 @@ struct PhotosProvider: AppIntentTimelineProvider {
         }
     }
 
-    private func entries(_ configuration: PhotoWidgetIntent, family: WidgetFamily, from now: Date, count: Int) -> [PhotoEntry] {
+    private func entries(_ source: WidgetFeed.Source?, family: WidgetFamily, from now: Date, count: Int, isPreview: Bool) -> [PhotoEntry] {
         guard let manifest = WidgetFeed.load() else { return [PhotoEntry(date: now, state: .signedOut)] }
-        guard let source = configuration.feedSource else { return [PhotoEntry(date: now, state: .choose)] }
-        WidgetFeed.noteRequested(source)
-        guard let pool = manifest.pools[source.key] else { return [PhotoEntry(date: now, state: .loading)] }
+        guard let source else { return [PhotoEntry(date: now, state: .choose)] }
+        if !isPreview { WidgetFeed.noteRequested(source) }
+        guard let pool = manifest.pools[source.key] else {
+            // A running app prepares these photos within seconds and reloads the widget.
+            if !isPreview { WidgetFeed.postNeedsPhotos() }
+            return [PhotoEntry(date: now, state: .loading)]
+        }
         guard !pool.photos.isEmpty else { return [PhotoEntry(date: now, state: source == .chosen ? .noneChosen : .empty)] }
         let tiles = tiles(family)
         // The mosaic has its own "Next" position, so it doesn't move a photo widget with the same source.
@@ -97,6 +165,36 @@ struct PhotosProvider: AppIntentTimelineProvider {
             let date = step == 0 ? now : Date(timeIntervalSince1970: slot + Double(step) * WidgetFeed.rotation)
             return PhotoEntry(date: date, state: .ready, photos: WidgetFeed.photos(at: date, in: pool.photos, count: tiles, offset: offset), pool: rotation)
         }
+    }
+}
+
+struct FixedPhotosProvider: TimelineProvider {
+    let source: WidgetFeed.Source
+    private let timeline = PhotoTimeline(mosaic: false)
+
+    func placeholder(in context: Context) -> PhotoEntry { PhotoEntry(date: Date(), state: .placeholder) }
+
+    func getSnapshot(in context: Context, completion: @escaping (PhotoEntry) -> Void) {
+        completion(timeline.snapshot(source, family: context.family, isPreview: context.isPreview))
+    }
+
+    func getTimeline(in context: Context, completion: @escaping (Timeline<PhotoEntry>) -> Void) {
+        completion(timeline.timeline(source, family: context.family))
+    }
+}
+
+struct IntentPhotosProvider<Intent: PhotoSourceIntent>: AppIntentTimelineProvider {
+    var mosaic = false
+    private var timeline: PhotoTimeline { PhotoTimeline(mosaic: mosaic) }
+
+    func placeholder(in context: Context) -> PhotoEntry { PhotoEntry(date: Date(), state: .placeholder) }
+
+    func snapshot(for configuration: Intent, in context: Context) async -> PhotoEntry {
+        timeline.snapshot(configuration.feedSource, family: context.family, isPreview: context.isPreview)
+    }
+
+    func timeline(for configuration: Intent, in context: Context) async -> Timeline<PhotoEntry> {
+        timeline.timeline(configuration.feedSource, family: context.family)
     }
 }
 

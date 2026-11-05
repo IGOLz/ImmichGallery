@@ -5,11 +5,17 @@ import Foundation
 /// from, and library statistics. The widgets only read these files: they never contact the
 /// server and never see a credential.
 enum WidgetFeed {
-    /// The configurable photo widget. The kind is the 0.3.1 one, so widgets added then keep working.
-    static let photosKind = "FeaturedPhotos"
+    // One widget per source, so the gallery lists them all. "FeaturedPhotos" is the 0.3.1 kind.
+    static let featuredKind = "FeaturedPhotos"
+    static let favoritesKind = "FavoritePhotos"
+    static let albumKind = "AlbumPhotos"
+    static let personKind = "PersonPhotos"
+    static let placeKind = "PlacePhotos"
+    static let chosenKind = "ChosenPhotos"
+    /// Several photos at once, from any source chosen in its settings.
     static let mosaicKind = "PhotoMosaic"
     static let libraryKind = "LibraryStats"
-    static let photoKinds: Set<String> = [photosKind, mosaicKind]
+    static let photoKinds: Set<String> = [featuredKind, favoritesKind, albumKind, personKind, placeKind, chosenKind, mosaicKind]
     static let urlScheme = "immichgallery"
     /// How long each photo stays on the widget before the next one.
     static let rotation: TimeInterval = 3600
@@ -112,6 +118,17 @@ enum WidgetFeed {
     }
 
     static func fileURL(_ photo: Photo) -> URL? { imagesURL?.appendingPathComponent(photo.file) }
+
+    // MARK: Telling the app
+
+    /// Posted by a widget that has no photos yet, so a running app prepares them right away.
+    /// Sandboxed processes may only use Darwin notifications prefixed with their App Group.
+    static var needsPhotosNotification: String? { appGroup.map { $0 + ".widget-needs-photos" } }
+
+    static func postNeedsPhotos() {
+        guard let name = needsPhotosNotification else { return }
+        CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), CFNotificationName(name as CFString), nil, nil, true)
+    }
 
     // MARK: Shared defaults
 

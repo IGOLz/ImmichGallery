@@ -29,6 +29,8 @@ final class WidgetFeedUpdater {
     @ObservationIgnored private var activation: NSObjectProtocol?
     /// Pools to rebuild on the next refresh whatever their age.
     @ObservationIgnored private var dirty: Set<String> = []
+    /// Something asked for a refresh while one was running: check again when it ends.
+    @ObservationIgnored private var rerun = false
 
     private init() {}
 
@@ -48,6 +50,13 @@ final class WidgetFeedUpdater {
             // A click on a widget that waits for photos opens the app, which then fills it.
             activation = NotificationCenter.default.addObserver(forName: NSApplication.didBecomeActiveNotification, object: nil, queue: .main) { _ in
                 Task { @MainActor in WidgetFeedUpdater.shared.refreshIfNeeded() }
+            }
+            // A widget that was just added or set to a new album has no photos yet: prepare them now,
+            // even while the app is in the background.
+            if let name = WidgetFeed.needsPhotosNotification {
+                CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), nil, { _, _, _, _, _ in
+                    Task { @MainActor in WidgetFeedUpdater.shared.refreshIfNeeded() }
+                }, name as CFString, nil, .deliverImmediately)
             }
         }
         refreshIfNeeded()
@@ -92,7 +101,9 @@ final class WidgetFeedUpdater {
     }
 
     private func refreshIfNeeded() {
-        guard let services, task == nil, WidgetFeed.directory != nil else { return }
+        guard let services, WidgetFeed.directory != nil else { return }
+        guard task == nil else { rerun = true; return }
+        rerun = false
         let account = accountKey(services)
         let previous = WidgetFeed.load().flatMap { $0.account == account ? $0 : nil } ?? WidgetFeed.Manifest(account: account)
         let client = services.client
@@ -103,7 +114,7 @@ final class WidgetFeedUpdater {
             defer {
                 if self.services === services {
                     self.task = nil
-                    if !self.dirty.isEmpty { self.refreshIfNeeded() }
+                    if self.rerun || !self.dirty.isEmpty { self.refreshIfNeeded() }
                 }
             }
             guard let sources = await Self.installedSources() else { return }
@@ -143,9 +154,17 @@ final class WidgetFeedUpdater {
                 let ours = widgets.filter { WidgetFeed.photoKinds.contains($0.kind) || $0.kind == WidgetFeed.libraryKind }
                 guard !ours.isEmpty else { continuation.resume(returning: nil); return }
                 var sources: [WidgetFeed.Source] = []
-                for widget in ours where WidgetFeed.photoKinds.contains(widget.kind) {
-                    // Widgets added in 0.3.1 have no configuration and show featured photos.
-                    let source = widget.widgetConfigurationIntent(of: PhotoWidgetIntent.self).map(\.feedSource) ?? .featured
+                for widget in ours {
+                    let source: WidgetFeed.Source? = switch widget.kind {
+                    case WidgetFeed.featuredKind: .featured
+                    case WidgetFeed.favoritesKind: .favorites
+                    case WidgetFeed.chosenKind: .chosen
+                    case WidgetFeed.albumKind: widget.widgetConfigurationIntent(of: AlbumWidgetIntent.self)?.feedSource ?? WidgetDefaults.album(nil)
+                    case WidgetFeed.personKind: widget.widgetConfigurationIntent(of: PersonWidgetIntent.self)?.feedSource ?? WidgetDefaults.person(nil)
+                    case WidgetFeed.placeKind: widget.widgetConfigurationIntent(of: PlaceWidgetIntent.self)?.feedSource ?? WidgetDefaults.place(nil)
+                    case WidgetFeed.mosaicKind: widget.widgetConfigurationIntent(of: PhotoWidgetIntent.self).map(\.feedSource) ?? .featured
+                    default: nil
+                    }
                     if let source, !sources.contains(source) { sources.append(source) }
                 }
                 let photoWidgets = ours.contains { WidgetFeed.photoKinds.contains($0.kind) }
@@ -330,15 +349,18 @@ final class WidgetFeedUpdater {
 
     private nonisolated static func catalog(client: ImmichClient) async throws -> WidgetFeed.Catalog {
         typealias Item = WidgetFeed.Catalog.Item
+        // Most recent first: a new Album or Place widget starts with the first one.
         let albums = try await client.albums()
+            .sorted { ($0.lastModifiedAssetTimestamp ?? $0.updatedAt ?? "") > ($1.lastModifiedAssetTimestamp ?? $1.updatedAt ?? "") }
             .map { Item(id: $0.id, name: $0.albumName) }
-            .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
         // People in Immich's order (most photos first); unnamed faces can't be told apart in a list.
         let people = ((try? await client.people(page: 1))?.people ?? [])
             .filter { !$0.isHidden && !$0.name.isEmpty }
             .map { Item(id: $0.id, name: $0.name) }
-        let cities = Set(((try? await client.exploreCities()) ?? []).compactMap { $0.exifInfo?.city })
-        let places = cities.sorted { $0.localizedStandardCompare($1) == .orderedAscending }.map { Item(id: $0, name: $0) }
+        var places: [Item] = []
+        for asset in ((try? await client.exploreCities()) ?? []).sorted(by: { $0.localDateTime > $1.localDateTime }) {
+            if let city = asset.exifInfo?.city, !places.contains(where: { $0.id == city }) { places.append(Item(id: city, name: city)) }
+        }
         return WidgetFeed.Catalog(updated: Date(), albums: albums, people: people, places: places)
     }
 
