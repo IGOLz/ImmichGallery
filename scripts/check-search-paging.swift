@@ -61,6 +61,11 @@ final class PagingProtocol: URLProtocol, @unchecked Sendable {
             }
         }
         let body = try! JSONSerialization.jsonObject(with: requestData) as! [String: Any]
+        if body["type"] as? String == "VIDEO" {
+            assert(body["visibility"] as? String == "timeline", "Videos must exclude hidden Live Photo components and archived assets on every page")
+        } else {
+            assert(body["visibility"] == nil, "Filename and advanced searches must retain their own visibility rules")
+        }
         let firstPage = body["page"] as? Int == 1
         let data = Data((firstPage ? #"{"assets":{"items":[{"id":"asset-a","ownerId":"owner","type":"IMAGE","originalFileName":"a.jpg","fileCreatedAt":"2025-01-01T00:00:00Z","localDateTime":"2025-01-01T00:00:00Z","isFavorite":false,"isTrashed":false}],"nextPage":"2"}}"# : #"{"message":"Simulated page failure"}"#).utf8)
         let response = HTTPURLResponse(url: request.url!, statusCode: firstPage ? 200 : 500, httpVersion: nil, headerFields: nil)!

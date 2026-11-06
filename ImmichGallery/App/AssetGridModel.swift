@@ -339,7 +339,8 @@ final class AssetGridModel {
         case .explore(let source):
             result = try await session.client.exploreAssets(source, page: page)
         case .videos:
-            result = try await session.client.metadataSearch(type: .video, page: page)
+            // Live Photo motion components are hidden and have no standalone thumbnails.
+            result = try await session.client.metadataSearch(type: .video, visibility: "timeline", page: page)
         default:
             return
         }
