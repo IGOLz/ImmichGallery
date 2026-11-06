@@ -16,10 +16,10 @@ struct AssetViewer: View {
 
     var body: some View {
         ZStack {
-            if !isPresentation { Color.black.opacity(0.92).ignoresSafeArea() }
+            if !isPresentation { Color(nsColor: .windowBackgroundColor).ignoresSafeArea() }
 
             if viewer?.window != nil && !isPresentation {
-                Color.black
+                Color(nsColor: .windowBackgroundColor)
             } else if item.isVideo {
                 VideoPlayerView(url: session.client.videoURL(item.id), headers: session.client.credential?.headers ?? [:],
                                 playing: viewer?.slideshow != true || viewer?.paused != true,
@@ -377,7 +377,6 @@ private struct ViewerVideoOptionsPlacement: ViewModifier {
         } else {
             content.safeAreaInset(edge: .top, spacing: 0) {
                 HStack { Spacer(); options }.padding(.horizontal, 12).padding(.vertical, 4)
-                    .environment(\.colorScheme, .dark) // sits on the black viewer background
             }
         }
     }

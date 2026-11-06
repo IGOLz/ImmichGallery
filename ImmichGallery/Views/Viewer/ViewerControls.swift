@@ -132,6 +132,7 @@ struct ViewerPresentation: View {
                 .onHover { overControls = $0 }
             }
         }
+        .environment(\.colorScheme, .dark)
         .animation(state.fade ? .easeInOut(duration: 0.35) : nil, value: state.model.viewerID)
         .focusedSceneValue(\.viewerState, state)
         .alert("Something Went Wrong", isPresented: Binding(get: { state.model.lastError != nil }, set: { if !$0 { state.model.lastError = nil } })) {
