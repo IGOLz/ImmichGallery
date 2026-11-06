@@ -114,7 +114,11 @@ struct AssetGridHost<Header: View>: View {
         } message: {
             Text(model.lastError ?? "")
         }
-        .onChange(of: model.viewerID) { playLive = false }
+        .onChange(of: model.viewerID) { _, id in
+            playLive = false
+            if id == nil { showInspector = false }
+        }
+        .onDisappear { showInspector = false }
         .modifier(ViewerIntegration(model: model))
     }
 
