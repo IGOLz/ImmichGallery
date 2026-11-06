@@ -12,6 +12,7 @@ struct OriginalTransfer: Transferable, Identifiable, Sendable {
         FileRepresentation(exportedContentType: .data) { item in
             SentTransferredFile(try await item.client.macIntegrationOriginal(item.id), allowAccessingOriginalFile: true)
         }
+        ProxyRepresentation(exporting: { _ in OriginalDragMarker() })
     }
 }
 

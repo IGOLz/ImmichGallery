@@ -48,7 +48,7 @@ extension View {
             draggable(OriginalTransfer.self, item: isEnabled ? item : nil)
         } else {
             // Parent gestures use their own content shape, so they still get events.
-            draggable(item).allowsHitTesting(isEnabled)
+            legacyAssetDrag(original: item).allowsHitTesting(isEnabled)
         }
     }
 }
@@ -58,7 +58,7 @@ extension View {
     /// file promise only, so album drop targets never saw the asset IDs. This provider carries
     /// both: the selected IDs (in-app only, for album drops) and the dragged photo's original
     /// (for the Finder), downloaded on demand.
-    func legacyAssetDrag(albumIDs: AlbumAssetTransfer, original: OriginalTransfer) -> some View {
+    func legacyAssetDrag(albumIDs: AlbumAssetTransfer? = nil, original: OriginalTransfer) -> some View {
         onDrag {
             let provider = NSItemProvider()
             // The Finder names the file when the drag starts, before the original (and its real
@@ -72,7 +72,11 @@ extension View {
                 }
                 return nil
             }
-            if let data = try? JSONEncoder().encode(albumIDs) {
+            provider.registerDataRepresentation(forTypeIdentifier: UTType.immichOriginalDrag.identifier, visibility: .all) { completion in
+                completion(try? JSONEncoder().encode(OriginalDragMarker()), nil)
+                return nil
+            }
+            if let albumIDs, let data = try? JSONEncoder().encode(albumIDs) {
                 provider.registerDataRepresentation(forTypeIdentifier: UTType.albumAssetIDs.identifier, visibility: .all) { completion in
                     completion(data, nil)
                     return nil

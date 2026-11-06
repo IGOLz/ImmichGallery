@@ -117,13 +117,12 @@ struct UploadDropModifier: ViewModifier {
     @State private var targeted = false
     func body(content: Content) -> some View {
         content
-            .onDrop(of: [UTType.fileURL], isTargeted: $targeted) { providers in
-                Self.enqueue(providers, queue: queue, albumID: albumID)
-            }
+            .onDrop(of: [UTType.fileURL], delegate: UploadFileDrop(queue: queue, albumID: albumID, targeted: $targeted))
             .overlay { if targeted { RoundedRectangle(cornerRadius: 8).stroke(Color.accentColor, lineWidth: 3).allowsHitTesting(false) } }
     }
 
     static func enqueue(_ providers: [NSItemProvider], queue: UploadQueue, albumID: String?) -> Bool {
+        guard !providers.isEmpty, !UploadDropPolicy.isInternal(providers) else { return false }
         Task { @MainActor in
             var urls: [URL] = []
             for provider in providers {
@@ -136,5 +135,24 @@ struct UploadDropModifier: ViewModifier {
             else { queue.lastError = String(localized: "The dropped files could not be read. Try Import… instead.") }
         }
         return !providers.isEmpty
+    }
+}
+
+private struct UploadFileDrop: DropDelegate {
+    let queue: UploadQueue
+    let albumID: String?
+    @Binding var targeted: Bool
+
+    func validateDrop(info: DropInfo) -> Bool {
+        info.hasItemsConforming(to: [.fileURL]) && !UploadDropPolicy.isInternal(info.itemProviders(for: [.fileURL]))
+    }
+
+    func dropEntered(info: DropInfo) { targeted = validateDrop(info: info) }
+    func dropExited(info: DropInfo) { targeted = false }
+
+    func performDrop(info: DropInfo) -> Bool {
+        targeted = false
+        guard validateDrop(info: info) else { return false }
+        return UploadDropModifier.enqueue(info.itemProviders(for: [.fileURL]), queue: queue, albumID: albumID)
     }
 }
