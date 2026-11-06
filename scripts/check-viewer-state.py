@@ -20,6 +20,9 @@ def method(name, source=source):
 
 harness = r'''
 import Foundation
+class NSText: NSObject {}
+struct TestWindow { var firstResponder: NSObject? }
+@MainActor enum NSApp { static var keyWindow: TestWindow? }
 enum NSCursor { static func setHiddenUntilMouseMoves(_ hidden: Bool) {} }
 struct AssetItem { let id: String; var isVideo = false }
 enum PressKey { case leftArrow, rightArrow, space, escape, `return`, delete, deleteForward }
@@ -95,6 +98,13 @@ harness += r'''
         assert(keyboardState.paused && keyboardState.model.viewerID == "a")
         _ = keys.handleKey(KeyPress(key: .escape))
         assert(keyboardState.model.viewerID == nil)
+        keyboardState.model.viewerID = "a"
+        NSApp.keyWindow = TestWindow(firstResponder: NSText())
+        assert(keys.handleKey(KeyPress(key: .rightArrow)) == .ignored)
+        assert(keys.handleKey(KeyPress(key: .space)) == .ignored)
+        assert(keys.handleKey(KeyPress(key: .return, characters: ".")) == .ignored)
+        assert(keyboardState.model.viewerID == "a", "Editing photo details must not navigate or close the viewer")
+        NSApp.keyWindow = nil
 
         let state = ViewerState()
         state.sequence = ["a", "c", "b"]

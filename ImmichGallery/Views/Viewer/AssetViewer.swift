@@ -13,45 +13,57 @@ struct AssetViewer: View {
     @Environment(\.viewerContext) private var viewer
     var isPresentation = false
     @FocusState private var isFocused: Bool
+    @State private var isZoomed = false
 
     var body: some View {
-        ZStack {
-            if !isPresentation { Color(nsColor: .windowBackgroundColor).ignoresSafeArea() }
-
-            if viewer?.window != nil && !isPresentation {
-                Color(nsColor: .windowBackgroundColor)
-            } else if item.isVideo {
-                VideoPlayerView(url: session.client.videoURL(item.id), headers: session.client.credential?.headers ?? [:],
-                                playing: viewer?.slideshow != true || viewer?.paused != true,
-                                onFinished: videoFinished,
-                                onProgress: { viewer?.videoStalledElapsed = 0 },
-                                onFailed: { if viewer?.slideshow == true && viewer?.paused != true { viewer?.step(1) } })
-                    .id("\(item.id)-\(viewer?.playbackGeneration ?? 0)")
-                    .modifier(ViewerVideoOptionsPlacement(visible: !isPresentation || viewer?.controlsVisible != false))
-                    .draggable(OriginalTransfer(id: item.id, isVideo: true, client: session.client))
+        Group {
+            if isPresentation {
+                media
             } else {
-                ZoomableImage(item: item, rotation: viewer?.rotation ?? 0, showsFaces: !isPresentation)
-                    .id(item.id)
-                if playLive, let videoID = item.livePhotoVideoID {
-                    VideoPlayerView(
-                        url: session.client.videoURL(videoID),
-                        headers: session.client.credential?.headers ?? [:],
-                        showsControls: false,
-                        onFinished: { playLive = false })
-                        .id(videoID)
-                        .allowsHitTesting(false)
+                GeometryReader { geometry in
+                    ScrollViewReader { scroll in
+                        ScrollView {
+                            LazyVStack(spacing: 0) {
+                                media
+                                    .frame(height: geometry.size.height)
+                                    .id("photo")
+                                    .overlay(alignment: .bottom) {
+                                        if !isZoomed {
+                                            Button {
+                                                withAnimation { scroll.scrollTo("details", anchor: .top) }
+                                            } label: {
+                                                Label("Info", systemImage: "chevron.up")
+                                            }
+                                            .buttonStyle(.plain)
+                                            .padding(10)
+                                            .adaptiveGlass(in: .capsule)
+                                            .padding(.bottom, 12)
+                                        }
+                                    }
+                                VStack(spacing: 0) {
+                                    HStack {
+                                        Text("Info").font(.title2.bold())
+                                        Spacer()
+                                        Button {
+                                            withAnimation { scroll.scrollTo("photo", anchor: .top) }
+                                            isFocused = true
+                                        } label: { Label("Back to Photo", systemImage: "chevron.down") }
+                                    }
+                                    .padding(.horizontal, 16)
+                                    .padding(.top, 20)
+                                    AssetInspector(assetID: item.id, scrollable: false)
+                                }
+                                .frame(maxWidth: 720)
+                                .frame(maxWidth: .infinity)
+                                .id("details")
+                            }
+                        }
+                        .scrollDisabled(isZoomed)
+                    }
                 }
-            }
-
-            if !isPresentation {
-                HStack {
-                    navButton("chevron.left", delta: -1)
-                    Spacer()
-                    navButton("chevron.right", delta: 1)
-                }
-                .padding(.horizontal, 16)
             }
         }
+
         .safeAreaInset(edge: .top) { if !isPresentation { AssetsStackButton(item: item, model: model).id(item.id) } }
         .deferredContextMenu {
             if let viewer {
@@ -79,6 +91,46 @@ struct AssetViewer: View {
         .onKeyPress(action: handleKey)
         .onExitCommand { if isPresentation { viewer?.close() } else { model.viewerID = nil } }
         .task(id: item.id) { await prefetchNeighbours() }
+    }
+
+    private var media: some View {
+        ZStack {
+            if !isPresentation { Color(nsColor: .windowBackgroundColor).ignoresSafeArea() }
+
+            if viewer?.window != nil && !isPresentation {
+                Color(nsColor: .windowBackgroundColor)
+            } else if item.isVideo {
+                VideoPlayerView(url: session.client.videoURL(item.id), headers: session.client.credential?.headers ?? [:],
+                                playing: viewer?.slideshow != true || viewer?.paused != true,
+                                onFinished: videoFinished,
+                                onProgress: { viewer?.videoStalledElapsed = 0 },
+                                onFailed: { if viewer?.slideshow == true && viewer?.paused != true { viewer?.step(1) } })
+                    .id("\(item.id)-\(viewer?.playbackGeneration ?? 0)")
+                    .modifier(ViewerVideoOptionsPlacement(visible: !isPresentation || viewer?.controlsVisible != false))
+                    .draggable(OriginalTransfer(id: item.id, isVideo: true, client: session.client))
+            } else {
+                ZoomableImage(item: item, rotation: viewer?.rotation ?? 0, showsFaces: !isPresentation, isZoomed: $isZoomed)
+                    .id(item.id)
+                if playLive, let videoID = item.livePhotoVideoID {
+                    VideoPlayerView(
+                        url: session.client.videoURL(videoID),
+                        headers: session.client.credential?.headers ?? [:],
+                        showsControls: false,
+                        onFinished: { playLive = false })
+                        .id(videoID)
+                        .allowsHitTesting(false)
+                }
+            }
+
+            if !isPresentation {
+                HStack {
+                    navButton("chevron.left", delta: -1)
+                    Spacer()
+                    navButton("chevron.right", delta: 1)
+                }
+                .padding(.horizontal, 16)
+            }
+        }
     }
 
     private var videoFinished: (@MainActor @Sendable () -> Void)? {
@@ -116,6 +168,7 @@ struct AssetViewer: View {
     }
 
     private func handleKey(_ press: KeyPress) -> KeyPress.Result {
+        guard !(NSApp.keyWindow?.firstResponder is NSText) else { return .ignored }
         if isPresentation {
             if press.key == .escape { viewer?.close(); return .handled }
             if press.key == .return { return .handled }
@@ -147,6 +200,7 @@ private struct ZoomableImage: View {
     let item: AssetItem
     let rotation: Int
     var showsFaces = true
+    @Binding var isZoomed: Bool
     @AppStorage(HDRPhotos.enabledKey) private var showHDR = true
 
     @State private var image: CGImage?
@@ -202,6 +256,7 @@ private struct ZoomableImage: View {
         .clipped()
         .task { await load() }
         .task(id: [showHDR, hasOriginal]) { await loadDetail() }
+        .onChange(of: scale * gestureScale) { _, value in isZoomed = value > 1 }
         .onChange(of: scale) { _, newValue in
             if newValue > 1.1 { hasOriginal = true }
         }

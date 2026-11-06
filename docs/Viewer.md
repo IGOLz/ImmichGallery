@@ -14,6 +14,8 @@ For issue #7, the updated isolated Dev app was built, installed and launched. Re
 
 Neighbour preview prefetching uses the slideshow sequence for selection/shuffle and the grid order otherwise, through the existing pipeline. Face overlays belong to the People feature. Optional filmstrips were omitted.
 
+The inline viewer scrolls vertically to show the photo’s existing Info details underneath, including location, people, albums and camera metadata when available. The Info button scrolls to the details, and Back to Photo returns to the image. Each newly opened asset starts at the photo. Scrolling is disabled while the image is zoomed so panning remains available. The sidebar inspector keeps its own scrolling; full-screen viewing and slideshows keep their existing layout. Text editing in the embedded details does not trigger viewer keyboard shortcuts.
+
 ## HDR photos
 
 Immich previews are SDR (the server tone maps HDR originals), so on a Mac with an EDR-capable display the viewer downloads the original and decodes it with `kCGImageSourceDecodeToHDR` (macOS 14+). That decode applies Apple and ISO 21496-1 gain maps (HEIC, JPEG, AVIF) and keeps HLG/PQ highlights. Only photos whose decoded image has a content headroom above 1 are shown in HDR; the others keep the SDR preview, and the pipeline remembers them for the session so their original isn't downloaded again. Before downloading, the viewer reads the asset's `originalMimeType` and skips RAW, GIF and other formats that can't carry HDR. On SDR-only displays, or with Settings › Show Photos in High Dynamic Range off, nothing changes.

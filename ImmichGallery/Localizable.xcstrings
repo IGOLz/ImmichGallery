@@ -8934,6 +8934,16 @@
           }
         }
       }
+    },
+    "Back to Photo": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Torna alla foto"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
