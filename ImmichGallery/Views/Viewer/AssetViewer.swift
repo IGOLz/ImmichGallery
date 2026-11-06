@@ -193,7 +193,7 @@ struct AssetViewer: View {
 }
 
 /// Shows the cached thumbnail instantly, then the preview, and fetches the original once the
-/// user zooms in past 1×. Pinch or double-click to zoom, drag to pan. On an HDR display, HDR
+/// user zooms in past 1×. Pinch or double-click to zoom, drag or scroll to pan. On an HDR display, HDR
 /// originals are drawn in extended dynamic range over the SDR preview.
 private struct ZoomableImage: View {
     @Environment(LibrarySession.self) private var session
@@ -254,6 +254,10 @@ private struct ZoomableImage: View {
             }
         }
         .clipped()
+        .background(ViewerScrollPan(isEnabled: scale * gestureScale > 1) { delta in
+            offset.width += delta.width
+            offset.height += delta.height
+        })
         .task { await load() }
         .task(id: [showHDR, hasOriginal]) { await loadDetail() }
         .onChange(of: scale * gestureScale) { _, value in isZoomed = value > 1 }

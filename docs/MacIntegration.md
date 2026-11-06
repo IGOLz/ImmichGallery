@@ -23,7 +23,9 @@ Implemented for macOS 26 without new dependencies or targets. Since 0.2.0 the de
 
 The installed CoreTransferable SDK requires a static exportedContentType in FileRepresentation. Grid timeline DTOs provide no original filename or MIME type, so a truthful per-item UTType cannot be derived before the drag without additional metadata requests. Promises now advertise generic file data, preserving the actual filename/extension from Content-Disposition, instead of advertising all RAW/HEIC files as image or all videos as movie. Receivers requiring an exact pre-advertised UTType still need a future metadata-backed NSFilePromiseProvider implementation. No speculative type is assigned.
 
-The viewer's drag source is attached to the displayed image, not its container or navigation controls. It is disabled above 1× zoom; the pan gesture is enabled only when zoomed. Videos retain their own drag source. Gesture behavior still needs manual UI verification.
+The viewer's drag source is attached to the displayed image, not its container or navigation controls. It is disabled above 1× zoom; the pan gesture is enabled only when zoomed. Videos retain their own drag source.
+
+Zoomed photos also pan with two-finger trackpad scrolling, including momentum, in the inline and presentation viewers. `ViewerScrollPan` consumes native scroll deltas on both axes only inside the visible photo viewport in its own window while zoomed. At 1×, events pass through so the inline viewer can scroll to photo details. `Tests/ViewerScrollPanChecks.swift` covers both axes, event consumption, pointer/window scope, zoom reset and detached views. The updated Dev app was built, installed and opened; automated UI scrolling confirmed vertical panning and scrolling to details after resetting zoom. Physical trackpad gestures and horizontal UI movement remain manual checks; the automation produced no visible horizontal movement.
 
 ## Verification for review fixes
 
