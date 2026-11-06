@@ -84,7 +84,7 @@ struct SearchView: View {
             }
             .fixedSize()
             .accessibilityLabel("Sort Results")
-            .help("Default order uses relevance for smart search and newest first for other searches. Sorting smart results by date loads all results first.")
+            .help("Default order uses relevance for smart search and newest first for other searches. Date sorting uses up to the 500 most relevant smart search results.")
             Menu {
                 ForEach(Array(history.entries.enumerated()), id: \.offset) { _, entry in
                     Button(([entry.text] + entry.chips).filter { !$0.isEmpty }.joined(separator: ", ")) { selectQuery(entry) }
@@ -132,7 +132,7 @@ struct SearchView: View {
                 }
             }
             if query.mode == .context && session.features.smartSearch && !query.text.isEmpty && query.sort != .automatic {
-                Text("Sorting by date loads all smart search results first. Large searches may take time and use more memory.")
+                Text("Showing up to the 500 most relevant smart search results, sorted by date.")
                     .font(.caption).foregroundStyle(.secondary).padding(.horizontal, 16).padding(.bottom, 8)
             }
             Divider()

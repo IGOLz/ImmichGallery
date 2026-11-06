@@ -9,6 +9,7 @@ final class SearchSortProtocol: URLProtocol, @unchecked Sendable {
     static let failSecondPage = Mutex(false)
     static let repeatPage = Mutex(false)
     static let fallback = Mutex(false)
+    static let largePageSize = Mutex<Int?>(nil)
     override class func canInit(with request: URLRequest) -> Bool { true }
     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
     override func startLoading() {
@@ -30,11 +31,20 @@ final class SearchSortProtocol: URLProtocol, @unchecked Sendable {
         if metadata { assert(body["order"] as? String == "asc") }
         else { assert(body["order"] == nil, "Upstream smart search must not receive unsupported order") }
         let dates = page == 1 ? [("a", "2020-01-01T00:00:00Z"), ("b", "2025-01-01T01:00:00+01:00")] : [("c", "2025-01-01T00:00:00.500Z"), ("d", "2010-01-01T00:00:00Z")]
-        let items = dates.map { id, date in
+        var items = dates.map { id, date in
             ["id": id, "type": "IMAGE", "originalFileName": id + ".jpg", "fileCreatedAt": date, "localDateTime": date, "isFavorite": false, "isTrashed": false] as [String: Any]
+        }
+        if let count = Self.largePageSize.withLock({ $0 }) {
+            assert(body["size"] as? Int == 500)
+            items = (0..<count).map { offset in
+                let rank = (page - 1) * count + offset
+                let date = Date(timeIntervalSince1970: Double(rank) * 86400).ISO8601Format()
+                return ["id": "rank-\(rank)", "type": "IMAGE", "originalFileName": "photo.jpg", "fileCreatedAt": date, "localDateTime": date, "isFavorite": false, "isTrashed": false]
+            }
         }
         var assets: [String: Any] = ["items": items]
         if page == 1 { assets["nextPage"] = "2" }
+        if Self.largePageSize.withLock({ $0 != nil }) { assets["nextPage"] = String(page + 1) }
         if Self.repeatPage.withLock({ $0 }) { assets["nextPage"] = "1" }
         let notFound = !metadata && Self.fallback.withLock { $0 }
         let failed = page == 2 && Self.failSecondPage.withLock { $0 }
@@ -127,7 +137,7 @@ final class SearchSortProtocol: URLProtocol, @unchecked Sendable {
             let smart = try body(true)
             assert(metadata["order"] as? String == (sort == .oldest ? "asc" : "desc"))
             assert(smart["order"] == nil)
-            assert(smart["size"] as? Int == (sort == .automatic ? 100 : 1000))
+            assert(smart["size"] as? Int == (sort == .automatic ? 100 : 500))
             let restored = try JSONDecoder().decode(SearchQuery.self, from: JSONEncoder().encode(query))
             assert(restored == query)
         }
@@ -145,6 +155,23 @@ final class SearchSortProtocol: URLProtocol, @unchecked Sendable {
             assert(SearchSortProtocol.pages.withLock { $0 } == (sort == .automatic ? [1] : [1, 2]))
             assert(result.nextPage == (sort == .automatic ? "2" : nil))
         }
+        // Lower relevance ranks have newer dates: truncation must happen before sorting.
+        // Cover a full first page, a server returning smaller pages, and an oversized response.
+        for pageSize in [500, 300, 600] {
+            SearchSortProtocol.largePageSize.withLock { $0 = pageSize }
+            for sort in [SearchSort.newest, .oldest] {
+                sortedQuery.sort = sort
+                SearchSortProtocol.pages.withLock { $0 = [] }
+                let result = try await client.advancedSearch(sortedQuery, smartEnabled: true, page: .init(page: 1)) { count in
+                    assert(count <= 500)
+                }
+                let ranks = sort == .newest ? Array((0..<500).reversed()) : Array(0..<500)
+                assert(result.items.map(\.id) == ranks.map { "rank-\($0)" })
+                assert(result.nextPage == nil && result.nextCursor == nil)
+                assert(SearchSortProtocol.pages.withLock { $0 } == (pageSize < 500 ? [1, 2] : [1]))
+            }
+        }
+        SearchSortProtocol.largePageSize.withLock { $0 = nil }
         SearchSortProtocol.failSecondPage.withLock { $0 = true }
         do {
             _ = try await client.advancedSearch(sortedQuery, smartEnabled: true, page: .init(page: 1))

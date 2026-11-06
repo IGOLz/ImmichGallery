@@ -8635,22 +8635,22 @@
         }
       }
     },
-    "Default order uses relevance for smart search and newest first for other searches. Sorting smart results by date loads all results first.": {
+    "Default order uses relevance for smart search and newest first for other searches. Date sorting uses up to the 500 most relevant smart search results.": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "L’ordine predefinito usa la rilevanza per la ricerca intelligente e mostra prima i più recenti per le altre ricerche. L’ordinamento per data della ricerca intelligente carica prima tutti i risultati."
+            "value": "L’ordine predefinito usa la rilevanza per la ricerca intelligente e mostra prima i più recenti per le altre ricerche. L’ordinamento per data considera fino ai 500 risultati più pertinenti della ricerca intelligente."
           }
         }
       }
     },
-    "Sorting by date loads all smart search results first. Large searches may take time and use more memory.": {
+    "Showing up to the 500 most relevant smart search results, sorted by date.": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "L’ordinamento per data carica prima tutti i risultati della ricerca intelligente. Le ricerche ampie possono richiedere tempo e più memoria."
+            "value": "Sono mostrati fino ai 500 risultati più pertinenti della ricerca intelligente, ordinati per data."
           }
         }
       }

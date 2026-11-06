@@ -13,21 +13,22 @@ extension ImmichClient {
             return response.assets
         }
         guard smart, query.sort != .automatic else { return response.assets }
-        // Immich smart search has no date order. Sort the complete result set,
-        // so dates remain ordered across page boundaries on upstream and Noodle.
+        // Keep the server’s most relevant matches before sorting by date,
+        // so weak matches from later pages cannot displace them.
+        let limit = AdvancedSearchRequest.smartDateResultLimit
         var seen: Set<String> = []
-        var items = response.assets.items.filter { seen.insert($0.id).inserted }
+        var items = Array(response.assets.items.filter { seen.insert($0.id).inserted }.prefix(limit))
         var current = 1
         await progress?(items.count)
         var next = response.assets.nextPage
-        while let token = next {
+        while items.count < limit, let token = next {
             guard let number = Int(token), number > current else {
                 throw ImmichError.http(502, String(localized: "Invalid search pagination"))
             }
             current = number
             try Task.checkCancellation()
             let response: SearchResponse = try await send("POST", "search/smart", body: AdvancedSearchRequest(query, smart: true, page: .init(page: number)))
-            items.append(contentsOf: response.assets.items.filter { seen.insert($0.id).inserted })
+            items.append(contentsOf: response.assets.items.filter { seen.insert($0.id).inserted }.prefix(limit - items.count))
             await progress?(items.count)
             next = response.assets.nextPage
         }

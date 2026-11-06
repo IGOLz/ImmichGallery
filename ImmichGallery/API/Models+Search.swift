@@ -134,6 +134,8 @@ struct SearchQuery: Codable, Hashable, Sendable {
 /// Both endpoints accept these flat filters in v2 and v3.3.5. The latter deprecates
 /// them in favor of SearchFilter, but still uses them in its own web client.
 struct AdvancedSearchRequest: Encodable {
+    static let smartDateResultLimit = 500
+
     var query: String?
     var originalFileName: String?
     var description: String?
@@ -162,7 +164,7 @@ struct AdvancedSearchRequest: Encodable {
         let text = value(search.text.trimmingCharacters(in: .whitespacesAndNewlines))
         if smart {
             query = text
-            if search.sort != .automatic { size = 1000 }
+            if search.sort != .automatic { size = Self.smartDateResultLimit }
         }
         else {
             switch search.mode {
