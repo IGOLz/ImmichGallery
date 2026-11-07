@@ -8,7 +8,7 @@ cask "immich-gallery" do
   homepage "https://github.com/IGOLz/ImmichGallery"
 
   auto_updates true
-  depends_on macos: ">= :sequoia"
+  depends_on macos: :sequoia
 
   app "ImmichGallery.app"
 end

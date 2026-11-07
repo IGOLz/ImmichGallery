@@ -17,7 +17,7 @@ class HomebrewChecks(unittest.TestCase):
         cask = homebrew.render('v0.4.5', 'a' * 64)
         self.assertIn('version "0.4.5"', cask)
         self.assertIn('sha256 "' + 'a' * 64 + '"', cask)
-        self.assertIn('depends_on macos: ">= :sequoia"', cask)
+        self.assertIn('depends_on macos: :sequoia', cask)
         for tag in ['v0.4.5-beta', '../bad', 'latest']:
             with self.assertRaises(ValueError):
                 homebrew.render(tag, 'a' * 64)
