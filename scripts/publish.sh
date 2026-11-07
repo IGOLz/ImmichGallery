@@ -31,3 +31,12 @@ gh release create "$TAG" -R "$REPO" --draft --title "Immich Gallery $VERSION" "$
 echo "→ Publishing $TAG"
 gh release edit "$TAG" -R "$REPO" --draft=false
 echo "✓ https://github.com/$REPO/releases/tag/$TAG"
+
+# Prereleases never change the stable Homebrew channel.
+if [[ "${1:-}" != "--prerelease" ]]; then
+  echo "→ Updating the Homebrew tap"
+  python3 scripts/update-homebrew.py "$TAG" || {
+    echo "Release is live; retry: python3 scripts/update-homebrew.py $TAG" >&2
+    exit 1
+  }
+fi

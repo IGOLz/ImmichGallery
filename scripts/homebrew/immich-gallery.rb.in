@@ -1,0 +1,14 @@
+cask "immich-gallery" do
+  version "@VERSION@"
+  sha256 "@SHA256@"
+
+  url "https://github.com/IGOLz/ImmichGallery/releases/download/v#{version}/ImmichGallery-#{version}.dmg"
+  name "Immich Gallery"
+  desc "Native client for your Immich photo and video library"
+  homepage "https://github.com/IGOLz/ImmichGallery"
+
+  auto_updates true
+  depends_on macos: ">= :sequoia"
+
+  app "ImmichGallery.app"
+end

@@ -37,6 +37,18 @@ Immich has a great web app and mobile apps, but on the Mac you live in a browser
 
 ## Install
 
+With [Homebrew](https://brew.sh), run:
+
+```sh
+brew install --cask igolz/tap/immich-gallery
+```
+
+If Homebrew asks you to trust this third-party cask, run `brew trust --cask igolz/tap/immich-gallery`, then repeat the install command.
+
+The [official tap](https://github.com/IGOLz/homebrew-tap) installs the same signed and notarized app as the download below. The app can update itself. To update through Homebrew instead, run `brew update` followed by `brew upgrade --cask --greedy igolz/tap/immich-gallery`.
+
+Or install manually:
+
 1. Download **ImmichGallery-x.y.z.dmg** from the [latest release](https://github.com/IGOLz/ImmichGallery/releases/latest).
 2. Open it and drag **Immich Gallery** to Applications.
 3. Sign in with your server address and your email and password, or an API key.
@@ -192,7 +204,7 @@ The app targets the Immich v3.3 API ([OpenAPI spec](https://github.com/immich-ap
 <details>
 <summary><b>Releasing</b></summary>
 
-`scripts/release.sh` archives the app with your Developer ID certificate, notarizes and staples it, and writes a DMG, a zip and the in-app update feed (`appcast.xml`) to `build/release/`. Bump `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION` in the project first. `scripts/publish.sh` then publishes them as the latest GitHub release. See [docs/Updates.md](docs/Updates.md) for the update feed and its signing key.
+`scripts/release.sh` archives the app with your Developer ID certificate, notarizes and staples it, and writes a DMG, a zip and the in-app update feed (`appcast.xml`) to `build/release/`. Bump `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION` in the project first. `scripts/publish.sh` then publishes them as the latest GitHub release. See [docs/Updates.md](docs/Updates.md) for the update feed and its signing key. After publishing a stable release, the publisher updates the [Homebrew tap](https://github.com/IGOLz/homebrew-tap) with its version and verified DMG checksum, using your existing GitHub CLI login. Prereleases leave the tap unchanged. If a tap update fails after publication, retry with `python3 scripts/update-homebrew.py vX.Y.Z`; the release is already live. Run `python3 Tests/HomebrewChecks.py` to check the tap publisher offline.
 
 For repeat releases on the same Mac, save the notarization configuration in `.release.env` at the repository root. The script loads it automatically; Git ignores it. Store only the key path and identifiers there, keeping the private key outside the repository. Use shell defaults so environment overrides still work:
 

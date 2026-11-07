@@ -87,3 +87,21 @@ terminal running the script to automate Finder. The app itself still supports ma
 ## Release issue completion
 
 Stable releases also complete their ready issues through GitHub Actions. Use a milestone matching the release tag and mark reviewed, verified fixes with `ready-for-release`. See [the release issue workflow](ReleaseIssues.md) for preparation, simulation, activation, and recovery. Prereleases leave issues open.
+
+## Homebrew
+
+Stable releases published with `scripts/publish.sh` also update the official
+[Homebrew tap](https://github.com/IGOLz/homebrew-tap). The publisher downloads the
+published DMG, verifies it against `SHA256SUMS.txt`, and commits its version and
+checksum to the tap using your GitHub CLI login. That account needs write access
+to both repositories. The cask template lives in `scripts/homebrew/immich-gallery.rb.in`.
+
+Prereleases do not change the tap. After promoting a prerelease to the latest
+stable release in GitHub, or to retry a failed tap update, run:
+
+```sh
+python3 scripts/update-homebrew.py vX.Y.Z
+```
+
+The command accepts only the latest published stable release and is safe to repeat.
+Check it offline with `python3 Tests/HomebrewChecks.py`.
