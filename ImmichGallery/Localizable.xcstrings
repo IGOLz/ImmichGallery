@@ -1,6 +1,56 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "No Matching Albums": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nessun album corrispondente"
+          }
+        }
+      }
+    },
+    "No albums match the selected filter.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nessun album corrisponde al filtro selezionato."
+          }
+        }
+      }
+    },
+    "Show All Albums": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostra tutti gli album"
+          }
+        }
+      }
+    },
+    "Group Order": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ordine dei gruppi"
+          }
+        }
+      }
+    },
+    "Album Order": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ordine degli album"
+          }
+        }
+      }
+    },
     "": {
       "localizations": {
         "it": {
@@ -1977,6 +2027,16 @@
         }
       }
     },
+    "All Albums": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tutti gli album"
+          }
+        }
+      }
+    },
     "All faces of %@ will move to %@. This cannot be undone.": {
       "localizations": {
         "it": {
@@ -2119,6 +2179,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Archiviati"
+          }
+        }
+      }
+    },
+    "Ascending": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crescente"
           }
         }
       }
@@ -2983,6 +3053,26 @@
         }
       }
     },
+    "Date Created": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Data di creazione"
+          }
+        }
+      }
+    },
+    "Date Modified": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Data di modifica"
+          }
+        }
+      }
+    },
     "Date Range": {
       "localizations": {
         "it": {
@@ -3259,6 +3349,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Elimina…"
+          }
+        }
+      }
+    },
+    "Descending": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Decrescente"
           }
         }
       }
@@ -4233,6 +4333,16 @@
         }
       }
     },
+    "Group By": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raggruppa per"
+          }
+        }
+      }
+    },
     "Hide Info": {
       "localizations": {
         "it": {
@@ -4519,6 +4629,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Potrebbe essere stata eliminata o appartenere a un altro account."
+          }
+        }
+      }
+    },
+    "Item Count": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Numero di elementi"
           }
         }
       }
@@ -5153,6 +5273,16 @@
         }
       }
     },
+    "Most Recent Photo": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Foto più recente"
+          }
+        }
+      }
+    },
     "Mouse Wheel Speed": {
       "localizations": {
         "it": {
@@ -5369,6 +5499,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nessun preferito"
+          }
+        }
+      }
+    },
+    "No Grouping": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nessun raggruppamento"
           }
         }
       }
@@ -5653,6 +5793,16 @@
         }
       }
     },
+    "Oldest Photo": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Foto più vecchia"
+          }
+        }
+      }
+    },
     "On an HDR display, photos with HDR highlights are shown at their full brightness. To find them, the viewer downloads the original of each photo you open.": {
       "localizations": {
         "it": {
@@ -5739,6 +5889,76 @@
           "stringUnit": {
             "state": "translated",
             "value": "Apri in una nuova scheda"
+          }
+        }
+      }
+    },
+    "Order": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ordine"
+          }
+        }
+      }
+    },
+    "Show": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostra"
+          }
+        }
+      }
+    },
+    "Sort By": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ordina per"
+          }
+        }
+      }
+    },
+    "Title": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Titolo"
+          }
+        }
+      }
+    },
+    "Unknown Year": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anno sconosciuto"
+          }
+        }
+      }
+    },
+    "View Options": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opzioni vista"
+          }
+        }
+      }
+    },
+    "Year": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anno"
           }
         }
       }

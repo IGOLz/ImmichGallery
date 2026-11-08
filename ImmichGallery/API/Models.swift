@@ -172,11 +172,15 @@ struct Album: Decodable, Sendable, Identifiable, Hashable {
     var startDate: String?
     var endDate: String?
     var lastModifiedAssetTimestamp: String?
+    var createdAt: String?
     var updatedAt: String?
 
     var albumUsers: [AlbumMember]?
     var owner: User?
     var ownerId: String?
+
+    /// v2 has a separate owner; v3 includes the owner in albumUsers.
+    var albumOwner: User? { owner ?? albumUsers?.first(where: { $0.role == "owner" })?.user }
 
     func canEdit(_ userID: String?) -> Bool {
         guard let userID else { return false }

@@ -2,27 +2,45 @@ import SwiftUI
 
 struct AlbumsView: View {
     @Environment(LibrarySession.self) private var session
+    // Albums: the same settings and defaults as the albums page of the Immich web app.
+    @AppStorage("albums.filter") private var filter = AlbumsFilter.all
+    @AppStorage("albums.groupBy") private var groupBy = AlbumsGroupBy.year
+    @AppStorage("albums.groupOrder") private var groupOrder = AlbumsSortOrder.descending
+    @AppStorage("albums.sortBy") private var sortBy = AlbumsSortBy.mostRecentPhoto
+    @AppStorage("albums.sortOrder") private var sortOrder = AlbumsSortOrder.descending
+
+    private var arrangement: AlbumsArrangement {
+        AlbumsArrangement(filter: filter, groupBy: groupBy, groupOrder: groupOrder, sortBy: sortBy, sortOrder: sortOrder)
+    }
 
     var body: some View {
+        let groups = arrangement.groups(session.albums, userID: session.user?.id)
         Group {
-            if session.albums.isEmpty {
+            if groups.isEmpty && !session.albums.isEmpty {
+                ContentUnavailableView {
+                    Label("No Matching Albums", systemImage: "line.3.horizontal.decrease.circle")
+                } description: {
+                    Text("No albums match the selected filter.")
+                } actions: {
+                    Button("Show All Albums") { filter = .all }
+                }
+            } else if groups.isEmpty {
                 ContentUnavailableView("No Albums", systemImage: "rectangle.stack",
                                        description: Text("Albums you create or that are shared with you appear here."))
             } else {
                 ScrollView {
-                    ForEach([false, true], id: \.self) { shared in
-                        let albums = session.albums.filter { $0.shared == shared }
-                        if !albums.isEmpty {
-                            Text(shared ? "Shared Albums" : "My Albums")
-                                .font(.title2.bold()).frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 20)
-                            LazyVGrid(columns: [GridItem(.adaptive(minimum: 170, maximum: 240), spacing: 20)], spacing: 24) {
-                                ForEach(albums) { album in
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 170, maximum: 240), spacing: 20)], spacing: 24, pinnedViews: [.sectionHeaders]) {
+                        ForEach(groups) { group in
+                            Section {
+                                ForEach(group.albums) { album in
                                     NavigationLink(value: album) { AlbumCell(album: album, pipeline: session.pipeline) }.buttonStyle(.plain)
                                         .contextMenu { MacAlbumWindowMenu(albumID: album.id) } // MacIntegration
                                 }
-                            }.padding(20)
+                            } header: {
+                                if let header = group.header { SectionHeader(title: title(header)).padding(.horizontal, -10) }
+                            }
                         }
-                    }
+                    }.padding(20)
                 }
                 .fastWheelScrolling()
             }
@@ -32,9 +50,67 @@ struct AlbumsView: View {
             AlbumDetailView(id: album.id)
         }
         .toolbar {
+            ToolbarItem { viewOptions }
             ToolbarItem { Button { session.albumActions.newAlbum() } label: { Label("New Album", systemImage: "plus") } }
         }
         .task { await session.reloadAlbums() }
+    }
+
+    private var viewOptions: some View {
+        Menu {
+            Picker("Show", selection: $filter) {
+                ForEach(AlbumsFilter.allCases) { Text($0.title).tag($0) }
+            }
+            .pickerStyle(.inline)
+            Section("Group By") {
+                Picker("Group By", selection: Binding(
+                    get: { arrangement.effectiveGroupBy },
+                    set: { option in
+                        guard groupBy != option else { return }
+                        groupBy = option
+                        groupOrder = option.defaultOrder
+                    }
+                )) {
+                    ForEach(AlbumsGroupBy.allCases) { option in
+                        Text(option.title).tag(option).disabled(!arrangement.allows(option))
+                    }
+                }
+                .pickerStyle(.inline)
+                orderPicker("Group Order", $groupOrder).disabled(arrangement.effectiveGroupBy == .none)
+            }
+            Section("Sort By") {
+                Picker("Sort By", selection: Binding(
+                    get: { sortBy },
+                    set: { option in
+                        guard sortBy != option else { return }
+                        sortBy = option
+                        sortOrder = option.defaultOrder
+                    }
+                )) {
+                    ForEach(AlbumsSortBy.allCases) { Text($0.title).tag($0) }
+                }
+                .pickerStyle(.inline)
+                orderPicker("Album Order", $sortOrder)
+            }
+        } label: {
+            Label("View Options", systemImage: filter == .all ? "line.3.horizontal.decrease.circle" : "line.3.horizontal.decrease.circle.fill")
+        }
+        .help("View Options")
+    }
+
+    private func orderPicker(_ title: LocalizedStringKey, _ order: Binding<AlbumsSortOrder>) -> some View {
+        Picker(title, selection: order) {
+            ForEach(AlbumsSortOrder.allCases) { Text($0.title).tag($0) }
+        }
+    }
+
+    private func title(_ header: AlbumsGroup.Header) -> String {
+        switch header {
+        case .year(let year): String(year)
+        case .unknownYear: String(localized: "Unknown Year")
+        case .mine: String(localized: "My Albums")
+        case .owner(let name): name
+        }
     }
 }
 
