@@ -400,7 +400,7 @@ private struct CellKey: Hashable {
     let index: Int
 }
 
-private struct SectionHeader: View {
+struct SectionHeader: View {
     let title: String
 
     var body: some View {

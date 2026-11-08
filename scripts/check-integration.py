@@ -33,6 +33,7 @@ cases = {
     'metadata': models + ['ImmichGallery/API/Models+Metadata.swift', 'scripts/verify-metadata.swift'],
     'transfer-cache': api + ['scripts/check-mac-transfer-cache.swift'],
     'album-review': api + [app('AlbumsActions'), 'ImmichGallery/Views/Albums/AlbumAssetTransfer.swift', 'scripts/verify-album-review.swift'],
+    'albums-arrangement': models + ['ImmichGallery/API/Models+Metadata.swift', app('AlbumsArrangement'), support('Formatters'), 'Tests/AlbumsArrangementChecks.swift'],
 }
 
 def check(item):

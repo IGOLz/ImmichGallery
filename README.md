@@ -87,7 +87,7 @@ The demo is shared with everyone and doesn't accept uploads.
 | Info inspector: camera, exposure, location map, people, albums   | ✅ |
 | Upload files and folders, with duplicate detection               | ✅ |
 | Download originals, or a selection or album as a ZIP             | ✅ |
-| Albums: create, edit, cover, sort, share with users              | ✅ |
+| Albums: create, edit, cover, sort, share with users; group the albums page by year or owner | ✅ |
 | Album comments and likes                                         | ✅ |
 | Edit date, time zone, location, description and rating           | ✅ |
 | Non-destructive rotate and crop                                  | ✅ |
