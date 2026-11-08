@@ -16,7 +16,15 @@ struct AlbumsView: View {
     var body: some View {
         let groups = arrangement.groups(session.albums, userID: session.user?.id)
         Group {
-            if groups.isEmpty {
+            if groups.isEmpty && !session.albums.isEmpty {
+                ContentUnavailableView {
+                    Label("No Matching Albums", systemImage: "line.3.horizontal.decrease.circle")
+                } description: {
+                    Text("No albums match the selected filter.")
+                } actions: {
+                    Button("Show All Albums") { filter = .all }
+                }
+            } else if groups.isEmpty {
                 ContentUnavailableView("No Albums", systemImage: "rectangle.stack",
                                        description: Text("Albums you create or that are shared with you appear here."))
             } else {
@@ -50,44 +58,48 @@ struct AlbumsView: View {
 
     private var viewOptions: some View {
         Menu {
-            Section("Show") {
-                ForEach(AlbumsFilter.allCases) { option in
-                    choice(option.title, selected: filter == option) { filter = option }
-                }
+            Picker("Show", selection: $filter) {
+                ForEach(AlbumsFilter.allCases) { Text($0.title).tag($0) }
             }
+            .pickerStyle(.inline)
             Section("Group By") {
-                ForEach(AlbumsGroupBy.allCases) { option in
-                    choice(option.title, selected: arrangement.effectiveGroupBy == option) {
+                Picker("Group By", selection: Binding(
+                    get: { arrangement.effectiveGroupBy },
+                    set: { option in
                         guard groupBy != option else { return }
                         groupBy = option
                         groupOrder = option.defaultOrder
                     }
-                    .disabled(!arrangement.allows(option))
+                )) {
+                    ForEach(AlbumsGroupBy.allCases) { option in
+                        Text(option.title).tag(option).disabled(!arrangement.allows(option))
+                    }
                 }
-                orderPicker($groupOrder).disabled(arrangement.effectiveGroupBy == .none)
+                .pickerStyle(.inline)
+                orderPicker("Group Order", $groupOrder).disabled(arrangement.effectiveGroupBy == .none)
             }
             Section("Sort By") {
-                ForEach(AlbumsSortBy.allCases) { option in
-                    choice(option.title, selected: sortBy == option) {
+                Picker("Sort By", selection: Binding(
+                    get: { sortBy },
+                    set: { option in
                         guard sortBy != option else { return }
                         sortBy = option
                         sortOrder = option.defaultOrder
                     }
+                )) {
+                    ForEach(AlbumsSortBy.allCases) { Text($0.title).tag($0) }
                 }
-                orderPicker($sortOrder)
+                .pickerStyle(.inline)
+                orderPicker("Album Order", $sortOrder)
             }
         } label: {
-            Label("View Options", systemImage: "line.3.horizontal.decrease.circle")
+            Label("View Options", systemImage: filter == .all ? "line.3.horizontal.decrease.circle" : "line.3.horizontal.decrease.circle.fill")
         }
         .help("View Options")
     }
 
-    private func choice(_ title: LocalizedStringResource, selected: Bool, action: @escaping () -> Void) -> some View {
-        Toggle(isOn: Binding(get: { selected }, set: { _ in action() })) { Text(title) }
-    }
-
-    private func orderPicker(_ order: Binding<AlbumsSortOrder>) -> some View {
-        Picker("Order", selection: order) {
+    private func orderPicker(_ title: LocalizedStringKey, _ order: Binding<AlbumsSortOrder>) -> some View {
+        Picker(title, selection: order) {
             ForEach(AlbumsSortOrder.allCases) { Text($0.title).tag($0) }
         }
     }

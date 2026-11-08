@@ -1,6 +1,56 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "No Matching Albums": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nessun album corrispondente"
+          }
+        }
+      }
+    },
+    "No albums match the selected filter.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nessun album corrisponde al filtro selezionato."
+          }
+        }
+      }
+    },
+    "Show All Albums": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostra tutti gli album"
+          }
+        }
+      }
+    },
+    "Group Order": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ordine dei gruppi"
+          }
+        }
+      }
+    },
+    "Album Order": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ordine degli album"
+          }
+        }
+      }
+    },
     "": {
       "localizations": {
         "it": {
