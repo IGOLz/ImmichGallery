@@ -1,7 +1,9 @@
+import AuthenticationServices
 import SwiftUI
 
 struct LoginView: View {
     @Environment(AppModel.self) private var app
+    @Environment(\.webAuthenticationSession) private var webAuthenticationSession
 
     private enum Step { case server, credentials(ImmichClient, ServerFeatures, ServerVersion?) }
     private enum Method: String, CaseIterable { case password = "Email & Password", apiKey = "API Key" }
@@ -16,6 +18,8 @@ struct LoginView: View {
     @State private var password = ""
     @State private var apiKey = ""
     @State private var method = Method.password
+    /// The server's single sign-on button text, when it offers OAuth.
+    @State private var oauthButton: String?
     @State private var isWorking = false
     @State private var errorMessage: String?
     @FocusState private var focused: Field?
@@ -79,6 +83,21 @@ struct LoginView: View {
 
     private func credentialsForm(client: ImmichClient, features: ServerFeatures, version: ServerVersion?) -> some View {
         VStack(spacing: 14) {
+            if let oauthButton {
+                Button { signInWithBrowser(client) } label: {
+                    Label(oauthButton, systemImage: "person.badge.key")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.large)
+
+                HStack {
+                    VStack { Divider() }
+                    Text("or").font(.caption).foregroundStyle(.secondary)
+                    VStack { Divider() }
+                }
+            }
+
             if features.passwordLogin {
                 Picker("Method", selection: $method) {
                     ForEach(Method.allCases, id: \.self) { Text(LocalizedStringKey($0.rawValue)).tag($0) }
@@ -100,7 +119,7 @@ struct LoginView: View {
                 SecureField("API Key", text: $apiKey)
                     .focused($focused, equals: .apiKey)
                     .onSubmit { signIn(client) }
-                Text("Create an API key in Immich under Account Settings → API Keys. Useful if your server uses OAuth.")
+                Text("Create an API key in Immich under Account Settings → API Keys.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -146,6 +165,7 @@ struct LoginView: View {
             async let features = try? client.serverFeatures()
             async let version = try? client.serverVersion()
             let f = await features ?? ServerFeatures()
+            if f.oauth { oauthButton = await client.oauthButtonText() } else { oauthButton = nil }
             method = f.passwordLogin ? .password : .apiKey
             step = .credentials(client, f, await version)
             focused = f.passwordLogin ? .email : .apiKey
@@ -162,6 +182,23 @@ struct LoginView: View {
                 credential = .apiKey(apiKey.trimmingCharacters(in: .whitespacesAndNewlines))
             }
             try await app.signIn(client: client, credential: credential)
+        }
+    }
+
+    /// Single sign-on in a web authentication session, which ends at the redirect URI Immich's mobile app uses.
+    private func signInWithBrowser(_ client: ImmichClient) {
+        run {
+            let attempt = try OAuthAttempt()
+            let address = try await client.oauthAuthorize(attempt)
+            let redirect: URL
+            do {
+                redirect = try await webAuthenticationSession.authenticate(
+                    using: address, callbackURLScheme: OAuthAttempt.callbackScheme, preferredBrowserSession: nil)
+            } catch ASWebAuthenticationSessionError.canceledLogin {
+                return
+            }
+            let response = try await client.oauthCallback(redirect, attempt)
+            try await app.signIn(client: client, credential: .accessToken(response.accessToken))
         }
     }
 

@@ -51,7 +51,7 @@ Or install manually:
 
 1. Download **ImmichGallery-x.y.z.dmg** from the [latest release](https://github.com/IGOLz/ImmichGallery/releases/latest).
 2. Open it and drag **Immich Gallery** to Applications.
-3. Sign in with your server address and your email and password, or an API key.
+3. Sign in with your server address and your email and password, single sign-on (OAuth), or an API key.
 
 The app is signed with a Developer ID and notarized by Apple, so it opens without Gatekeeper warnings.
 
@@ -107,7 +107,7 @@ The demo is shared with everyone and doesn't accept uploads.
 | Desktop widgets: photos (featured, album, person, place, favorites, chosen), mosaic, library | ✅ |
 | In-app updates, optionally automatic                             | ✅ |
 | English and Italian                                              | ✅ |
-| OAuth sign-in                                                    | Via API key |
+| OAuth (OIDC) sign-in                                             | ✅ |
 | Automatic background backup                                      | ❌ |
 | 360° photos                                                      | ❌ |
 | Offline library                                                  | ❌ |

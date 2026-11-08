@@ -24,6 +24,7 @@ cases = {
     'explore': api + [support('ImagePipeline'), app('ExploreClustering'), app('ExploreFolders'), 'Tests/ExploreChecks.swift'],
     'people-cache': api + [support('ImagePipeline'), 'scripts/checks/people-network.swift'],
     'search': api + ['scripts/check-search.swift'],
+    'oauth': api + ['Tests/OAuthChecks.swift'],
     'tag-picker': api + ['ImmichGallery/Views/Explore/ExploreTagPicker.swift', 'Tests/ExploreTagPickerChecks.swift'],
     'grid-context-menu': ['ImmichGallery/Views/Grid/DeferredContextMenu.swift', 'Tests/GridContextMenuChecks.swift'],
     'viewer-scroll-pan': ['ImmichGallery/Views/Viewer/ViewerScrollPan.swift', 'Tests/ViewerScrollPanChecks.swift'],

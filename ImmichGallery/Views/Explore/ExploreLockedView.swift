@@ -20,7 +20,7 @@ struct ExploreLockedView: View {
     var body: some View {
         Group {
             if !session.client.exploreSupportsLockedFolder {
-                ContentUnavailableView("Session Login Required", systemImage: "lock", description: Text("Sign in with email and password to use Locked Folder. API keys cannot unlock a session."))
+                ContentUnavailableView("Session Login Required", systemImage: "lock", description: Text("Sign in with email and password, or with single sign-on, to use Locked Folder. API keys cannot unlock a session."))
             } else if unlocked, let client {
                 if let selected {
                     VStack {

@@ -2823,12 +2823,32 @@
         }
       }
     },
+    "Couldn't start single sign-on. Please try again.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossibile avviare l'accesso SSO. Riprova."
+          }
+        }
+      }
+    },
     "Create": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
             "value": "Crea"
+          }
+        }
+      }
+    },
+    "Create an API key in Immich under Account Settings → API Keys.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crea una chiave API in Immich in Impostazioni account → Chiavi API."
           }
         }
       }
@@ -2899,16 +2919,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Crea link pubblico…"
-          }
-        }
-      }
-    },
-    "Create an API key in Immich under Account Settings → API Keys. Useful if your server uses OAuth.": {
-      "localizations": {
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Crea una chiave API in Immich in Impostazioni account → Chiavi API. Utile se il tuo server usa OAuth."
           }
         }
       }
@@ -5733,6 +5743,16 @@
         }
       }
     },
+    "or": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "oppure"
+          }
+        }
+      }
+    },
     "Original dimensions are unavailable for cropping.": {
       "localizations": {
         "it": {
@@ -7485,6 +7505,16 @@
         }
       }
     },
+    "Sign in with SSO": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accedi con SSO"
+          }
+        }
+      }
+    },
     "Sign Out": {
       "localizations": {
         "it": {
@@ -7535,12 +7565,12 @@
         }
       }
     },
-    "Sign in with email and password to use Locked Folder. API keys cannot unlock a session.": {
+    "Sign in with email and password, or with single sign-on, to use Locked Folder. API keys cannot unlock a session.": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Accedi con email e password per usare la cartella bloccata. Le chiavi API non possono sbloccare una sessione."
+            "value": "Accedi con email e password, o con l'accesso SSO, per usare la cartella bloccata. Le chiavi API non possono sbloccare una sessione."
           }
         }
       }
@@ -7755,6 +7785,16 @@
         }
       }
     },
+    "That sign-in belongs to another attempt. Please sign in again.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Questo accesso appartiene a un altro tentativo. Accedi di nuovo."
+          }
+        }
+      }
+    },
     "The album will be deleted for everyone. Its photos and videos stay in the library.": {
       "localizations": {
         "it": {
@@ -7891,6 +7931,26 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "The server sent a sign-in address that can't be opened.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il server ha inviato un indirizzo di accesso che non può essere aperto."
+          }
+        }
+      }
+    },
+    "The sign-in provider refused: %@": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il provider di accesso ha rifiutato: %@"
           }
         }
       }
