@@ -1,6 +1,26 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Most Items": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Più elementi"
+          }
+        }
+      }
+    },
+    "Largest Size": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dimensione maggiore"
+          }
+        }
+      }
+    },
     "Photos and Videos": {
       "localizations": {
         "it": {

@@ -38,6 +38,7 @@ cases = {
     'shared-links-arrangement': api + [app('SharedLinksArrangement'), support('Formatters'), 'Tests/SharedLinksArrangementChecks.swift'],
     'places-arrangement': models + ['ImmichGallery/API/Models+Metadata.swift', app('PlacesArrangement'), 'Tests/PlacesArrangementChecks.swift'],
     'people-arrangement': models + [app('PeopleArrangement'), 'Tests/PeopleArrangementChecks.swift'],
+    'duplicates-arrangement': models + [app('DuplicatesArrangement'), 'Tests/DuplicatesArrangementChecks.swift'],
 }
 
 def check(item):
