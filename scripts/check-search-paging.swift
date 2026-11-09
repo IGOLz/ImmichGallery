@@ -37,6 +37,7 @@ struct SharingPresentation {}
 final class PagingProtocol: URLProtocol, @unchecked Sendable {
     static let requests = Mutex(0)
     static let completeSearch = Mutex(false)
+    static let filteredLibrary = Mutex(false)
     override class func canInit(with request: URLRequest) -> Bool { true }
     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
     override func startLoading() {
@@ -61,6 +62,22 @@ final class PagingProtocol: URLProtocol, @unchecked Sendable {
             }
         }
         let body = try! JSONSerialization.jsonObject(with: requestData) as! [String: Any]
+        if Self.filteredLibrary.withLock({ $0 }) {
+            assert(body["type"] as? String == "IMAGE")
+            assert(body["visibility"] as? String == "timeline")
+            let page = body["page"] as! Int
+            let item: [String: Any] = ["id": "filtered-\(page)", "ownerId": "owner", "type": "IMAGE",
+                "originalFileName": "a.jpg", "fileCreatedAt": "2025-01-01T00:00:00Z",
+                "localDateTime": "2025-01-01T00:00:00Z", "isFavorite": false, "isTrashed": false,
+                "visibility": page == 2 ? "hidden" : "timeline"]
+            var assets: [String: Any] = ["items": [item]]
+            if page < 3 { assets["nextPage"] = String(page + 1) }
+            let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+            client!.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+            client!.urlProtocol(self, didLoad: try! JSONSerialization.data(withJSONObject: ["assets": assets]))
+            client!.urlProtocolDidFinishLoading(self)
+            return
+        }
         if body["type"] as? String == "VIDEO" {
             assert(body["visibility"] as? String == "timeline", "Videos must exclude hidden Live Photo components and archived assets on every page")
         } else {
@@ -171,6 +188,20 @@ final class PagingProtocol: URLProtocol, @unchecked Sendable {
         let columns = try JSONDecoder().decode(TimeBucketAssets.self, from: Data(#"{"id":["public","private"],"visibility":["timeline","locked"],"ownerId":["owner","owner"],"isImage":[true,true],"isFavorite":[false,false],"isTrashed":[false,false],"thumbhash":[null,null],"ratio":[1,1],"duration":[null,null],"fileCreatedAt":["2026-01-01","2026-01-01"],"livePhotoVideoId":[null,null]}"#.utf8))
         assert(AssetItem.from(columns).map(\.id) == ["public"])
         let library = session.gridModel(for: .library)
+        // Reveal must page past a fully hidden page, also when the target shares a loaded month.
+        let mediaKey = GridPage.library.key("mediaType")
+        let savedMedia = UserDefaults.standard.object(forKey: mediaKey)
+        defer { UserDefaults.standard.set(savedMedia, forKey: mediaKey) }
+        UserDefaults.standard.set(GridMediaType.photos.rawValue, forKey: mediaKey)
+        PagingProtocol.filteredLibrary.withLock { $0 = true }
+        await library.reload()
+        assert(library.totalCount == 1)
+        let target = try JSONDecoder().decode(AssetResponse.self, from: Data(#"{"id":"filtered-3","type":"IMAGE","originalFileName":"a.jpg","fileCreatedAt":"2025-01-01T00:00:00Z","localDateTime":"2025-01-01T00:00:00Z","isFavorite":false,"isTrashed":false}"#.utf8))
+        try await library.loadForReveal(target)
+        assert(library.item(target.id) != nil && library.totalCount == 2)
+        assert(library.item("filtered-2") == nil)
+        PagingProtocol.filteredLibrary.withLock { $0 = false }
+        UserDefaults.standard.set(savedMedia, forKey: mediaKey)
         var query = SearchQuery()
         query.text = "first"
         weak let previous = session.gridModel(for: .filteredSearch(query))

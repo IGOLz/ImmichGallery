@@ -138,6 +138,20 @@ final class AssetGridModel {
         await loadSection(id: sections[section].id).value
     }
 
+    /// Locate an asset even when media filters make the Library a paged search.
+    func loadForReveal(_ asset: AssetResponse) async throws {
+        if isPaged {
+            while item(asset.id) == nil, nextPage != nil {
+                if let pageTask { await pageTask.value }
+                else { try await fetchNextPage() }
+                if pageFailed { break }
+            }
+        } else if let month = sectionMonth(of: asset),
+                  let section = sections.firstIndex(where: { $0.id.prefix(7) == month }) {
+            await viewerLoadSection(section)
+        }
+    }
+
     func viewerAllItems() async throws -> [AssetItem] {
         for i in sections.indices { await viewerLoadSection(i) }
         while isPaged, nextPage != nil { try await fetchNextPage() }
@@ -399,9 +413,10 @@ final class AssetGridModel {
             nextPage = nil
         }
         // Search without a visibility also finds Live Photos' hidden video parts.
-        append(result.items.filter { $0.visibility != "locked" && !(searchesTimeline && $0.visibility == "hidden") }.map(AssetItem.init))
-        // A page containing only locked results must not strand the pagination trigger.
-        if result.items.allSatisfy({ $0.visibility == "locked" }), nextPage != nil {
+        let visibleItems = result.items.filter { $0.visibility != "locked" && !(searchesTimeline && $0.visibility == "hidden") }
+        append(visibleItems.map(AssetItem.init))
+        // Any fully filtered page must advance, since it has no cells to trigger pagination.
+        if visibleItems.isEmpty, nextPage != nil {
             try await fetchNextPage()
         }
     }
