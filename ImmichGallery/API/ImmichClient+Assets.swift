@@ -31,8 +31,10 @@ extension ImmichClient {
     }
 
     // Deprecated since v3.2.0 in favor of searchAssets; retained for the v3.3.5 web utility contract.
-    func assetsLargeFiles() async throws -> [AssetResponse] {
-        let data = try await data(for: request("search/large-assets", method: "POST", query: ["minFileSize": "0"]))
+    /// `type` is Immich's AssetType ("IMAGE" or "VIDEO").
+    func assetsLargeFiles(type: String? = nil, isFavorite: Bool? = nil) async throws -> [AssetResponse] {
+        let data = try await data(for: request("search/large-assets", method: "POST",
+                                               query: ["minFileSize": "0", "type": type, "isFavorite": isFavorite.map(String.init)]))
         return try JSONDecoder().decode([AssetResponse].self, from: data)
     }
 

@@ -97,7 +97,7 @@ struct AssetGridHost<Header: View>: View {
                 .inspectorColumnWidth(min: 260, ideal: 300, max: 420)
         }
         .task(id: session.macGridRevision) { await model.loadIfNeeded() }
-        .timelineViewOptionsReloader(model)
+        .gridViewOptionsReloader(model)
         .onChange(of: session.upload.revision) { Task { await model.reload() } } // Upload
         .focusedSceneValue(\.gridModel, model)
         .confirmationDialog(deleteTitle, isPresented: Binding(get: { pendingDelete != nil }, set: { if !$0 { pendingDelete = nil } })) {
@@ -178,8 +178,8 @@ struct AssetGridHost<Header: View>: View {
                 ToolbarItem { zoomOutButton }
                 ToolbarItem { zoomInButton }
             }
-            if let page = model.source.timelinePage {
-                ToolbarItem { TimelineViewOptions(page: page, dateAddedAvailable: TimelineArrangement.supportsDateAdded(session.version)) }
+            if let page = model.source.gridPage {
+                ToolbarItem { GridViewOptions(page: page, dateAddedAvailable: GridArrangement.supportsDateAdded(session.version)) }
             }
         }
 
@@ -246,13 +246,13 @@ struct AssetGridView: View {
                         Button("Try Again") { Task { await model.reload() } }
                     }
                 case .loaded:
-                    if let page = model.source.timelinePage, model.arrangement?.isFiltered == true {
+                    if let page = model.source.gridPage, model.arrangement?.isFiltered == true {
                         ContentUnavailableView {
                             Label("No Matching Photos", systemImage: "line.3.horizontal.decrease.circle")
                         } description: {
                             Text("No photos match the selected view options.")
                         } actions: {
-                            Button("Show All Items") { UserDefaults.standard.set(TimelineShow.all.rawValue, forKey: page.key("show")) }
+                            Button("Show All Items") { page.showAllItems() }
                         }
                     } else {
                         emptyState

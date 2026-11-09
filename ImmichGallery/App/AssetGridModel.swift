@@ -43,12 +43,14 @@ enum GridSource: Hashable {
 }
 
 extension GridSource {
-    /// Timeline pages with view options (TimelineArrangement).
-    var timelinePage: TimelinePage? {
+    /// Grid pages with view options (GridArrangement).
+    var gridPage: GridPage? {
         switch self {
         case .library: .library
         case .favorites: .favorites
+        case .videos: .videos
         case .archive: .archive
+        case .largeFiles: .largeFiles // Assets
         case .partner: .partner // Sharing
         case .person: .person
         case .explore(.tag): .tag // Explore
@@ -123,7 +125,7 @@ final class AssetGridModel {
 
     var albumOrder = "desc" // Albums
     /// The page's view options, read from its saved settings on every reload.
-    private(set) var arrangement: TimelineArrangement?
+    private(set) var arrangement: GridArrangement?
     private(set) var sections: [GridSection] = []
     private(set) var state: LoadState = .idle
     private(set) var searchResultsLoaded = 0
@@ -171,7 +173,7 @@ final class AssetGridModel {
 
     var totalCount: Int { sections.reduce(0) { $0 + $1.count } }
 
-    private var dateAdded: Bool { TimelineArrangement.supportsDateAdded(session?.version) }
+    private var dateAdded: Bool { GridArrangement.supportsDateAdded(session?.version) }
 
     /// The source's timeline filters with the page's view options applied.
     private var timelineQuery: TimelineQuery? {
@@ -181,7 +183,7 @@ final class AssetGridModel {
 
     /// The ID prefix ("2026-11") of the section that holds an asset, following the view options.
     func sectionMonth(of asset: AssetResponse) -> Substring? {
-        (arrangement ?? TimelineArrangement()).month(localDateTime: asset.localDateTime, createdAt: asset.createdAt, dateAdded: dateAdded)
+        (arrangement ?? GridArrangement()).month(localDateTime: asset.localDateTime, createdAt: asset.createdAt, dateAdded: dateAdded)
     }
 
     var isPaged: Bool { source.timelineQuery == nil }
@@ -217,7 +219,7 @@ final class AssetGridModel {
     func loadIfNeeded() async {
         if let loadTask { await loadTask.value }
         // View options changed while this grid was off screen.
-        let arrangementChanged = arrangement != source.timelinePage.map { TimelineArrangement(page: $0) }
+        let arrangementChanged = arrangement != source.gridPage.map { GridArrangement(page: $0) }
         guard state == .idle || isStale || arrangementChanged else { return }
         await reload()
     }
@@ -264,7 +266,7 @@ final class AssetGridModel {
         pageTask?.cancel()
         pageTask = nil
         if sections.isEmpty { state = .loading }
-        arrangement = source.timelinePage.map { TimelineArrangement(page: $0) }
+        arrangement = source.gridPage.map { GridArrangement(page: $0) }
         do {
             if let query = timelineQuery {
                 var buckets = try await source.albumID != nil
@@ -351,7 +353,7 @@ final class AssetGridModel {
         let result: SearchResponse.Assets
         switch source {
         case .largeFiles:
-            let assets = try await session.client.assetsLargeFiles()
+            let assets = try await session.client.assetsLargeFiles(type: arrangement?.assetType, isFavorite: arrangement?.isFavorite)
             nextPage = nil
             append(assets.filter { $0.visibility != "locked" }.map(AssetItem.init))
             return
@@ -374,7 +376,8 @@ final class AssetGridModel {
             result = try await session.client.exploreAssets(source, page: page)
         case .videos:
             // Live Photo motion components are hidden and have no standalone thumbnails.
-            result = try await session.client.metadataSearch(type: .video, visibility: "timeline", page: page)
+            result = try await session.client.metadataSearch(type: .video, visibility: "timeline", isFavorite: arrangement?.isFavorite,
+                                                             order: (arrangement?.order ?? .newestFirst).rawValue, page: page)
         default:
             return
         }

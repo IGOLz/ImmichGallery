@@ -81,7 +81,7 @@ The demo is shared with everyone and doesn't accept uploads.
 | Feature                                                          | Immich Gallery |
 | :--------------------------------------------------------------- | :------------: |
 | Timeline grouped by month, with ThumbHash placeholders           | ✅ |
-| Timeline view options: favorites only, newest or oldest first, date taken or date added | ✅ |
+| View options: favorites only, newest or oldest first, date taken or date added; photos or videos in Large Files | ✅ |
 | Favorites, Videos, Archive, Recently Deleted                     | ✅ |
 | Viewer with zoom, video, Live Photos, slideshow and full screen  | ✅ |
 | HDR photos on HDR displays (gain-map HEIC/JPEG, HLG, PQ)        | ✅ |

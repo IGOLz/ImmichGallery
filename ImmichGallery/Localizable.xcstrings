@@ -1,6 +1,16 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Photos and Videos": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Foto e video"
+          }
+        }
+      }
+    },
     "All Time": {
       "localizations": {
         "it": {
