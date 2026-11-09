@@ -415,11 +415,23 @@ private struct CellKey: Hashable {
 }
 
 struct SectionHeader: View {
+    /// Albums: a chevron for groups that collapse.
+    enum Disclosure { case expanded, collapsed }
+
     let title: String
+    var disclosure: Disclosure?
 
     var body: some View {
         HStack {
-            Text(title)
+            HStack(spacing: 6) {
+                if let disclosure {
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .rotationEffect(.degrees(disclosure == .expanded ? 90 : 0))
+                        .foregroundStyle(.secondary)
+                }
+                Text(title)
+            }
                 .font(.headline)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 7)

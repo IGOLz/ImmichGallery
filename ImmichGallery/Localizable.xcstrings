@@ -1,6 +1,86 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Covers": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copertine"
+          }
+        }
+      }
+    },
+    "List": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elenco"
+          }
+        }
+      }
+    },
+    "View": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vista"
+          }
+        }
+      }
+    },
+    "Expand All Groups": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Espandi tutti i gruppi"
+          }
+        }
+      }
+    },
+    "Collapse All Groups": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comprimi tutti i gruppi"
+          }
+        }
+      }
+    },
+    "Shared": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Condiviso"
+          }
+        }
+      }
+    },
+    "Shows the albums in this group": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostra gli album di questo gruppo"
+          }
+        }
+      }
+    },
+    "Hides the albums in this group": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nasconde gli album di questo gruppo"
+          }
+        }
+      }
+    },
     "Most Items": {
       "localizations": {
         "it": {

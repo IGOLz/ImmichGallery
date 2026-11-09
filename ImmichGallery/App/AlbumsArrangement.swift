@@ -51,6 +51,44 @@ enum AlbumsSortBy: String, CaseIterable, Identifiable {
     var defaultOrder: AlbumsSortOrder { self == .title ? .ascending : .descending }
 }
 
+/// Immich's Cover and List views.
+enum AlbumsViewMode: String, CaseIterable, Identifiable {
+    case cover = "Cover", list = "List"
+    var id: Self { self }
+    var title: LocalizedStringResource { self == .cover ? "Covers" : "List" }
+}
+
+/// Collapsed groups, saved per grouping like Immich's `collapsedGroups` ("Year": ["year-2024"]).
+struct AlbumsCollapsedGroups {
+    private var groups: [String: [String]]
+
+    init(stored: String) {
+        groups = (try? JSONDecoder().decode([String: [String]].self, from: Data(stored.utf8))) ?? [:]
+    }
+
+    var stored: String {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .sortedKeys
+        return String(decoding: (try? encoder.encode(groups)) ?? Data("{}".utf8), as: UTF8.self)
+    }
+
+    func isCollapsed(_ id: String, in groupBy: AlbumsGroupBy) -> Bool {
+        groupBy != .none && groups[groupBy.rawValue, default: []].contains(id)
+    }
+
+    mutating func toggle(_ id: String, in groupBy: AlbumsGroupBy) {
+        guard groupBy != .none else { return }
+        var ids = groups[groupBy.rawValue, default: []]
+        if let index = ids.firstIndex(of: id) { ids.remove(at: index) } else { ids.append(id) }
+        groups[groupBy.rawValue] = ids.isEmpty ? nil : ids
+    }
+
+    mutating func set(_ ids: [String], in groupBy: AlbumsGroupBy) {
+        guard groupBy != .none else { return }
+        groups[groupBy.rawValue] = ids.isEmpty ? nil : ids
+    }
+}
+
 struct AlbumsGroup: Identifiable {
     enum Header: Hashable {
         case year(Int), unknownYear, mine, owner(String)
