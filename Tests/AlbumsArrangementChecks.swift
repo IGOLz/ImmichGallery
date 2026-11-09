@@ -73,6 +73,25 @@ import Foundation
         // Settings saved by the app use Immich's names.
         precondition(AlbumsGroupBy(rawValue: "Year") == .year && AlbumsSortBy(rawValue: "MostRecentPhoto") == .mostRecentPhoto)
         precondition(AlbumsSortOrder(rawValue: "desc") == .descending && AlbumsFilter(rawValue: "Owned") == .owned)
+        precondition(AlbumsViewMode(rawValue: "List") == .list && AlbumsViewMode(rawValue: "Cover") == .cover)
+
+        // Collapsed groups are saved per grouping, as Immich does.
+        var collapsed = CollapsedGroups(stored: "")
+        precondition(!collapsed.isCollapsed("year-2024", in: "Year"))
+        collapsed.toggle("year-2024", in: "Year")
+        collapsed.toggle("owner-zoe", in: "Owner")
+        precondition(collapsed.isCollapsed("year-2024", in: "Year") && !collapsed.isCollapsed("year-2024", in: "Owner"))
+        precondition(collapsed.stored == #"{"Owner":["owner-zoe"],"Year":["year-2024"]}"#)
+        let reloaded = CollapsedGroups(stored: collapsed.stored)
+        precondition(reloaded.isCollapsed("owner-zoe", in: "Owner"))
+        collapsed.toggle("year-2024", in: "Year")
+        collapsed.set([], in: "Owner")
+        precondition(collapsed.stored == "{}")
+        collapsed.toggle("albums", in: nil)
+        precondition(!collapsed.isCollapsed("albums", in: nil) && collapsed.stored == "{}")
+        collapsed.set(["year-2025", "year-unknown"], in: "Year")
+        precondition(collapsed.isCollapsed("year-unknown", in: "Year"))
+        precondition(!CollapsedGroups(stored: "not json").isCollapsed("year-2025", in: "Year"))
         print("Album grouping and sorting checks passed.")
     }
 }

@@ -81,24 +81,25 @@ The demo is shared with everyone and doesn't accept uploads.
 | Feature                                                          | Immich Gallery |
 | :--------------------------------------------------------------- | :------------: |
 | Timeline grouped by month, with ThumbHash placeholders           | ✅ |
+| View options: favorites only, photos or videos only, newest or oldest first, date taken or date added | ✅ |
 | Favorites, Videos, Archive, Recently Deleted                     | ✅ |
 | Viewer with zoom, video, Live Photos, slideshow and full screen  | ✅ |
 | HDR photos on HDR displays (gain-map HEIC/JPEG, HLG, PQ)        | ✅ |
 | Info inspector: camera, exposure, location map, people, albums   | ✅ |
 | Upload files and folders, with duplicate detection               | ✅ |
 | Download originals, or a selection or album as a ZIP             | ✅ |
-| Albums: create, edit, cover, sort, share with users; group the albums page by year or owner | ✅ |
+| Albums: create, edit, cover, sort, share with users; group the albums page by year or owner, as covers or a list | ✅ |
 | Album comments and likes                                         | ✅ |
 | Edit date, time zone, location, description and rating           | ✅ |
 | Non-destructive rotate and crop                                  | ✅ |
-| People: rename, merge, hide, birthday, assign faces              | ✅ |
+| People: rename, merge, hide, birthday, assign faces; show favorites or hidden people | ✅ |
 | Smart (CLIP), file name, description and OCR search              | ✅ |
 | Search filters: people, place, camera, date, type, rating        | ✅ |
-| Global map with clusters, places, memories                      | ✅ |
+| Global map with clusters, places by city or country, memories    | ✅ |
 | Tags and folder view                                             | ✅ |
 | Locked Folder (PIN)                                              | ✅ |
 | Stacks, duplicates, large files                                  | ✅ |
-| Public shared links and partner sharing                          | ✅ |
+| Public shared links, filtered by type, and partner sharing       | ✅ |
 | Several accounts and servers                                     | ✅ |
 | API keys, sessions, notifications, preferences                   | ✅ |
 | Administration: stats, jobs, users, external libraries           | ✅ |
@@ -136,6 +137,8 @@ The demo is shared with everyone and doesn't accept uploads.
 | Administration (admins)        | ⌥⌘A |
 
 </details>
+
+When filtering Library to photos or videos only, results contain your own items. Partner photos remain available in the unfiltered Library and on partner pages. Date Added sorting is available for the unfiltered timeline on Immich v3.0 or later.
 
 ## Screenshots
 

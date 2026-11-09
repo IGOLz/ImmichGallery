@@ -5,6 +5,7 @@ import Observation
 /// What a grid shows.
 enum GridSource: Hashable {
     case library, favorites, videos, archive, trash
+    case locked // Explore: only shown in an unlocked Locked Folder session
     case largeFiles, geolocation // Assets
     case album(String)
     case partner(String) // Sharing
@@ -31,6 +32,7 @@ enum GridSource: Hashable {
         case .favorites: TimelineQuery(visibility: nil, isFavorite: true)
         case .archive: TimelineQuery(visibility: "archive")
         case .trash: TimelineQuery(visibility: nil, isTrashed: true)
+        case .locked: TimelineQuery(visibility: "locked")
         case .album(let id): TimelineQuery(visibility: nil, albumId: id)
         case .partner(let id): TimelineQuery(userId: id) // Sharing
         case .person(let id): TimelineQuery(personId: id)
@@ -38,6 +40,24 @@ enum GridSource: Hashable {
         case .explore(.map(let query)): query.timeline
         case .explore: nil
         case .videos, .search, .filteredSearch, .largeFiles: nil
+        }
+    }
+}
+
+extension GridSource {
+    /// Grid pages with view options (GridArrangement).
+    var gridPage: GridPage? {
+        switch self {
+        case .library: .library
+        case .favorites: .favorites
+        case .videos: .videos
+        case .archive: .archive
+        case .largeFiles: .largeFiles // Assets
+        case .partner: .partner // Sharing
+        case .person: .person
+        case .explore(.tag): .tag // Explore
+        case .locked: .locked // Explore
+        default: nil
         }
     }
 }
@@ -72,8 +92,8 @@ struct AssetItem: Identifiable, Hashable, Sendable {
         fileSizeInBytes = r.exifInfo?.fileSizeInByte
     }
 
-    static func from(_ c: TimeBucketAssets) -> [AssetItem] {
-        c.id.indices.filter { c.visibility?.indices.contains($0) != true || c.visibility?[$0] != "locked" }.map { i in
+    static func from(_ c: TimeBucketAssets, includingLocked: Bool = false) -> [AssetItem] {
+        c.id.indices.filter { includingLocked || c.visibility?.indices.contains($0) != true || c.visibility?[$0] != "locked" }.map { i in
             AssetItem(
                 id: c.id[i], ownerId: c.ownerId.flatMap { $0.indices.contains(i) ? $0[i] : nil }, isVideo: !c.isImage[i], isFavorite: c.isFavorite[i], isTrashed: c.isTrashed[i],
                 thumbhash: c.thumbhash[i], ratio: c.ratio[i] ?? 1, durationMS: c.duration[i]?.milliseconds,
@@ -104,9 +124,12 @@ final class AssetGridModel {
     enum LoadState: Equatable { case idle, loading, loaded, failed(String) }
 
     let source: GridSource
-    @ObservationIgnored private weak var session: LibrarySession?
+    /// The session that owns this grid (Locked Folder: its own session, so menu commands use its client).
+    @ObservationIgnored private(set) weak var session: LibrarySession?
 
     var albumOrder = "desc" // Albums
+    /// The page's view options, read from its saved settings on every reload.
+    private(set) var arrangement: GridArrangement?
     private(set) var sections: [GridSection] = []
     private(set) var state: LoadState = .idle
     private(set) var searchResultsLoaded = 0
@@ -119,6 +142,28 @@ final class AssetGridModel {
         await loadSection(id: sections[section].id).value
     }
 
+    /// Locate an asset even when media filters make the Library a paged search.
+    func loadForReveal(_ asset: AssetResponse) async throws {
+        if let arrangement {
+            guard arrangement.isFavorite != true || asset.isFavorite,
+                  arrangement.assetType == nil || arrangement.assetType == asset.type.rawValue else { return }
+        }
+        let generation = loadGeneration
+        if isPaged {
+            while item(asset.id) == nil, nextPage != nil {
+                try Task.checkCancellation()
+                guard generation == loadGeneration else { throw CancellationError() }
+                if let pageTask { await pageTask.value }
+                else { try await fetchNextPage() }
+                if pageFailed { break }
+            }
+            guard generation == loadGeneration else { throw CancellationError() }
+        } else if let month = sectionMonth(of: asset),
+                  let section = sections.firstIndex(where: { $0.id.prefix(7) == month }) {
+            await viewerLoadSection(section)
+        }
+    }
+
     func viewerAllItems() async throws -> [AssetItem] {
         for i in sections.indices { await viewerLoadSection(i) }
         while isPaged, nextPage != nil { try await fetchNextPage() }
@@ -129,6 +174,7 @@ final class AssetGridModel {
     @ObservationIgnored private var index: [String: (section: Int, item: Int)] = [:]
     @ObservationIgnored private var sectionTasks: [String: Task<Void, Never>] = [:]
     @ObservationIgnored private var isStale = false
+    @ObservationIgnored private var loadGeneration = UUID()
     // Paged sources (search, videos)
     @ObservationIgnored private var nextPage: ImmichClient.SearchPage?
     @ObservationIgnored private var pageFailed = false
@@ -153,7 +199,24 @@ final class AssetGridModel {
     }
 
     var totalCount: Int { sections.reduce(0) { $0 + $1.count } }
-    var isPaged: Bool { source.timelineQuery == nil }
+
+    private var dateAdded: Bool { GridArrangement.supportsDateAdded(session?.version) }
+
+    /// The source's timeline filters with the page's view options applied.
+    private var timelineQuery: TimelineQuery? {
+        guard let query = source.timelineQuery else { return nil }
+        return arrangement.map { $0.applied(to: query, dateAdded: dateAdded) } ?? query
+    }
+
+    /// The ID prefix ("2026-11") of the section that holds an asset, following the view options.
+    func sectionMonth(of asset: AssetResponse) -> Substring? {
+        (arrangement ?? GridArrangement()).month(localDateTime: asset.localDateTime, createdAt: asset.createdAt, dateAdded: dateAdded)
+    }
+
+    /// A timeline page showing photos or videos only, through the search API.
+    private var searchesTimeline: Bool { source.timelineQuery != nil && arrangement?.searchesTimeline == true }
+
+    var isPaged: Bool { source.timelineQuery == nil || searchesTimeline }
     var showsSectionHeaders: Bool {
         switch source { case .search, .filteredSearch, .largeFiles: false; default: true }
     }
@@ -185,7 +248,9 @@ final class AssetGridModel {
 
     func loadIfNeeded() async {
         if let loadTask { await loadTask.value }
-        guard state == .idle || isStale else { return }
+        // View options changed while this grid was off screen.
+        let arrangementChanged = arrangement != source.gridPage.map { GridArrangement(page: $0) }
+        guard state == .idle || isStale || arrangementChanged else { return }
         await reload()
     }
 
@@ -204,12 +269,14 @@ final class AssetGridModel {
     func markStale() { isStale = true }
 
     func cancelLoading() {
+        loadGeneration = UUID()
         loadTask?.cancel()
         pageTask?.cancel()
         sectionTasks.values.forEach { $0.cancel() }
     }
 
     func reload() async {
+        loadGeneration = UUID()
         if let previous = loadTask {
             previous.cancel()
             await previous.value
@@ -231,8 +298,9 @@ final class AssetGridModel {
         pageTask?.cancel()
         pageTask = nil
         if sections.isEmpty { state = .loading }
+        arrangement = source.gridPage.map { GridArrangement(page: $0) }
         do {
-            if let query = source.timelineQuery {
+            if let query = timelineQuery, !searchesTimeline {
                 var buckets = try await source.albumID != nil
                     ? session.client.albumTimeBuckets(query, order: albumOrder)
                     : session.client.timeBuckets(query)
@@ -281,19 +349,23 @@ final class AssetGridModel {
     @discardableResult
     private func loadSection(id: String) -> Task<Void, Never> {
         if let task = sectionTasks[id] { return task }
+        let generation = loadGeneration
         let task = Task { [weak self] in
-            guard let self, let session, let query = source.timelineQuery else { return }
+            guard let self, let session, let query = timelineQuery else { return }
             do {
                 let columns = try await source.albumID != nil
                     ? session.client.albumTimeBucket(id, query, order: albumOrder)
                     : session.client.timeBucket(id, query)
-                guard let i = sections.firstIndex(where: { $0.id == id }) else { return }
-                var assets = AssetItem.from(columns).filter { self.source != .geolocation || (session.user?.id != nil && $0.ownerId == session.user?.id) }
+                try Task.checkCancellation()
+                guard generation == loadGeneration,
+                      let i = sections.firstIndex(where: { $0.id == id }) else { return }
+                var assets = AssetItem.from(columns, includingLocked: source == .locked).filter { self.source != .geolocation || (session.user?.id != nil && $0.ownerId == session.user?.id) }
                 if case .explore(.map(let query)) = source { assets.removeAll { !query.includes($0.date) } }
                 sections[i].assets = assets
                 sections[i].count = assets.count
                 rebuildIndex()
             } catch {
+                guard generation == loadGeneration, !error.isCancellation else { return }
                 session.handle(error)
                 sectionTasks[id] = nil // allow retry on next appearance
             }
@@ -304,20 +376,32 @@ final class AssetGridModel {
 
     private func loadNextPage() {
         guard !pageFailed, pageTask == nil, nextPage != nil else { return }
+        let generation = loadGeneration
         pageTask = Task { [weak self] in
             guard let self else { return }
             do { try await fetchNextPage() }
-            catch { if !error.isCancellation { pageFailed = true; report(error) } }
-            pageTask = nil
+            catch { if generation == loadGeneration, !error.isCancellation { pageFailed = true; report(error) } }
+            if generation == loadGeneration { pageTask = nil }
         }
     }
 
     private func fetchNextPage() async throws {
+        try Task.checkCancellation()
         guard let session, let page = nextPage else { return }
+        let generation = loadGeneration
         let result: SearchResponse.Assets
         switch source {
+        case _ where searchesTimeline:
+            // Photos or videos only on a timeline page: the timeline API has no type filter, search does.
+            guard let query = source.timelineQuery, let arrangement else { return }
+            result = try await session.client.metadataSearch(
+                type: arrangement.mediaType == .videos ? .video : .image, visibility: query.visibility,
+                isFavorite: query.isFavorite ?? arrangement.isFavorite, personIds: query.personId.map { [$0] },
+                tagIds: query.tagId.map { [$0] }, order: arrangement.order.rawValue, page: page)
         case .largeFiles:
-            let assets = try await session.client.assetsLargeFiles()
+            let assets = try await session.client.assetsLargeFiles(type: arrangement?.assetType, isFavorite: arrangement?.isFavorite, serverVersion: session.version)
+            try Task.checkCancellation()
+            guard generation == loadGeneration else { throw CancellationError() }
             nextPage = nil
             append(assets.filter { $0.visibility != "locked" }.map(AssetItem.init))
             return
@@ -329,8 +413,11 @@ final class AssetGridModel {
             }
         case .filteredSearch(let query):
             result = try await session.client.advancedSearch(query, smartEnabled: session.features.smartSearch, page: page) { [weak self] count in
+                guard self?.loadGeneration == generation else { return }
                 self?.searchResultsLoaded = count
             }
+            try Task.checkCancellation()
+            guard generation == loadGeneration else { throw CancellationError() }
             if query.mode == .context, session.features.smartSearch,
                !query.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
                query.sort != .automatic, result.nextPage == nil, result.nextCursor == nil {
@@ -340,10 +427,13 @@ final class AssetGridModel {
             result = try await session.client.exploreAssets(source, page: page)
         case .videos:
             // Live Photo motion components are hidden and have no standalone thumbnails.
-            result = try await session.client.metadataSearch(type: .video, visibility: "timeline", page: page)
+            result = try await session.client.metadataSearch(type: .video, visibility: "timeline", isFavorite: arrangement?.isFavorite,
+                                                             order: (arrangement?.order ?? .newestFirst).rawValue, page: page)
         default:
             return
         }
+        try Task.checkCancellation()
+        guard generation == loadGeneration else { throw CancellationError() }
         if let cursor = result.nextCursor {
             nextPage = .init(cursor: cursor)
         } else if let next = result.nextPage.flatMap(Int.init) {
@@ -351,9 +441,12 @@ final class AssetGridModel {
         } else {
             nextPage = nil
         }
-        append(result.items.filter { $0.visibility != "locked" }.map(AssetItem.init))
-        // A page containing only locked results must not strand the pagination trigger.
-        if result.items.allSatisfy({ $0.visibility == "locked" }), nextPage != nil {
+        // Search without a visibility also finds Live Photos' hidden video parts.
+        let keepsLocked = source == .locked
+        let visibleItems = result.items.filter { (keepsLocked || $0.visibility != "locked") && !(searchesTimeline && $0.visibility == "hidden") }
+        append(visibleItems.map(AssetItem.init))
+        // Any fully filtered page must advance, since it has no cells to trigger pagination.
+        if visibleItems.isEmpty, nextPage != nil {
             try await fetchNextPage()
         }
     }
@@ -458,7 +551,7 @@ final class AssetGridModel {
         guard canMutate(ids), let session else { return }
         do {
             try await session.client.setFavorite(ids, value)
-            if source == .favorites && !value {
+            if (source == .favorites || arrangement?.show == .favorites) && !value {
                 remove(ids)
             } else {
                 update(ids) { $0.isFavorite = value }
@@ -473,7 +566,7 @@ final class AssetGridModel {
     }
 
     func moveToLockedFolder(_ ids: [String]) async {
-        guard canMutate(ids), let session else { return }
+        guard canMutate(ids), source != .locked, let session else { return }
         do {
             try await session.client.setVisibility(ids, "locked")
             session.exploreRemoveFromGrids(Set(ids))
@@ -487,8 +580,18 @@ final class AssetGridModel {
         } catch { report(error) }
     }
 
+    func removeFromLockedFolder(_ ids: [String]) async {
+        guard canMutate(ids), source == .locked, let session else { return }
+        do {
+            try await session.client.setVisibility(ids, "timeline")
+            remove(ids)
+            session.services.hiddenAssetIDs.subtract(ids)
+            session.invalidateGrids(except: self)
+        } catch { report(error) }
+    }
+
     func setArchived(_ ids: [String], _ archived: Bool) async {
-        guard canMutate(ids), let session else { return }
+        guard canMutate(ids), source != .locked, let session else { return }
         do {
             try await session.client.setVisibility(ids, archived ? "archive" : "timeline")
             if source == .archive || source.excludesArchived {
@@ -501,7 +604,8 @@ final class AssetGridModel {
     func delete(_ ids: [String], permanently: Bool) async {
         guard canDelete(ids), let session else { return }
         do {
-            try await session.client.delete(ids, force: permanently)
+            // Locked items are deleted permanently, as in Immich: trash doesn't show them.
+            try await session.client.delete(ids, force: permanently || source == .locked)
             remove(ids)
             session.invalidateGrids(except: self)
             await session.reloadAlbums()

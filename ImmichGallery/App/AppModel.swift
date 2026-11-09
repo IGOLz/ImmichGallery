@@ -354,6 +354,8 @@ final class AccountServices {
 @MainActor @Observable
 final class LibrarySession {
     let services: AccountServices
+    /// Set for the session that shows an unlocked Locked Folder inside a window.
+    let lockedFolder: LockedFolderMedia?
     @ObservationIgnored var lockFolder: () -> Void = {}
     @ObservationIgnored var closeViewer: () -> Void = {}
     /// The library window showing this session (Widget: clicks open photos in the frontmost one).
@@ -363,8 +365,8 @@ final class LibrarySession {
     let metadata: MetadataState
     let sharing: SharingModel
     @ObservationIgnored private var gridModels: [GridSource: AssetGridModel] = [:]
-    var client: ImmichClient { services.client }
-    var pipeline: ImagePipeline { services.pipeline }
+    var client: ImmichClient { lockedFolder?.client ?? services.client }
+    var pipeline: ImagePipeline { lockedFolder?.pipeline ?? services.pipeline }
     var upload: UploadQueue { services.upload }
     var user: User? { services.user }
     var features: ServerFeatures { services.features }
@@ -375,8 +377,9 @@ final class LibrarySession {
     var exploreTags: [ExploreTag] { services.exploreTags }
     var exploreTagsEnabled: Bool { services.exploreTagsEnabled }
     var cacheUserID: String { services.cacheUserID }
-    init(services: AccountServices) {
+    init(services: AccountServices, lockedFolder: LockedFolderMedia? = nil) {
         self.services = services
+        self.lockedFolder = lockedFolder
         metadata = MetadataState(shared: services.metadata)
         sharing = SharingModel(client: services.client, data: services.sharing.data)
         services.windows.add(self)
@@ -439,12 +442,16 @@ final class LibrarySession {
     func removeFromGrids(_ ids: Set<String>) {
         if let snapshot = metadata.viewerSnapshot, ids.contains(snapshot.id) { metadata.viewerSnapshot = nil }
         for model in gridModels.values {
+            // Items moved into the Locked Folder from elsewhere belong in this grid.
+            if model.source == .locked { model.markStale(); continue }
             if let id = model.viewerID, ids.contains(id) { closeViewer() }
             model.exploreRemove(ids)
         }
     }
 
     func handle(_ error: Error) {
+        // An expired unlock fails Locked Folder requests; that locks the folder, it doesn't sign out.
+        if let lockedFolder { if !error.isCancellation { lockedFolder.requestFailed() }; return }
         services.handle(error)
     }
 }

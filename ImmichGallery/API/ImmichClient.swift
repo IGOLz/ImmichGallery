@@ -40,6 +40,8 @@ final class ImmichClient: Sendable {
     let apiURL: URL
     let credential: Credential?
     let session: URLSession
+    /// Where originals for Quick Look, drags and copied files go when not the shared temporary folders (Locked Folder).
+    let transferRoot: URL?
 
     static let userAgent: String = {
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0"
@@ -58,15 +60,17 @@ final class ImmichClient: Sendable {
         return URLSession(configuration: config)
     }()
 
-    init(serverURL: URL, apiURL: URL, credential: Credential?, session: URLSession = ImmichClient.sharedSession) {
+    init(serverURL: URL, apiURL: URL, credential: Credential?, session: URLSession = ImmichClient.sharedSession,
+         transferRoot: URL? = nil) {
         self.serverURL = serverURL
         self.apiURL = apiURL
         self.credential = credential
         self.session = session
+        self.transferRoot = transferRoot
     }
 
     func with(credential: Credential) -> ImmichClient {
-        ImmichClient(serverURL: serverURL, apiURL: apiURL, credential: credential, session: session)
+        ImmichClient(serverURL: serverURL, apiURL: apiURL, credential: credential, session: session, transferRoot: transferRoot)
     }
 
     // MARK: - Request plumbing
@@ -193,6 +197,8 @@ struct TimelineQuery: Hashable, Sendable {
     var withPartners: Bool?
     var withStacked: Bool? = true
     var bbox: String? // Explore
+    var order: String? // Timeline view options: "asc" for oldest first.
+    var orderBy: String? // Timeline view options: "createdAt" for date added (Immich v3.0).
 
     var parameters: [String: String?] {
         [
@@ -206,6 +212,8 @@ struct TimelineQuery: Hashable, Sendable {
             "tagId": tagId, // Explore
             "withPartners": withPartners.map(String.init),
             "withStacked": withStacked.map(String.init),
+            "order": order,
+            "orderBy": orderBy,
         ]
     }
 }
@@ -259,19 +267,25 @@ extension ImmichClient {
 
     /// Metadata search (used for filename search and media-type collections).
     func metadataSearch(
-        type: AssetType? = nil, fileName: String? = nil, visibility: String? = nil, page: SearchPage, size: Int = 250
+        type: AssetType? = nil, fileName: String? = nil, visibility: String? = nil, isFavorite: Bool? = nil,
+        personIds: [String]? = nil, tagIds: [String]? = nil, order: String = "desc", withExif: Bool? = nil, page: SearchPage, size: Int = 250
     ) async throws -> SearchResponse.Assets {
         struct Body: Encodable {
             var type: String?
             var originalFileName: String?
             var visibility: String?
+            var isFavorite: Bool?
+            var personIds: [String]?
+            var tagIds: [String]?
             var page: Int?
             var cursor: String?
             var size: Int
-            var order = "desc"
+            var order: String
+            var withExif: Bool?
             var withStacked = true
         }
-        let body = Body(type: type?.rawValue, originalFileName: fileName, visibility: visibility, page: page.page, cursor: page.cursor, size: size)
+        let body = Body(type: type?.rawValue, originalFileName: fileName, visibility: visibility, isFavorite: isFavorite,
+                        personIds: personIds, tagIds: tagIds, page: page.page, cursor: page.cursor, size: size, order: order, withExif: withExif)
         let response: SearchResponse = try await send("POST", "search/metadata", body: body)
         return response.assets
     }
