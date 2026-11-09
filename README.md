@@ -95,7 +95,7 @@ The demo is shared with everyone and doesn't accept uploads.
 | People: rename, merge, hide, birthday, assign faces; show favorites or hidden people | ✅ |
 | Smart (CLIP), file name, description and OCR search              | ✅ |
 | Search filters: people, place, camera, date, type, rating        | ✅ |
-| Global map with clusters, places grouped by country (collapsible), memories | ✅ |
+| Global map with clusters, places by city or country, memories    | ✅ |
 | Tags and folder view                                             | ✅ |
 | Locked Folder (PIN)                                              | ✅ |
 | Stacks, duplicates, large files                                  | ✅ |

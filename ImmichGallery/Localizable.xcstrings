@@ -1,22 +1,62 @@
 {
   "sourceLanguage": "en",
   "strings": {
-    "Shows the places in this country": {
+    "Cities": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Mostra i luoghi di questo paese"
+            "value": "Città"
           }
         }
       }
     },
-    "Hides the places in this country": {
+    "Countries": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nasconde i luoghi di questo paese"
+            "value": "Paesi"
+          }
+        }
+      }
+    },
+    "%lld places": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld place"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld places"
+                }
+              }
+            }
+          }
+        },
+        "it": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld luogo"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld luoghi"
+                }
+              }
+            }
           }
         }
       }
@@ -257,16 +297,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mostra tutte le persone"
-          }
-        }
-      }
-    },
-    "Country": {
-      "localizations": {
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Paese"
           }
         }
       }

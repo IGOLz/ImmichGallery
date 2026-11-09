@@ -44,72 +44,33 @@ struct ExplorePlacesView: View {
     @Environment(LibrarySession.self) private var session
     @State private var cities: [AssetResponse] = []
     @State private var error: String?
-    // Places: the same grouping and default as the places page of the Immich web app.
+    // Places: Immich's grouping setting and default. Grouped by country, the page shows a card per country
+    // that opens its cities, since one long page of country sections is hard to find your way in.
     @AppStorage("places.groupBy") private var groupBy = PlacesGroupBy.none
-    @AppStorage("places.collapsedGroups") private var collapsedGroups = "{}"
-    private var collapsed: CollapsedGroups { CollapsedGroups(stored: collapsedGroups) }
     var body: some View {
         let groups = PlacesArrangement(groupBy: groupBy).groups(cities)
         ScrollView {
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 170, maximum: 240))], spacing: 20, pinnedViews: [.sectionHeaders]) {
-                ForEach(groups) { group in
-                    let isCollapsed = collapsed.isCollapsed(group.id, in: groupBy.collapsingKey)
-                    Section {
-                        if !isCollapsed {
-                            ForEach(group.places) { asset in
-                                if let city = asset.exifInfo?.city {
-                                    NavigationLink {
-                                        AssetGridContainer(source: .explore(.city(city)), title: Text(city))
-                                    } label: {
-                                        VStack(alignment: .leading) {
-                                            RemoteThumbnail(pipeline: session.pipeline, assetID: asset.id).aspectRatio(1, contentMode: .fit).clipShape(.rect(cornerRadius: 10))
-                                            Text(city).font(.headline)
-                                            // The group header already names the country.
-                                            if group.header == nil { Text(asset.exifInfo?.country ?? "").foregroundStyle(.secondary) }
-                                        }
-                                    }.buttonStyle(.plain)
-                                }
-                            }
-                        }
-                    } header: {
-                        if let header = group.header {
-                            // Like Immich, a country header collapses and expands its places, so collapsing
-                            // all groups turns the page into a list of countries.
-                            Button {
-                                var groups = collapsed
-                                groups.toggle(group.id, in: groupBy.collapsingKey)
-                                collapsedGroups = groups.stored
-                            } label: {
-                                SectionHeader(title: title(header), disclosure: isCollapsed ? .collapsed : .expanded, count: group.places.count)
-                                    .contentShape(Rectangle())
-                            }
-                            .buttonStyle(.plain)
-                            .padding(.horizontal, -10)
-                            .accessibilityHint(isCollapsed ? Text("Shows the places in this country") : Text("Hides the places in this country"))
-                        }
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 170, maximum: 240))], spacing: 20) {
+                if groupBy == .country {
+                    ForEach(groups) { group in
+                        NavigationLink {
+                            ExplorePlacesCountryView(title: Self.title(group.header), places: group.places)
+                        } label: {
+                            ExploreCountryCard(title: Self.title(group.header), places: group.places)
+                        }.buttonStyle(.plain)
                     }
+                } else {
+                    ForEach(cities) { ExplorePlaceCell(asset: $0, showsCountry: true) }
                 }
             }.padding(20)
         }
         .toolbar {
             ToolbarItem {
                 Menu {
-                    Picker("Group By", selection: $groupBy) {
+                    Picker("Show", selection: $groupBy) {
                         ForEach(PlacesGroupBy.allCases) { Text($0.title).tag($0) }
                     }
                     .pickerStyle(.inline)
-                    Button("Expand All Groups") {
-                        var all = collapsed
-                        all.set([], in: groupBy.collapsingKey)
-                        collapsedGroups = all.stored
-                    }
-                    .disabled(groupBy == .none)
-                    Button("Collapse All Groups") {
-                        var all = collapsed
-                        all.set(groups.map(\.id), in: groupBy.collapsingKey)
-                        collapsedGroups = all.stored
-                    }
-                    .disabled(groupBy == .none)
                 } label: {
                     Label("View Options", systemImage: "line.3.horizontal.decrease.circle")
                 }
@@ -123,10 +84,74 @@ struct ExplorePlacesView: View {
         }
     }
 
-    private func title(_ header: PlacesGroup.Header) -> String {
+    static func title(_ header: PlacesGroup.Header?) -> String {
         switch header {
         case .country(let country): country
-        case .unknownCountry: String(localized: "Unknown Country")
+        case .unknownCountry, nil: String(localized: "Unknown Country")
+        }
+    }
+}
+
+/// A country's cities, opened from its card.
+struct ExplorePlacesCountryView: View {
+    let title: String
+    let places: [AssetResponse]
+    var body: some View {
+        ScrollView {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 170, maximum: 240))], spacing: 20) {
+                ForEach(places) { ExplorePlaceCell(asset: $0, showsCountry: false) }
+            }.padding(20)
+        }
+        .navigationTitle(title)
+    }
+}
+
+/// A country: a mosaic of its first four places (or the first one's photo), its name and how many places.
+private struct ExploreCountryCard: View {
+    @Environment(LibrarySession.self) private var session
+    let title: String
+    let places: [AssetResponse]
+    var body: some View {
+        VStack(alignment: .leading) {
+            Group {
+                if places.count >= 4 {
+                    VStack(spacing: 2) {
+                        ForEach(0..<2, id: \.self) { row in
+                            HStack(spacing: 2) {
+                                ForEach(0..<2, id: \.self) { column in
+                                    RemoteThumbnail(pipeline: session.pipeline, assetID: places[row * 2 + column].id)
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    RemoteThumbnail(pipeline: session.pipeline, assetID: places.first?.id)
+                }
+            }
+            .aspectRatio(1, contentMode: .fit)
+            .clipShape(.rect(cornerRadius: 10))
+            Text(title).font(.headline).lineLimit(1)
+            Text("\(places.count) places").foregroundStyle(.secondary)
+        }
+        .contentShape(Rectangle())
+    }
+}
+
+private struct ExplorePlaceCell: View {
+    @Environment(LibrarySession.self) private var session
+    let asset: AssetResponse
+    let showsCountry: Bool
+    var body: some View {
+        if let city = asset.exifInfo?.city {
+            NavigationLink {
+                AssetGridContainer(source: .explore(.city(city)), title: Text(city))
+            } label: {
+                VStack(alignment: .leading) {
+                    RemoteThumbnail(pipeline: session.pipeline, assetID: asset.id).aspectRatio(1, contentMode: .fit).clipShape(.rect(cornerRadius: 10))
+                    Text(city).font(.headline)
+                    if showsCountry { Text(asset.exifInfo?.country ?? "").foregroundStyle(.secondary) }
+                }
+            }.buttonStyle(.plain)
         }
     }
 }
