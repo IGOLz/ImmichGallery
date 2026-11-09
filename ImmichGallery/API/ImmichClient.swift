@@ -193,6 +193,8 @@ struct TimelineQuery: Hashable, Sendable {
     var withPartners: Bool?
     var withStacked: Bool? = true
     var bbox: String? // Explore
+    var order: String? // Timeline view options: "asc" for oldest first.
+    var orderBy: String? // Timeline view options: "createdAt" for date added (Immich v3.0).
 
     var parameters: [String: String?] {
         [
@@ -206,6 +208,8 @@ struct TimelineQuery: Hashable, Sendable {
             "tagId": tagId, // Explore
             "withPartners": withPartners.map(String.init),
             "withStacked": withStacked.map(String.init),
+            "order": order,
+            "orderBy": orderBy,
         ]
     }
 }

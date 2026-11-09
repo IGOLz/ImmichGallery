@@ -205,11 +205,14 @@ final class ViewerState: NSObject, NSWindowDelegate {
                 let asset = try await session.client.asset(id)
                 let library = session.gridModel(for: .library)
                 await library.loadIfNeeded()
-                if let index = library.sections.firstIndex(where: { $0.id.prefix(7) == asset.localDateTime.prefix(7) }) {
+                let month = library.sectionMonth(of: asset)
+                if let index = library.sections.firstIndex(where: { $0.id.prefix(7) == month }) {
                     await library.viewerLoadSection(index)
                 }
                 guard library.item(id) != nil else {
-                    model.lastError = String(localized: "This item isn't in All Photos. It may be archived, hidden, trashed, or part of a stack.")
+                    model.lastError = library.arrangement?.isFiltered == true
+                        ? String(localized: "This item isn't shown in All Photos with its current view options. Choose All Items in View Options to find it.")
+                        : String(localized: "This item isn't in All Photos. It may be archived, hidden, trashed, or part of a stack.")
                     return
                 }
                 close()

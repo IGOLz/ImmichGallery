@@ -79,7 +79,8 @@ extension LibrarySession {
                 let asset = try await client.asset(id)
                 let library = gridModel(for: .library)
                 await library.loadIfNeeded()
-                if let index = library.sections.firstIndex(where: { $0.id.prefix(7) == asset.localDateTime.prefix(7) }) {
+                let month = library.sectionMonth(of: asset)
+                if let index = library.sections.firstIndex(where: { $0.id.prefix(7) == month }) {
                     await library.viewerLoadSection(index)
                 }
                 guard library.item(id) != nil else { fallback(); return }

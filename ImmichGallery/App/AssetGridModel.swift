@@ -42,6 +42,21 @@ enum GridSource: Hashable {
     }
 }
 
+extension GridSource {
+    /// Timeline pages with view options (TimelineArrangement).
+    var timelinePage: TimelinePage? {
+        switch self {
+        case .library: .library
+        case .favorites: .favorites
+        case .archive: .archive
+        case .partner: .partner // Sharing
+        case .person: .person
+        case .explore(.tag): .tag // Explore
+        default: nil
+        }
+    }
+}
+
 /// Lightweight asset used by grids and the viewer.
 struct AssetItem: Identifiable, Hashable, Sendable {
     let id: String
@@ -107,6 +122,8 @@ final class AssetGridModel {
     @ObservationIgnored private weak var session: LibrarySession?
 
     var albumOrder = "desc" // Albums
+    /// The page's view options, read from its saved settings on every reload.
+    private(set) var arrangement: TimelineArrangement?
     private(set) var sections: [GridSection] = []
     private(set) var state: LoadState = .idle
     private(set) var searchResultsLoaded = 0
@@ -153,6 +170,20 @@ final class AssetGridModel {
     }
 
     var totalCount: Int { sections.reduce(0) { $0 + $1.count } }
+
+    private var dateAdded: Bool { TimelineArrangement.supportsDateAdded(session?.version) }
+
+    /// The source's timeline filters with the page's view options applied.
+    private var timelineQuery: TimelineQuery? {
+        guard let query = source.timelineQuery else { return nil }
+        return arrangement.map { $0.applied(to: query, dateAdded: dateAdded) } ?? query
+    }
+
+    /// The ID prefix ("2026-11") of the section that holds an asset, following the view options.
+    func sectionMonth(of asset: AssetResponse) -> Substring? {
+        (arrangement ?? TimelineArrangement()).month(localDateTime: asset.localDateTime, createdAt: asset.createdAt, dateAdded: dateAdded)
+    }
+
     var isPaged: Bool { source.timelineQuery == nil }
     var showsSectionHeaders: Bool {
         switch source { case .search, .filteredSearch, .largeFiles: false; default: true }
@@ -185,7 +216,9 @@ final class AssetGridModel {
 
     func loadIfNeeded() async {
         if let loadTask { await loadTask.value }
-        guard state == .idle || isStale else { return }
+        // View options changed while this grid was off screen.
+        let arrangementChanged = arrangement != source.timelinePage.map { TimelineArrangement(page: $0) }
+        guard state == .idle || isStale || arrangementChanged else { return }
         await reload()
     }
 
@@ -231,8 +264,9 @@ final class AssetGridModel {
         pageTask?.cancel()
         pageTask = nil
         if sections.isEmpty { state = .loading }
+        arrangement = source.timelinePage.map { TimelineArrangement(page: $0) }
         do {
-            if let query = source.timelineQuery {
+            if let query = timelineQuery {
                 var buckets = try await source.albumID != nil
                     ? session.client.albumTimeBuckets(query, order: albumOrder)
                     : session.client.timeBuckets(query)
@@ -282,7 +316,7 @@ final class AssetGridModel {
     private func loadSection(id: String) -> Task<Void, Never> {
         if let task = sectionTasks[id] { return task }
         let task = Task { [weak self] in
-            guard let self, let session, let query = source.timelineQuery else { return }
+            guard let self, let session, let query = timelineQuery else { return }
             do {
                 let columns = try await source.albumID != nil
                     ? session.client.albumTimeBucket(id, query, order: albumOrder)

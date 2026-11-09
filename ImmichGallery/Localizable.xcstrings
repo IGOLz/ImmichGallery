@@ -1,6 +1,76 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "All Items": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tutti gli elementi"
+          }
+        }
+      }
+    },
+    "Date Added": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Data di aggiunta"
+          }
+        }
+      }
+    },
+    "View Options. Sorting by Date Added needs Immich v3.0 or later.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opzioni vista. L'ordinamento per data di aggiunta richiede Immich v3.0 o successivo."
+          }
+        }
+      }
+    },
+    "No Matching Photos": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nessuna foto corrispondente"
+          }
+        }
+      }
+    },
+    "No photos match the selected view options.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nessuna foto corrisponde alle opzioni vista selezionate."
+          }
+        }
+      }
+    },
+    "Show All Items": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostra tutti gli elementi"
+          }
+        }
+      }
+    },
+    "This item isn't shown in All Photos with its current view options. Choose All Items in View Options to find it.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Questo elemento non è visibile in Tutte le foto con le opzioni vista attuali. Scegli Tutti gli elementi in Opzioni vista per trovarlo."
+          }
+        }
+      }
+    },
     "No Matching Albums": {
       "localizations": {
         "it": {
