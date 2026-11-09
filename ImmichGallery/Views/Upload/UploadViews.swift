@@ -44,7 +44,7 @@ private struct UploadToolbarLabel: View {
                 .progressViewStyle(.circular).controlSize(.small)
                 .accessibilityLabel("Importing \(queue.completed) of \(queue.items.count)")
         } else {
-            Label("Import", systemImage: "square.and.arrow.down")
+            Label("Import", systemImage: "arrow.up.to.line")
         }
     }
 }
