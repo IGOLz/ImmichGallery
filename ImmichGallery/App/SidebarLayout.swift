@@ -26,7 +26,11 @@ struct SidebarSection: Codable, Identifiable, Equatable {
     let id: String
     var name: String?
     var hidden = false
+    /// Optional so layouts saved before sections could collapse still decode.
+    var collapsed: Bool?
+    var isCollapsed: Bool { collapsed == true }
     var isCustom: Bool { SidebarGroup(rawValue: id) == nil }
+    var listsAlbums: Bool { id == SidebarGroup.myAlbums.rawValue || id == SidebarGroup.sharedAlbums.rawValue }
 }
 
 struct SidebarLayout {
@@ -39,11 +43,15 @@ struct SidebarLayout {
         var entries: [Entry]?
         var hiddenLinks: [String]?
         var hiddenDynamicItems: [String]?
+        var albumLimits: [String: Int]?
+        var albumSorting: [String: String]?
     }
     private var entries: [Entry]
     private(set) var sections: [SidebarSection]
     private var hiddenLinks: Set<String>
     private var hiddenDynamicItems: Set<String>
+    private var albumLimits: [String: Int]
+    private var albumSorting: [String: String]
 
     init(stored: String = "") {
         let data = Data(stored.utf8)
@@ -68,12 +76,15 @@ struct SidebarLayout {
         }
         hiddenLinks = Set(saved?.hiddenLinks ?? []).filter { SidebarLink(rawValue: $0) != nil }
         hiddenDynamicItems = Set(saved?.hiddenDynamicItems ?? [])
+        albumLimits = (saved?.albumLimits ?? [:]).filter { $0.value > 0 }
+        albumSorting = saved?.albumSorting ?? [:]
     }
 
     var stored: String {
         let encoder = JSONEncoder()
         encoder.outputFormatting = .sortedKeys
-        let saved = Saved(sections: sections, entries: entries, hiddenLinks: hiddenLinks.sorted(), hiddenDynamicItems: hiddenDynamicItems.sorted())
+        let saved = Saved(sections: sections, entries: entries, hiddenLinks: hiddenLinks.sorted(), hiddenDynamicItems: hiddenDynamicItems.sorted(),
+                          albumLimits: albumLimits, albumSorting: albumSorting)
         return String(decoding: try! encoder.encode(saved), as: UTF8.self)
     }
 
@@ -91,9 +102,21 @@ struct SidebarLayout {
     mutating func setDynamicItemHidden(_ hidden: Bool, key: String) {
         if hidden { hiddenDynamicItems.insert(key) } else { hiddenDynamicItems.remove(key) }
     }
+    /// How many albums an album section lists, or nil to list all of them.
+    func albumLimit(in sectionID: String) -> Int? { albumLimits[sectionID] }
+    mutating func setAlbumLimit(_ limit: Int?, in sectionID: String) {
+        albumLimits[sectionID] = limit.map { max(1, $0) }
+    }
+    /// The album sort an album section uses, stored by raw value so the layout stays independent of the albums page.
+    func albumSorting(in sectionID: String) -> String? { albumSorting[sectionID] }
+    mutating func setAlbumSorting(_ sortBy: String?, in sectionID: String) { albumSorting[sectionID] = sortBy }
     mutating func setSectionHidden(_ hidden: Bool, id: String) {
         guard let index = sections.firstIndex(where: { $0.id == id }) else { return }
         sections[index].hidden = hidden
+    }
+    mutating func setSectionCollapsed(_ collapsed: Bool, id: String) {
+        guard let index = sections.firstIndex(where: { $0.id == id }) else { return }
+        sections[index].collapsed = collapsed ? true : nil
     }
 
     @discardableResult

@@ -104,6 +104,7 @@ The demo is shared with everyone and doesn't accept uploads.
 | API keys, sessions, notifications, preferences                   | ✅ |
 | Administration: stats, jobs, users, external libraries           | ✅ |
 | Several windows and tabs, Quick Look, drag and drop              | ✅ |
+| Customizable sidebar, edited in place, with collapsible sections and a choice of how many albums it lists | ✅ |
 | Shortcuts actions and the macOS share sheet                      | ✅ |
 | Desktop widgets: photos (featured, album, person, place, favorites, chosen), mosaic, library | ✅ |
 | In-app updates, optionally automatic                             | ✅ |

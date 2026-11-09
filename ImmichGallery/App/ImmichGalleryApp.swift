@@ -150,7 +150,7 @@ struct SearchActions {
 }
 
 struct SidebarActions {
-    var customize: () -> Void
+    var editing: Binding<Bool>
 }
 
 extension FocusedValues {
@@ -218,7 +218,7 @@ struct AppCommands: Commands {
         }
 
         CommandGroup(after: .sidebar) {
-            Button("Customize Sidebar…") { sidebarActions?.customize() }
+            Toggle("Edit Sidebar", isOn: sidebarActions?.editing ?? .constant(false))
                 .disabled(sidebarActions == nil)
         }
 

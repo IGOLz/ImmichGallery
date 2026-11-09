@@ -51,17 +51,12 @@ struct SidebarNavigationRow: View {
     let link: SidebarLink
     let sectionID: String
     @Binding var layout: String
-    let visibleLinks: [SidebarLink]
-    let customize: () -> Void
+    let edit: () -> Void
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         SidebarNavigationLabel(link: link)
             .contextMenu {
-                Button("Move Up") { shift(by: -1) }
-                    .disabled(visibleLinks.first == link)
-                Button("Move Down") { shift(by: 1) }
-                    .disabled(visibleLinks.last == link)
                 Menu("Move to Section") {
                     ForEach(SidebarLayout(stored: layout).sections.filter { !$0.hidden && $0.id != sectionID }) { destination in
                         Button { move(link, to: destination.id) } label: { destination.label }
@@ -73,21 +68,14 @@ struct SidebarNavigationRow: View {
                     updated.setHidden(true, link: link)
                     layout = updated.stored
                 }
-                Button("Customize Sidebar…", action: customize)
+                Button("Edit Sidebar", action: edit)
             }
     }
 
-    private func shift(by offset: Int) {
-        guard let index = visibleLinks.firstIndex(of: link), visibleLinks.indices.contains(index + offset) else { return }
-        move(link, to: sectionID, relativeTo: visibleLinks[index + offset], after: offset > 0)
-    }
-
-    @discardableResult
-    private func move(_ source: SidebarLink, to sectionID: String, relativeTo target: SidebarLink? = nil, after: Bool = false) -> Bool {
+    private func move(_ source: SidebarLink, to sectionID: String) {
         var updated = SidebarLayout(stored: layout)
-        guard updated.move(source, to: sectionID, relativeTo: target, after: after) else { return false }
+        guard updated.move(source, to: sectionID) else { return }
         withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) { layout = updated.stored }
-        return true
     }
 }
 

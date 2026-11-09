@@ -2,17 +2,15 @@ import SwiftUI
 
 /// The signed-in account and its notifications, at the bottom of the sidebar. They are about
 /// who is signed in to which server, not about the page shown, so they stay out of the toolbar.
-struct AccountSidebarFooter: View {
+struct AccountSidebarFooter<Controls: View>: View {
     let services: AccountServices
-    let customize: () -> Void
+    @ViewBuilder let controls: Controls
 
     var body: some View {
         HStack(spacing: 6) {
             AccountMenu(services: services)
             AccountNotificationBell(session: services)
-            Button(action: customize) { Image(systemName: "slider.horizontal.3") }
-                .help("Customize Sidebar…")
-                .accessibilityLabel("Customize Sidebar…")
+            controls
         }
         .buttonStyle(.borderless)
         .padding(.horizontal, 10).padding(.vertical, 8)
