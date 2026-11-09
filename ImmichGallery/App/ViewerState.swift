@@ -11,6 +11,7 @@ final class ViewerState: NSObject, NSWindowDelegate {
     var slideshow = false { didSet { updateActivity() } }
     var paused = false { didSet { updateActivity() } }
     var settingsPresented = false
+    var pendingDelete: String?
     var window: NSWindow?
     var preparing = false
     var elapsed = 0.0
@@ -50,6 +51,11 @@ final class ViewerState: NSObject, NSWindowDelegate {
         self.model = model
         self.session = session
     }
+    func requestDeleteCurrent() {
+        guard let id = model.viewerID, model.canDelete([id]) else { return }
+        pendingDelete = id
+    }
+
 
     var currentID: String? { model.viewerID ?? (model.selection.count == 1 ? model.selection.first : nil) }
 
