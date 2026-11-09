@@ -1,6 +1,76 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "All Time": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sempre"
+          }
+        }
+      }
+    },
+    "Past 24 Hours": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ultime 24 ore"
+          }
+        }
+      }
+    },
+    "Past 7 Days": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ultimi 7 giorni"
+          }
+        }
+      }
+    },
+    "Past 30 Days": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ultimi 30 giorni"
+          }
+        }
+      }
+    },
+    "Past Year": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ultimo anno"
+          }
+        }
+      }
+    },
+    "Past 3 Years": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ultimi 3 anni"
+          }
+        }
+      }
+    },
+    "Custom Range": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Intervallo personalizzato"
+          }
+        }
+      }
+    },
     "All People": {
       "localizations": {
         "it": {
