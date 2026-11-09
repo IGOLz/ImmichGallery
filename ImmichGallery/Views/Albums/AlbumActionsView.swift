@@ -103,7 +103,7 @@ struct AlbumSidebarRows: View {
 
     var body: some View {
         let layout = SidebarLayout(stored: storedLayout)
-        ForEach(session.albums.filter { $0.shared == shared && !layout.isDynamicItemHidden(session.sidebarItemKey("album:" + $0.id)) }) { album in
+        ForEach(session.sidebarAlbums(in: (shared ? SidebarGroup.sharedAlbums : .myAlbums).rawValue, layout: layout)) { album in
             SidebarSelectionRow(item: .album(album.id), selection: $selection) {
                 Label {
                     Text(album.albumName)

@@ -17,8 +17,8 @@ struct MainView: View {
     @State private var searchText = ""
     @State private var submittedSearch = ""
     @State private var showSearchFilters = false
-    @State private var customizingSidebar = false
-    @AppStorage("sidebarLayout") private var sidebarLayout = ""
+    @State private var editingSidebar = false
+    @State private var columnVisibility = NavigationSplitViewVisibility.automatic
     @FocusState private var searchFocused: Bool
 
     init(initialAlbumID: String? = nil, initialSearch: String? = nil) {
@@ -28,8 +28,8 @@ struct MainView: View {
     }
 
     var body: some View {
-        NavigationSplitView {
-            SidebarView(selection: $selection, customizing: $customizingSidebar)
+        NavigationSplitView(columnVisibility: $columnVisibility) {
+            SidebarView(selection: $selection, editing: $editingSidebar)
                 .navigationSplitViewColumnWidth(min: 180, ideal: 220, max: 320)
         } detail: {
             NavigationStack {
@@ -51,8 +51,8 @@ struct MainView: View {
         .searchable(text: $searchText, placement: .toolbar, prompt: session.features.smartSearch ? "Search photos" : "Search file names")
         .searchSuggestions { SearchFieldSuggestions(text: searchText) }
         .searchFocused($searchFocused)
-        .sheet(isPresented: $customizingSidebar) { SidebarCustomizationView(storedLayout: $sidebarLayout) }
-        .focusedSceneValue(\.sidebarActions, SidebarActions(customize: { customizingSidebar = true }))
+        .focusedSceneValue(\.sidebarActions, SidebarActions(editing: $editingSidebar))
+        .onChange(of: editingSidebar) { _, editing in if editing { columnVisibility = .all } }
         .focusedSceneValue(\.librarySession, session)
         .focusedSceneValue(\.searchActions, SearchActions(
             find: { selection = .search; searchFocused = true },

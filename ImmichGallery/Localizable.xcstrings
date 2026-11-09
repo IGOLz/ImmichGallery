@@ -9055,76 +9055,6 @@
         }
       }
     },
-    "Customize Sidebar": {
-      "localizations": {
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Personalizza barra laterale"
-          }
-        }
-      }
-    },
-    "Customize Sidebar…": {
-      "localizations": {
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Personalizza barra laterale…"
-          }
-        }
-      }
-    },
-    "Choose which items and sections appear on this Mac. Hiding them does not delete any photos or albums.": {
-      "localizations": {
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Scegli quali voci e sezioni mostrare su questo Mac. Nasconderle non elimina foto o album."
-          }
-        }
-      }
-    },
-    "New section name": {
-      "localizations": {
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nome della nuova sezione"
-          }
-        }
-      }
-    },
-    "Add Section": {
-      "localizations": {
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aggiungi sezione"
-          }
-        }
-      }
-    },
-    "Unavailable on this server": {
-      "localizations": {
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Non disponibile su questo server"
-          }
-        }
-      }
-    },
-    "Move items here using their Move to Section menu, or drag them into this section in the sidebar.": {
-      "localizations": {
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sposta qui le voci dal menu Sposta nella sezione, oppure trascinale in questa sezione nella barra laterale."
-          }
-        }
-      }
-    },
     "Rename Section": {
       "localizations": {
         "it": {
@@ -9251,6 +9181,116 @@
           "stringUnit": {
             "state": "translated",
             "value": "Torna alla foto"
+          }
+        }
+      }
+    },
+    "%lld Albums": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Album"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Albums"
+                }
+              }
+            }
+          }
+        },
+        "it": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld album"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld album"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Edit Sidebar": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modifica barra laterale"
+          }
+        }
+      }
+    },
+    "New Section": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nuova sezione"
+          }
+        }
+      }
+    },
+    "Show in Sidebar": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostra nella barra laterale"
+          }
+        }
+      }
+    },
+    "Sidebar Options": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opzioni barra laterale"
+          }
+        }
+      }
+    },
+    "Expand": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Espandi"
+          }
+        }
+      }
+    },
+    "Collapse": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comprimi"
+          }
+        }
+      }
+    },
+    "Show All": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostra tutti"
           }
         }
       }

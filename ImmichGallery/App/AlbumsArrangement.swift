@@ -125,6 +125,12 @@ struct AlbumsArrangement {
         }
     }
 
+    /// A sidebar album section: the first albums in the chosen order, newest first for dates.
+    static func sidebar(_ albums: [Album], sortBy: AlbumsSortBy, limit: Int?) -> [Album] {
+        let sorted = AlbumsArrangement(sortBy: sortBy, sortOrder: sortBy.defaultOrder).sorted(albums)
+        return limit.map { Array(sorted.prefix($0)) } ?? sorted
+    }
+
     private static func ownerID(_ album: Album) -> String? { album.albumOwner?.id ?? album.ownerId }
 
     private static let utc: Calendar = {
