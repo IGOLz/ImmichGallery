@@ -37,6 +37,7 @@ cases = {
     'timeline-arrangement': api + [app('TimelineArrangement'), support('Formatters'), 'Tests/TimelineArrangementChecks.swift'],
     'shared-links-arrangement': api + [app('SharedLinksArrangement'), support('Formatters'), 'Tests/SharedLinksArrangementChecks.swift'],
     'places-arrangement': models + ['ImmichGallery/API/Models+Metadata.swift', app('PlacesArrangement'), 'Tests/PlacesArrangementChecks.swift'],
+    'people-arrangement': models + [app('PeopleArrangement'), 'Tests/PeopleArrangementChecks.swift'],
 }
 
 def check(item):

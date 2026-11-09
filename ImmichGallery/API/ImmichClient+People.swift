@@ -1,8 +1,10 @@
 import Foundation
 
 extension ImmichClient {
-    func peoplePage(page: Int, withHidden: Bool, name: String? = nil) async throws -> PeopleResponse {
-        try await get("people", query: ["page": String(page), "size": "100", "withHidden": String(withHidden), "name": name])
+    func peoplePage(page: Int, withHidden: Bool, name: String? = nil, filters: [String: String] = [:]) async throws -> PeopleResponse {
+        var query: [String: String?] = ["page": String(page), "size": "100", "withHidden": String(withHidden), "name": name]
+        query.merge(filters.mapValues { Optional($0) }) { $1 }
+        return try await get("people", query: query)
     }
     func person(_ id: String) async throws -> Person { try await get("people/\(id)") }
     func personStatistics(_ id: String) async throws -> PeopleStatistics { try await get("people/\(id)/statistics") }

@@ -1,6 +1,66 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "All People": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tutte le persone"
+          }
+        }
+      }
+    },
+    "Hidden People": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Persone nascoste"
+          }
+        }
+      }
+    },
+    "Include Hidden People": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Includi persone nascoste"
+          }
+        }
+      }
+    },
+    "No Matching People": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nessuna persona corrispondente"
+          }
+        }
+      }
+    },
+    "No people match the selected view options.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nessuna persona corrisponde alle opzioni vista selezionate."
+          }
+        }
+      }
+    },
+    "Show All People": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostra tutte le persone"
+          }
+        }
+      }
+    },
     "Country": {
       "localizations": {
         "it": {
