@@ -188,6 +188,16 @@ struct AssetGridHost<Header: View>: View {
             }
         }
 
+        ToolbarItem {
+            Button {
+                Exporter.exportOriginals(ids, session: session)
+            } label: {
+                Label("Download", systemImage: "arrow.down.to.line")
+            }
+            .disabled(ids.isEmpty)
+            .help("Export Unmodified Original…")
+        }
+
         if model.source != .locked {
             ToolbarItem { SharingMenu(assetIDs: ids, allowPublicLinks: model.canMutate(ids), albumID: { if case .album(let id) = model.source { return id }; return nil }()) } // Sharing
             if #available(macOS 26, *) { ToolbarSpacer(.fixed) }
