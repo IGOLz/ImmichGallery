@@ -1,6 +1,6 @@
 # Account implementation
 
-Account settings are split into General, Account, Security, Preferences, and Accounts tabs. The library toolbar includes an account switcher and notifications bell.
+Account settings are split into General, Account, Security, Preferences, and Accounts tabs. The bottom of the library sidebar shows the signed-in account (avatar, name, server) and the notifications bell. They describe who is signed in, not the page shown, so they stay out of the toolbar. The account menu holds the email, server and storage use, Account Settings… (opens Settings on the Account tab), Administration… for admins, the account switcher, Add Account… and Sign Out. The app menu repeats Switch Account and Sign Out for when the sidebar is hidden.
 
 Implemented:
 - Profile name editing, email display, usage/quota display, authenticated profile image loading, JPEG upload from a security scoped file importer, and image removal.
@@ -9,7 +9,7 @@ Implemented:
 - Device/session listing with current marker, device OS/type/app version and last activity, confirmed individual revocation and logout of other sessions. Bulk revocation requires session-token authentication.
 - Notifications list, unread count, mark read/all read and delete. Polling runs once per minute only while the scene is active, backs off on failure, stops on cancellation and hides the bell on 403/404.
 - Server preferences for memories, ratings, folders, tags, people, shared links, web sidebar visibility, memory duration, people threshold/update strategy, default album order, download size and embedded video inclusion, email toggles, Cast, recently added web sidebar and support badge. Only available groups/fields appear. Loaded values are exposed as LibrarySession.preferences.
-- Multiple accounts in Keychain, account menu and Settings switcher, adding through the existing login UI, local removal, last selected restoration, and legacy credential migration. Migration now copies the legacy item without changing/deleting it. Sign Out preserves the legacy item and makes it inert through the migration flag; vault failures leave the live login intact and show an error.
+- Multiple accounts in Keychain, sidebar account menu, app menu and Settings switcher, adding through the existing login UI, local removal, last selected restoration, and legacy credential migration. Migration now copies the legacy item without changing/deleting it. Sign Out preserves the legacy item and makes it inert through the migration flag; vault failures leave the live login intact and show an error.
 - New LibrarySession and memory cache per switch, SHA-256-named disk cache directories per API URL/user ID. Old session unauthorized callbacks cannot sign out a newly selected account.
 
 No project file or README changes. No dependencies.

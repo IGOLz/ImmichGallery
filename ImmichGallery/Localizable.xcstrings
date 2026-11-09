@@ -9684,6 +9684,36 @@
           }
         }
       }
+    },
+    "%@ of %@ used": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ di %@ utilizzati"
+          }
+        }
+      }
+    },
+    "%@ used": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ utilizzati"
+          }
+        }
+      }
+    },
+    "Switch Account": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cambia account"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

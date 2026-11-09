@@ -9,23 +9,6 @@ struct SettingsView: View {
     var body: some View {
         Form {
             if let session = app.services {
-                Section("Account") {
-                    LabeledContent("Name", value: session.user?.name ?? "—")
-                    LabeledContent("Email", value: session.user?.email ?? "—")
-                    if let used = session.user?.quotaUsageInBytes {
-                        LabeledContent("Storage Used", value: used.formatted(.byteCount(style: .file)))
-                    }
-                }
-                Section("Server") {
-                    LabeledContent("Address", value: session.client.serverURL.absoluteString)
-                    LabeledContent("Version", value: session.version?.description ?? "—")
-                    LabeledContent("Signed in with") {
-                        switch session.client.credential {
-                        case .apiKey: Text("API Key")
-                        default: Text("Password")
-                        }
-                    }
-                }
                 Section {
                     Slider(value: $wheelMultiplier, in: 1...8, step: 0.5) {
                         Text("Mouse Wheel Speed")
@@ -49,15 +32,11 @@ struct SettingsView: View {
                 MacNotificationPreference()
                 Section {
                     LabeledContent("Image Cache", value: cacheSize.formatted(.byteCount(style: .file)))
-                    HStack {
-                        Button("Clear Cache") {
-                            session.pipeline.removeAll()
-                            session.metadata.imageRevision += 1
-                            session.invalidateGrids()
-                            cacheSize = 0
-                        }
-                        Spacer()
-                        Button("Sign Out", role: .destructive) { Task { await app.signOut() } }
+                    Button("Clear Cache") {
+                        session.pipeline.removeAll()
+                        session.metadata.imageRevision += 1
+                        session.invalidateGrids()
+                        cacheSize = 0
                     }
                 }
             } else {
