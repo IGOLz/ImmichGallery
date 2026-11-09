@@ -108,12 +108,7 @@ struct SidebarView: View {
                 .onKeyPress(.downArrow) { navigate(by: 1, scroll: proxy) }
             }
             Divider()
-            Button { customizing = true } label: {
-                Label("Customize Sidebar…", systemImage: "slider.horizontal.3")
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            .buttonStyle(.plain)
-            .padding(12)
+            AccountSidebarFooter(services: session.services) { customizing = true } // Account
         }
         .onChange(of: storedLayout, initial: true) { _, value in
             guard displayedLayout != value else { return }

@@ -63,7 +63,7 @@ On macOS 15 everything works, with a few differences from macOS 26 Tahoe:
 
 - Controls use the standard translucent material instead of Liquid Glass.
 - Dragging to the Finder exports only the photo you drag, named after its Immich ID, rather than the whole selection with original file names. Dragging a selection onto an album works on both.
-- On pages opened from a grid (a place, tag, album or person), the Import, notifications and account buttons are hidden until you go back. Import, Settings and Sign Out stay available in the menus.
+- On pages opened from a grid (a place, tag, album or person), the Import button is hidden until you go back. **File › Import…** stays available.
 - Video options sit in a strip above the video instead of over it.
 
 ## Try it with the demo

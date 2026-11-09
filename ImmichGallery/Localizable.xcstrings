@@ -1,6 +1,26 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "%@ of %@ used": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ di %@ utilizzati"
+          }
+        }
+      }
+    },
+    "%@ used": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ utilizzati"
+          }
+        }
+      }
+    },
     "No Matching Albums": {
       "localizations": {
         "it": {
@@ -5919,6 +5939,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ordina per"
+          }
+        }
+      }
+    },
+    "Switch Account": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cambia account"
           }
         }
       }

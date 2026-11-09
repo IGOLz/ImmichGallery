@@ -287,6 +287,7 @@ final class AccountServices {
         self.version = await version
         if let user = await user, !Task.isCancelled { self.user = user; onUserLoaded(user) }
         guard !Task.isCancelled else { return }
+        Task { [weak self] in await self?.loadProfilePicture() }
         preferences = try? await client.accountPreferences()
         await reloadAlbums()
         await sharing.reload() // Sharing
@@ -300,7 +301,24 @@ final class AccountServices {
         Task { await loadExploreTags(refresh: true); await sharing.reload() }
     }
 
-    func refreshAccountUser() async throws { user = try await client.currentUser() }
+    func refreshAccountUser() async throws {
+        user = try await client.currentUser()
+        await loadProfilePicture()
+    }
+
+    /// Account: the signed-in user's picture, shown in the sidebar and in Settings.
+    private(set) var profilePicture: NSImage?
+    func loadProfilePicture() async {
+        guard let user, let path = user.profileImagePath, !path.isEmpty else { profilePicture = nil; return }
+        let picture: NSImage?
+        do {
+            var request = try client.request("users/\(user.id)/profile-image")
+            request.cachePolicy = .reloadIgnoringLocalCacheData
+            picture = NSImage(data: try await client.data(for: request))
+        } catch { picture = nil }
+        // An older load finishing late must not bring back a replaced or removed picture.
+        if self.user?.profileImagePath == path { profilePicture = picture }
+    }
 
     var requiresPasswordChange: Bool {
         guard case .accessToken = client.credential else { return false }

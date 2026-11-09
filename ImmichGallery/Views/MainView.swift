@@ -107,11 +107,11 @@ struct MainView: View {
     }
 }
 
-/// Import, notifications and account items. macOS 26 attaches them to the split view, so they
-/// stay visible on pushed pages too. On macOS 15 that combination with a pushed page's own
-/// toolbar loops forever (100% CPU, frozen window), so there they belong to the detail stack:
-/// shown on the main pages, hidden on pushed ones (Back brings them back; menus cover Import,
-/// Settings and Sign Out).
+/// The Import item. macOS 26 attaches it to the split view, so it stays visible on pushed
+/// pages too. On macOS 15 that combination with a pushed page's own toolbar loops forever
+/// (100% CPU, frozen window), so there it belongs to the detail stack: shown on the main
+/// pages, hidden on pushed ones (Back brings it back; File > Import… covers it). Account and
+/// notifications live at the bottom of the sidebar instead.
 private struct GlobalToolbar: ViewModifier {
     enum Level { case splitView, detailStack }
     let session: LibrarySession
@@ -121,7 +121,6 @@ private struct GlobalToolbar: ViewModifier {
         if attached {
             content
                 .toolbar { UploadToolbar(queue: session.upload) } // Upload
-                .toolbar { AccountToolbar(services: session.services) } // Account
         } else {
             content
         }
@@ -129,20 +128,5 @@ private struct GlobalToolbar: ViewModifier {
 
     private var attached: Bool {
         if #available(macOS 26, *) { level == .splitView } else { level == .detailStack }
-    }
-}
-
-/// One group on macOS 26. Separate items on macOS 15, where toolbar groups showed up in the
-/// same layout loop; kept as a precaution.
-private struct AccountToolbar: ToolbarContent {
-    let services: AccountServices
-
-    var body: some ToolbarContent {
-        if #available(macOS 26, *) {
-            ToolbarItemGroup { AccountNotificationBell(session: services); AccountMenu() }
-        } else {
-            ToolbarItem { AccountNotificationBell(session: services) }
-            ToolbarItem { AccountMenu() }
-        }
     }
 }
