@@ -36,6 +36,7 @@ cases = {
     'albums-arrangement': models + ['ImmichGallery/API/Models+Metadata.swift', app('AlbumsArrangement'), support('Formatters'), 'Tests/AlbumsArrangementChecks.swift'],
     'timeline-arrangement': api + [app('TimelineArrangement'), support('Formatters'), 'Tests/TimelineArrangementChecks.swift'],
     'shared-links-arrangement': api + [app('SharedLinksArrangement'), support('Formatters'), 'Tests/SharedLinksArrangementChecks.swift'],
+    'places-arrangement': models + ['ImmichGallery/API/Models+Metadata.swift', app('PlacesArrangement'), 'Tests/PlacesArrangementChecks.swift'],
 }
 
 def check(item):

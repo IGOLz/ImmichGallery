@@ -1,6 +1,26 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Country": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paese"
+          }
+        }
+      }
+    },
+    "Unknown Country": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paese sconosciuto"
+          }
+        }
+      }
+    },
     "All Links": {
       "localizations": {
         "it": {

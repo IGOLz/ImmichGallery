@@ -95,11 +95,11 @@ The demo is shared with everyone and doesn't accept uploads.
 | People: rename, merge, hide, birthday, assign faces              | ✅ |
 | Smart (CLIP), file name, description and OCR search              | ✅ |
 | Search filters: people, place, camera, date, type, rating        | ✅ |
-| Global map with clusters, places, memories                      | ✅ |
+| Global map with clusters, places grouped by country, memories   | ✅ |
 | Tags and folder view                                             | ✅ |
 | Locked Folder (PIN)                                              | ✅ |
 | Stacks, duplicates, large files                                  | ✅ |
-| Public shared links and partner sharing                          | ✅ |
+| Public shared links, filtered by type, and partner sharing       | ✅ |
 | Several accounts and servers                                     | ✅ |
 | API keys, sessions, notifications, preferences                   | ✅ |
 | Administration: stats, jobs, users, external libraries           | ✅ |

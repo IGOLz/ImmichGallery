@@ -44,28 +44,56 @@ struct ExplorePlacesView: View {
     @Environment(LibrarySession.self) private var session
     @State private var cities: [AssetResponse] = []
     @State private var error: String?
+    // Places: the same grouping and default as the places page of the Immich web app.
+    @AppStorage("places.groupBy") private var groupBy = PlacesGroupBy.none
     var body: some View {
         ScrollView {
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 170, maximum: 240))], spacing: 20) {
-                ForEach(cities) { asset in
-                    if let city = asset.exifInfo?.city {
-                        NavigationLink {
-                            AssetGridContainer(source: .explore(.city(city)), title: Text(city))
-                        } label: {
-                            VStack(alignment: .leading) {
-                                RemoteThumbnail(pipeline: session.pipeline, assetID: asset.id).aspectRatio(1, contentMode: .fit).clipShape(.rect(cornerRadius: 10))
-                                Text(city).font(.headline)
-                                Text(asset.exifInfo?.country ?? "").foregroundStyle(.secondary)
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 170, maximum: 240))], spacing: 20, pinnedViews: [.sectionHeaders]) {
+                ForEach(PlacesArrangement(groupBy: groupBy).groups(cities)) { group in
+                    Section {
+                        ForEach(group.places) { asset in
+                            if let city = asset.exifInfo?.city {
+                                NavigationLink {
+                                    AssetGridContainer(source: .explore(.city(city)), title: Text(city))
+                                } label: {
+                                    VStack(alignment: .leading) {
+                                        RemoteThumbnail(pipeline: session.pipeline, assetID: asset.id).aspectRatio(1, contentMode: .fit).clipShape(.rect(cornerRadius: 10))
+                                        Text(city).font(.headline)
+                                        Text(asset.exifInfo?.country ?? "").foregroundStyle(.secondary)
+                                    }
+                                }.buttonStyle(.plain)
                             }
-                        }.buttonStyle(.plain)
+                        }
+                    } header: {
+                        if let header = group.header { SectionHeader(title: title(header)).padding(.horizontal, -10) }
                     }
                 }
             }.padding(20)
+        }
+        .toolbar {
+            ToolbarItem {
+                Menu {
+                    Picker("Group By", selection: $groupBy) {
+                        ForEach(PlacesGroupBy.allCases) { Text($0.title).tag($0) }
+                    }
+                    .pickerStyle(.inline)
+                } label: {
+                    Label("View Options", systemImage: "line.3.horizontal.decrease.circle")
+                }
+                .help("View Options")
+            }
         }
         .overlay { if let error { ContentUnavailableView("Places Unavailable", systemImage: "globe", description: Text(error)) } }
         .task {
             do { cities = try await session.client.exploreCities().filter { $0.visibility != "locked" } }
             catch { self.error = error.localizedDescription }
+        }
+    }
+
+    private func title(_ header: PlacesGroup.Header) -> String {
+        switch header {
+        case .country(let country): country
+        case .unknownCountry: String(localized: "Unknown Country")
         }
     }
 }
