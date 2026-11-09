@@ -137,6 +137,8 @@ The demo is shared with everyone and doesn't accept uploads.
 
 </details>
 
+When filtering Library to photos or videos only, results contain your own items. Partner photos remain available in the unfiltered Library and on partner pages. Date Added sorting is available for the unfiltered timeline on Immich v3.0 or later.
+
 ## Screenshots
 
 <table>

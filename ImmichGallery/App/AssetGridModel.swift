@@ -140,12 +140,20 @@ final class AssetGridModel {
 
     /// Locate an asset even when media filters make the Library a paged search.
     func loadForReveal(_ asset: AssetResponse) async throws {
+        if let arrangement {
+            guard arrangement.isFavorite != true || asset.isFavorite,
+                  arrangement.assetType == nil || arrangement.assetType == asset.type.rawValue else { return }
+        }
+        let generation = loadGeneration
         if isPaged {
             while item(asset.id) == nil, nextPage != nil {
+                try Task.checkCancellation()
+                guard generation == loadGeneration else { throw CancellationError() }
                 if let pageTask { await pageTask.value }
                 else { try await fetchNextPage() }
                 if pageFailed { break }
             }
+            guard generation == loadGeneration else { throw CancellationError() }
         } else if let month = sectionMonth(of: asset),
                   let section = sections.firstIndex(where: { $0.id.prefix(7) == month }) {
             await viewerLoadSection(section)
@@ -162,6 +170,7 @@ final class AssetGridModel {
     @ObservationIgnored private var index: [String: (section: Int, item: Int)] = [:]
     @ObservationIgnored private var sectionTasks: [String: Task<Void, Never>] = [:]
     @ObservationIgnored private var isStale = false
+    @ObservationIgnored private var loadGeneration = UUID()
     // Paged sources (search, videos)
     @ObservationIgnored private var nextPage: ImmichClient.SearchPage?
     @ObservationIgnored private var pageFailed = false
@@ -256,12 +265,14 @@ final class AssetGridModel {
     func markStale() { isStale = true }
 
     func cancelLoading() {
+        loadGeneration = UUID()
         loadTask?.cancel()
         pageTask?.cancel()
         sectionTasks.values.forEach { $0.cancel() }
     }
 
     func reload() async {
+        loadGeneration = UUID()
         if let previous = loadTask {
             previous.cancel()
             await previous.value
@@ -334,19 +345,23 @@ final class AssetGridModel {
     @discardableResult
     private func loadSection(id: String) -> Task<Void, Never> {
         if let task = sectionTasks[id] { return task }
+        let generation = loadGeneration
         let task = Task { [weak self] in
             guard let self, let session, let query = timelineQuery else { return }
             do {
                 let columns = try await source.albumID != nil
                     ? session.client.albumTimeBucket(id, query, order: albumOrder)
                     : session.client.timeBucket(id, query)
-                guard let i = sections.firstIndex(where: { $0.id == id }) else { return }
+                try Task.checkCancellation()
+                guard generation == loadGeneration,
+                      let i = sections.firstIndex(where: { $0.id == id }) else { return }
                 var assets = AssetItem.from(columns).filter { self.source != .geolocation || (session.user?.id != nil && $0.ownerId == session.user?.id) }
                 if case .explore(.map(let query)) = source { assets.removeAll { !query.includes($0.date) } }
                 sections[i].assets = assets
                 sections[i].count = assets.count
                 rebuildIndex()
             } catch {
+                guard generation == loadGeneration, !error.isCancellation else { return }
                 session.handle(error)
                 sectionTasks[id] = nil // allow retry on next appearance
             }
@@ -357,16 +372,19 @@ final class AssetGridModel {
 
     private func loadNextPage() {
         guard !pageFailed, pageTask == nil, nextPage != nil else { return }
+        let generation = loadGeneration
         pageTask = Task { [weak self] in
             guard let self else { return }
             do { try await fetchNextPage() }
-            catch { if !error.isCancellation { pageFailed = true; report(error) } }
-            pageTask = nil
+            catch { if generation == loadGeneration, !error.isCancellation { pageFailed = true; report(error) } }
+            if generation == loadGeneration { pageTask = nil }
         }
     }
 
     private func fetchNextPage() async throws {
+        try Task.checkCancellation()
         guard let session, let page = nextPage else { return }
+        let generation = loadGeneration
         let result: SearchResponse.Assets
         switch source {
         case _ where searchesTimeline:
@@ -377,7 +395,9 @@ final class AssetGridModel {
                 isFavorite: query.isFavorite ?? arrangement.isFavorite, personIds: query.personId.map { [$0] },
                 tagIds: query.tagId.map { [$0] }, order: arrangement.order.rawValue, page: page)
         case .largeFiles:
-            let assets = try await session.client.assetsLargeFiles(type: arrangement?.assetType, isFavorite: arrangement?.isFavorite)
+            let assets = try await session.client.assetsLargeFiles(type: arrangement?.assetType, isFavorite: arrangement?.isFavorite, serverVersion: session.version)
+            try Task.checkCancellation()
+            guard generation == loadGeneration else { throw CancellationError() }
             nextPage = nil
             append(assets.filter { $0.visibility != "locked" }.map(AssetItem.init))
             return
@@ -389,8 +409,11 @@ final class AssetGridModel {
             }
         case .filteredSearch(let query):
             result = try await session.client.advancedSearch(query, smartEnabled: session.features.smartSearch, page: page) { [weak self] count in
+                guard self?.loadGeneration == generation else { return }
                 self?.searchResultsLoaded = count
             }
+            try Task.checkCancellation()
+            guard generation == loadGeneration else { throw CancellationError() }
             if query.mode == .context, session.features.smartSearch,
                !query.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
                query.sort != .automatic, result.nextPage == nil, result.nextCursor == nil {
@@ -405,6 +428,8 @@ final class AssetGridModel {
         default:
             return
         }
+        try Task.checkCancellation()
+        guard generation == loadGeneration else { throw CancellationError() }
         if let cursor = result.nextCursor {
             nextPage = .init(cursor: cursor)
         } else if let next = result.nextPage.flatMap(Int.init) {
@@ -521,7 +546,7 @@ final class AssetGridModel {
         guard canMutate(ids), let session else { return }
         do {
             try await session.client.setFavorite(ids, value)
-            if source == .favorites && !value {
+            if (source == .favorites || arrangement?.show == .favorites) && !value {
                 remove(ids)
             } else {
                 update(ids) { $0.isFavorite = value }
