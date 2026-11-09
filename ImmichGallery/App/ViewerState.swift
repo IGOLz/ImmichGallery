@@ -196,6 +196,7 @@ final class ViewerState: NSObject, NSWindowDelegate {
     }
 
     func showInLibrary() {
+        guard model.source != .locked else { return }
         guard let id = currentID else { return }
         Self.showInLibrary(id: id, model: model, session: session, close: { self.close() })
     }
@@ -206,6 +207,7 @@ final class ViewerState: NSObject, NSWindowDelegate {
     }
 
     static func showInLibrary(id: String, model: AssetGridModel, session: LibrarySession, close: @escaping () -> Void = {}) {
+        guard model.source != .locked, session.lockedFolder == nil else { return }
         Task {
             do {
                 let asset = try await session.client.asset(id)

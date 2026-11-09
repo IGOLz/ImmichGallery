@@ -120,7 +120,9 @@ struct ViewerPresentation: View {
                         Button { state.paused.toggle() } label: { Label(state.paused ? "Play" : "Pause", systemImage: state.paused ? "play.fill" : "pause.fill") }
                     }
                     Button { state.step(1) } label: { Label("Next", systemImage: "forward.end.fill") }
-                    Button { state.showInLibrary() } label: { Label("Show in All Photos", systemImage: "square.grid.2x2") }
+                    if state.model.source != .locked {
+                        Button { state.showInLibrary() } label: { Label("Show in All Photos", systemImage: "square.grid.2x2") }
+                    }
                     Button { state.settingsPresented.toggle() } label: { Label("Slideshow Settings", systemImage: "gearshape") }
                         .popover(isPresented: $state.settingsPresented) { ViewerSlideshowSettings(state: state) }
                 }

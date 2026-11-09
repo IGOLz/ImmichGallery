@@ -33,3 +33,15 @@ final class LockedFolderMedia {
     /// Files left by a run that quit without locking.
     nonisolated static func sweep() { try? FileManager.default.removeItem(at: MacTransferCache.lockedRoot) }
 }
+
+/// An app-side deadline, independent of background requests extending the server unlock.
+struct LockedFolderInactivity {
+    static let timeout: TimeInterval = 15 * 60
+    private(set) var deadline: Date?
+
+    mutating func resignActive(now: Date = .now) { deadline = now.addingTimeInterval(Self.timeout) }
+    mutating func becomeActive(now: Date = .now) -> Bool {
+        defer { deadline = nil }
+        return deadline.map { now >= $0 } ?? false
+    }
+}

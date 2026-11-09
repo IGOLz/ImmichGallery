@@ -15,6 +15,8 @@ struct ExploreLockedView: View {
     @State private var verifying = false
     @State private var generation = UUID()
     @State private var expiryTask: Task<Void, Never>?
+    @State private var inactivityTask: Task<Void, Never>?
+    @State private var inactivity = LockedFolderInactivity()
 
     var body: some View {
         Group {
@@ -42,7 +44,7 @@ struct ExploreLockedView: View {
                     Button(status?.pinCode == false ? "Set PIN and Unlock" : "Unlock") { Task { await unlock() } }
                         .keyboardShortcut(.defaultAction)
                         .disabled(status == nil || busy || pin.range(of: "^[0-9]{6}$", options: .regularExpression) == nil || (status?.pinCode == false && pin != confirmation))
-                    Text("Locks when you leave the Locked Folder, lock the screen, or stop using it for a while.").font(.caption).foregroundStyle(.secondary)
+                    Text("Locks when you leave the Locked Folder, lock the screen, or keep the app inactive for 15 minutes.").font(.caption).foregroundStyle(.secondary)
                 }.frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
@@ -56,6 +58,12 @@ struct ExploreLockedView: View {
             session.lockFolder = {}
             generation = UUID()
             lock()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didResignActiveNotification)) { _ in startInactivityTimer() }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            inactivityTask?.cancel()
+            inactivityTask = nil
+            if inactivity.becomeActive() { lock() }
         }
         .onReceive(DistributedNotificationCenter.default().publisher(for: .init("com.apple.screenIsLocked"))) { _ in lock() }
         .onReceive(NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.willSleepNotification)) { _ in lock() }
@@ -90,7 +98,18 @@ struct ExploreLockedView: View {
             media.onRequestFailed = { Task { await verify() } }
             unlocked = LibrarySession(services: services, lockedFolder: media)
             scheduleCheck(status.pinExpiresAt)
+            if !NSApp.isActive { startInactivityTimer() }
         } catch { self.error = error.localizedDescription }
+    }
+
+    private func startInactivityTimer() {
+        guard unlocked != nil else { return }
+        inactivityTask?.cancel()
+        inactivity.resignActive()
+        inactivityTask = Task {
+            do { try await Task.sleep(for: .seconds(LockedFolderInactivity.timeout)) } catch { return }
+            lock()
+        }
     }
 
     /// The server extends an unlock while it's used, so check again just after it would have expired.
@@ -108,13 +127,24 @@ struct ExploreLockedView: View {
         guard let media = unlocked?.lockedFolder, !verifying else { return }
         verifying = true
         defer { verifying = false }
-        let status = try? await media.client.exploreAuth()
-        guard unlocked?.lockedFolder === media else { return }
-        if let status, status.isElevated {
-            scheduleCheck(status.pinExpiresAt)
-        } else {
+        do {
+            let status = try await media.client.exploreAuth()
+            guard unlocked?.lockedFolder === media else { return }
+            if status.isElevated {
+                scheduleCheck(status.pinExpiresAt)
+            } else {
+                lock()
+                error = String(localized: "Locked Folder access expired. Unlock again to continue.")
+            }
+        } catch {
+            guard unlocked?.lockedFolder === media else { return }
             lock()
-            error = String(localized: "Locked Folder access expired. Unlock again to continue.")
+            switch error {
+            case ImmichError.unauthorized, ImmichError.http(401, _), ImmichError.http(403, _):
+                self.error = String(localized: "Locked Folder access expired. Unlock again to continue.")
+            default:
+                self.error = String(localized: "Could not verify Locked Folder access. Unlock again to continue.")
+            }
         }
     }
 
@@ -123,6 +153,9 @@ struct ExploreLockedView: View {
     private func lock() {
         // A screen lock must invalidate an unlock that is still waiting for the server.
         generation = UUID()
+        inactivityTask?.cancel()
+        inactivityTask = nil
+        inactivity = LockedFolderInactivity()
         expiryTask?.cancel()
         expiryTask = nil
         guard let locked = unlocked else { return }
@@ -130,6 +163,10 @@ struct ExploreLockedView: View {
         locked.endSession()
         MacQuickLook.shared.dismiss()
         locked.lockedFolder?.discard()
+        // All windows share the server's unlock, so clear their local media together.
+        for window in session.services.windows.allObjects where window !== session && window !== locked {
+            window.lockFolder()
+        }
         let account = locked.services.client
         Task {
             do { try await Self.uncached(account) { try await $0.exploreLock() } }

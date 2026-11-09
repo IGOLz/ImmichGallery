@@ -332,6 +332,13 @@ final class PagingProtocol: URLProtocol, @unchecked Sendable {
         lockedMedia.discard()
         assert(!FileManager.default.fileExists(atPath: lockedRoot.path))
         assert(lockedMedia.isDiscarded)
+        let now = Date()
+        var inactivity = LockedFolderInactivity()
+        inactivity.resignActive(now: now)
+        assert(!inactivity.becomeActive(now: now.addingTimeInterval(60)))
+        inactivity.resignActive(now: now)
+        assert(inactivity.becomeActive(now: now.addingTimeInterval(LockedFolderInactivity.timeout)))
+        assert(inactivity.deadline == nil)
         lockedMedia.requestFailed()
         assert(lockedFailures == 1, "Discarded media must not launch another status check")
         do {

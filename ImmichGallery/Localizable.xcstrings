@@ -9714,6 +9714,26 @@
           }
         }
       }
+    },
+    "Locks when you leave the Locked Folder, lock the screen, or keep the app inactive for 15 minutes.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Si blocca quando lasci la Cartella protetta, blocchi lo schermo o lasci l’app inattiva per 15 minuti."
+          }
+        }
+      }
+    },
+    "Could not verify Locked Folder access. Unlock again to continue.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossibile verificare l’accesso alla Cartella protetta. Sblocca di nuovo per continuare."
+          }
+        }
+      }
     }
   },
   "version": "1.0"
