@@ -31,8 +31,39 @@ extension ImmichClient {
     }
 
     // Deprecated since v3.2.0 in favor of searchAssets; retained for the v3.3.5 web utility contract.
-    func assetsLargeFiles() async throws -> [AssetResponse] {
-        let data = try await data(for: request("search/large-assets", method: "POST", query: ["minFileSize": "0"]))
+    /// `type` is Immich's AssetType ("IMAGE" or "VIDEO").
+    func assetsLargeFiles(type: String? = nil, isFavorite: Bool? = nil, serverVersion: ServerVersion? = nil) async throws -> [AssetResponse] {
+        if let isFavorite {
+            if let version = serverVersion, version.major > 3 || (version.major == 3 && version.minor >= 2) {
+                struct Filter: Encodable {
+                    let type: [String: String]?
+                    let isFavorite: [String: Bool]
+                    let visibility = ["ne": "locked"]
+                }
+                struct Body: Encodable {
+                    let filter: Filter
+                    let orderBy = ["field": "fileSizeInBytes", "direction": "desc"]
+                    let size = 250
+                    let withExif = true
+                }
+                let response: SearchResponse = try await send("POST", "search/metadata", body: Body(
+                    filter: Filter(type: type.map { ["eq": $0] }, isFavorite: ["eq": isFavorite])))
+                return response.assets.items
+            }
+            // Older servers cannot sort search by size. Collect matching favorites before ranking them.
+            var page = SearchPage(page: 1)
+            var assets: [AssetResponse] = []
+            repeat {
+                try Task.checkCancellation()
+                let result = try await metadataSearch(type: type.flatMap(AssetType.init), isFavorite: isFavorite, withExif: true, page: page)
+                assets += result.items.filter { $0.visibility != "locked" }
+                if let cursor = result.nextCursor { page = .init(cursor: cursor) }
+                else if let next = result.nextPage.flatMap(Int.init) { page = .init(page: next) }
+                else { break }
+            } while true
+            return Array(assets.sorted { ($0.exifInfo?.fileSizeInByte ?? 0) > ($1.exifInfo?.fileSizeInByte ?? 0) }.prefix(250))
+        }
+        let data = try await data(for: request("search/large-assets", method: "POST", query: ["minFileSize": "0", "type": type]))
         return try JSONDecoder().decode([AssetResponse].self, from: data)
     }
 

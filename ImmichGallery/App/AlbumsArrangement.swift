@@ -32,6 +32,8 @@ enum AlbumsGroupBy: String, CaseIterable, Identifiable {
         }
     }
     var defaultOrder: AlbumsSortOrder { self == .year ? .descending : .ascending }
+    /// Where CollapsedGroups keeps this grouping's collapsed groups.
+    var collapsingKey: String? { self == .none ? nil : rawValue }
 }
 
 enum AlbumsSortBy: String, CaseIterable, Identifiable {
@@ -49,6 +51,13 @@ enum AlbumsSortBy: String, CaseIterable, Identifiable {
         }
     }
     var defaultOrder: AlbumsSortOrder { self == .title ? .ascending : .descending }
+}
+
+/// Immich's Cover and List views.
+enum AlbumsViewMode: String, CaseIterable, Identifiable {
+    case cover = "Cover", list = "List"
+    var id: Self { self }
+    var title: LocalizedStringResource { self == .cover ? "Covers" : "List" }
 }
 
 struct AlbumsGroup: Identifiable {

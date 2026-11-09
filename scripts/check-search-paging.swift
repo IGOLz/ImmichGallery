@@ -37,6 +37,17 @@ struct SharingPresentation {}
 final class PagingProtocol: URLProtocol, @unchecked Sendable {
     static let requests = Mutex(0)
     static let completeSearch = Mutex(false)
+    static let filteredLibrary = Mutex(false)
+    static let delayPage = Mutex(false)
+    static let delayed = Mutex<PagingProtocol?>(nil)
+    private var delayedData: Data?
+
+    func finishDelayed() {
+        let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+        client!.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        client!.urlProtocol(self, didLoad: delayedData!)
+        client!.urlProtocolDidFinishLoading(self)
+    }
     override class func canInit(with request: URLRequest) -> Bool { true }
     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
     override func startLoading() {
@@ -49,6 +60,21 @@ final class PagingProtocol: URLProtocol, @unchecked Sendable {
             return
         }
         Self.requests.withLock { $0 += 1 }
+        if request.url!.path.hasSuffix("search/large-assets") {
+            let query = URLComponents(url: request.url!, resolvingAgainstBaseURL: false)!.queryItems!
+            assert(!query.contains { $0.name == "isFavorite" }, "Boolean strings fail the large-assets query DTO")
+            assert(query.contains { $0.name == "type" && $0.value == "IMAGE" })
+            let data = Data(#"[{"id":"large-favorite","ownerId":"owner","type":"IMAGE","originalFileName":"a.jpg","fileCreatedAt":"2025-01-01","localDateTime":"2025-01-01","isFavorite":true,"isTrashed":false},{"id":"large-other","ownerId":"owner","type":"IMAGE","originalFileName":"b.jpg","fileCreatedAt":"2025-01-01","localDateTime":"2025-01-01","isFavorite":false,"isTrashed":false}]"#.utf8)
+            client!.urlProtocol(self, didReceive: HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!, cacheStoragePolicy: .notAllowed)
+            client!.urlProtocol(self, didLoad: data)
+            client!.urlProtocolDidFinishLoading(self)
+            return
+        }
+        if request.httpMethod == "PUT", request.url!.path.hasSuffix("assets") {
+            client!.urlProtocol(self, didReceive: HTTPURLResponse(url: request.url!, statusCode: 204, httpVersion: nil, headerFields: nil)!, cacheStoragePolicy: .notAllowed)
+            client!.urlProtocolDidFinishLoading(self)
+            return
+        }
         var requestData = request.httpBody ?? Data()
         if requestData.isEmpty, let stream = request.httpBodyStream {
             stream.open()
@@ -61,6 +87,49 @@ final class PagingProtocol: URLProtocol, @unchecked Sendable {
             }
         }
         let body = try! JSONSerialization.jsonObject(with: requestData) as! [String: Any]
+        if Self.filteredLibrary.withLock({ $0 }) {
+            assert(body["type"] as? String == "IMAGE")
+            assert(body["visibility"] as? String == "timeline")
+            let page = body["page"] as! Int
+            let item: [String: Any] = ["id": "filtered-\(page)", "ownerId": "owner", "type": "IMAGE",
+                "originalFileName": "a.jpg", "fileCreatedAt": "2025-01-01T00:00:00Z",
+                "localDateTime": "2025-01-01T00:00:00Z", "isFavorite": body["isFavorite"] as? Bool ?? false, "isTrashed": false,
+                "visibility": page == 2 ? "hidden" : "timeline"]
+            var assets: [String: Any] = ["items": [item]]
+            if page < 3 { assets["nextPage"] = String(page + 1) }
+            let data = try! JSONSerialization.data(withJSONObject: ["assets": assets])
+            if page == 2, Self.delayPage.withLock({ $0 }) {
+                delayedData = data
+                Self.delayed.withLock { $0 = self }
+                return
+            }
+            let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+            client!.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+            client!.urlProtocol(self, didLoad: data)
+            client!.urlProtocolDidFinishLoading(self)
+            return
+        }
+        if body["isFavorite"] as? Bool == true || body["filter"] != nil {
+            assert(body["withExif"] as? Bool == true, "Ranking needs EXIF file sizes")
+            let modern = body["filter"] != nil
+            if modern {
+                let filter = body["filter"] as! [String: Any]
+                assert((filter["isFavorite"] as! [String: Bool])["eq"] == true)
+                assert((filter["type"] as! [String: String])["eq"] == "IMAGE")
+                assert((body["orderBy"] as! [String: String])["field"] == "fileSizeInBytes")
+                assert(body["type"] == nil && body["order"] == nil, "New and legacy shapes cannot be mixed")
+            }
+            let second = body["page"] as? Int == 2
+            let item: [String: Any] = ["id": second ? "larger-favorite" : "large-favorite", "ownerId": "owner", "type": "IMAGE",
+                "originalFileName": "a.jpg", "fileCreatedAt": "2025-01-01", "localDateTime": "2025-01-01",
+                "isFavorite": true, "isTrashed": false, "exifInfo": ["fileSizeInByte": second ? 1000 : 500]]
+            var assets: [String: Any] = ["items": [item]]
+            if !modern && !second { assets["nextPage"] = "2" }
+            client!.urlProtocol(self, didReceive: HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!, cacheStoragePolicy: .notAllowed)
+            client!.urlProtocol(self, didLoad: try! JSONSerialization.data(withJSONObject: ["assets": assets]))
+            client!.urlProtocolDidFinishLoading(self)
+            return
+        }
         if body["type"] as? String == "VIDEO" {
             assert(body["visibility"] as? String == "timeline", "Videos must exclude hidden Live Photo components and archived assets on every page")
         } else {
@@ -171,6 +240,51 @@ final class PagingProtocol: URLProtocol, @unchecked Sendable {
         let columns = try JSONDecoder().decode(TimeBucketAssets.self, from: Data(#"{"id":["public","private"],"visibility":["timeline","locked"],"ownerId":["owner","owner"],"isImage":[true,true],"isFavorite":[false,false],"isTrashed":[false,false],"thumbhash":[null,null],"ratio":[1,1],"duration":[null,null],"fileCreatedAt":["2026-01-01","2026-01-01"],"livePhotoVideoId":[null,null]}"#.utf8))
         assert(AssetItem.from(columns).map(\.id) == ["public"])
         let library = session.gridModel(for: .library)
+        // Reveal must page past a fully hidden page, also when the target shares a loaded month.
+        let mediaKey = GridPage.library.key("mediaType")
+        let savedMedia = UserDefaults.standard.object(forKey: mediaKey)
+        defer { UserDefaults.standard.set(savedMedia, forKey: mediaKey) }
+        UserDefaults.standard.set(GridMediaType.photos.rawValue, forKey: mediaKey)
+        PagingProtocol.filteredLibrary.withLock { $0 = true }
+        await library.reload()
+        assert(library.totalCount == 1)
+        let target = try JSONDecoder().decode(AssetResponse.self, from: Data(#"{"id":"filtered-3","type":"IMAGE","originalFileName":"a.jpg","fileCreatedAt":"2025-01-01T00:00:00Z","localDateTime":"2025-01-01T00:00:00Z","isFavorite":false,"isTrashed":false}"#.utf8))
+        let beforeReveal = PagingProtocol.requests.withLock { $0 }
+        let video = try JSONDecoder().decode(AssetResponse.self, from: Data(#"{"id":"video","type":"VIDEO","originalFileName":"a.mp4","fileCreatedAt":"2025-01-01","localDateTime":"2025-01-01","isFavorite":false,"isTrashed":false}"#.utf8))
+        try await library.loadForReveal(video)
+        assert(PagingProtocol.requests.withLock { $0 } == beforeReveal, "An excluded media type must not scan the library")
+        try await library.loadForReveal(target)
+        assert(library.item(target.id) != nil && library.totalCount == 2)
+        assert(library.item("filtered-2") == nil)
+        // A page started by reveal must not append into a newer arrangement after reloading.
+        await library.reload()
+        PagingProtocol.delayPage.withLock { $0 = true }
+        let reveal = Task { try await library.loadForReveal(target) }
+        for _ in 0..<100 where PagingProtocol.delayed.withLock({ $0 == nil }) { try await Task.sleep(for: .milliseconds(10)) }
+        let delayed = PagingProtocol.delayed.withLock { value in let result = value; value = nil; return result }!
+        let showKey = GridPage.library.key("show")
+        let savedShow = UserDefaults.standard.object(forKey: showKey)
+        defer { UserDefaults.standard.set(savedShow, forKey: showKey) }
+        UserDefaults.standard.set(GridShow.favorites.rawValue, forKey: showKey)
+        await library.reload()
+        delayed.finishDelayed()
+        do { try await reveal.value; assertionFailure("Stale reveal should cancel") } catch is CancellationError {}
+        assert(library.totalCount == 1 && library.item(target.id) == nil)
+        let beforeExcluded = PagingProtocol.requests.withLock { $0 }
+        try await library.loadForReveal(target)
+        assert(PagingProtocol.requests.withLock { $0 } == beforeExcluded, "Non-favorites must not scan a favorites-filtered library")
+        await library.setFavorite(["filtered-1"], false)
+        assert(library.totalCount == 0, "Unfavoriting must remove an item from a favorites-filtered grid")
+        UserDefaults.standard.set(savedShow, forKey: showKey)
+        PagingProtocol.delayPage.withLock { $0 = false }
+        PagingProtocol.filteredLibrary.withLock { $0 = false }
+        UserDefaults.standard.set(savedMedia, forKey: mediaKey)
+        let largeFavorites = try await client.assetsLargeFiles(type: "IMAGE", isFavorite: true)
+        assert(largeFavorites.map(\.id) == ["larger-favorite", "large-favorite"], "Legacy ranking must include matching favorites from later pages")
+        let modernFavorites = try await client.assetsLargeFiles(type: "IMAGE", isFavorite: true, serverVersion: .init(major: 3, minor: 3, patch: 5))
+        assert(modernFavorites.map(\.id) == ["large-favorite"])
+        let largeAll = try await client.assetsLargeFiles(type: "IMAGE")
+        assert(largeAll.count == 2)
         var query = SearchQuery()
         query.text = "first"
         weak let previous = session.gridModel(for: .filteredSearch(query))

@@ -97,6 +97,7 @@ struct AssetGridHost<Header: View>: View {
                 .inspectorColumnWidth(min: 260, ideal: 300, max: 420)
         }
         .task(id: session.macGridRevision) { await model.loadIfNeeded() }
+        .gridViewOptionsReloader(model)
         .onChange(of: session.upload.revision) { Task { await model.reload() } } // Upload
         .focusedSceneValue(\.gridModel, model)
         .confirmationDialog(deleteTitle, isPresented: Binding(get: { pendingDelete != nil }, set: { if !$0 { pendingDelete = nil } })) {
@@ -177,6 +178,9 @@ struct AssetGridHost<Header: View>: View {
                 ToolbarItem { zoomOutButton }
                 ToolbarItem { zoomInButton }
             }
+            if let page = model.source.gridPage {
+                ToolbarItem { GridViewOptions(page: page, dateAddedAvailable: GridArrangement.supportsDateAdded(session.version)) }
+            }
         }
 
         ToolbarItem { SharingMenu(assetIDs: ids, allowPublicLinks: model.canMutate(ids), albumID: { if case .album(let id) = model.source { return id }; return nil }()) } // Sharing
@@ -242,7 +246,17 @@ struct AssetGridView: View {
                         Button("Try Again") { Task { await model.reload() } }
                     }
                 case .loaded:
-                    emptyState
+                    if let page = model.source.gridPage, model.arrangement?.isFiltered == true {
+                        ContentUnavailableView {
+                            Label("No Matching Photos", systemImage: "line.3.horizontal.decrease.circle")
+                        } description: {
+                            Text("No photos match the selected view options.")
+                        } actions: {
+                            Button("Show All Items") { page.showAllItems() }
+                        }
+                    } else {
+                        emptyState
+                    }
                 }
             } else {
                 grid
@@ -401,11 +415,26 @@ private struct CellKey: Hashable {
 }
 
 struct SectionHeader: View {
+    /// Albums: a chevron for groups that collapse.
+    enum Disclosure { case expanded, collapsed }
+
     let title: String
+    var disclosure: Disclosure?
+    /// Albums and Places: how many items the group holds.
+    var count: Int?
 
     var body: some View {
         HStack {
-            Text(title)
+            HStack(spacing: 6) {
+                if let disclosure {
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .rotationEffect(.degrees(disclosure == .expanded ? 90 : 0))
+                        .foregroundStyle(.secondary)
+                }
+                Text(title)
+                if let count { Text(count, format: .number).foregroundStyle(.secondary).monospacedDigit() }
+            }
                 .font(.headline)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 7)

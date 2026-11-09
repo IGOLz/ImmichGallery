@@ -3,7 +3,9 @@ import SwiftUI
 struct PeopleView: View {
     @Environment(LibrarySession.self) private var session
     @State private var people: [Person] = []
-    @State private var showHidden = false
+    // People: the Immich web app's favorite and hidden filters, as view options.
+    @AppStorage("people.show") private var show = PeopleShow.all
+    @AppStorage("people.includeHidden") private var includeHidden = false
     @State private var revision = 0
     @State private var page = 1
     @State private var hasMore = true
@@ -18,6 +20,14 @@ struct PeopleView: View {
         Group {
             if people.isEmpty && isLoading {
                 ProgressView().controlSize(.large)
+            } else if people.isEmpty && arrangement.isFiltered && error == nil {
+                ContentUnavailableView {
+                    Label("No Matching People", systemImage: "line.3.horizontal.decrease.circle")
+                } description: {
+                    Text("No people match the selected view options.")
+                } actions: {
+                    Button("Show All People") { show = .all; includeHidden = false }
+                }
             } else if people.isEmpty {
                 ContentUnavailableView("No People", systemImage: "person.crop.square",
                                        description: Text(error ?? String(localized: "People recognized by Immich appear here.")))
@@ -82,13 +92,30 @@ struct PeopleView: View {
         .navigationDestination(for: Person.self) { person in
             PersonDetailView(person: person)
         }
-        .toolbar { Toggle(isOn: $showHidden) { Label("Show Hidden People", systemImage: "eye.slash") } }
+        .toolbar { ToolbarItem { viewOptions } }
         .onReceive(NotificationCenter.default.publisher(for: .peopleChanged, object: session.services)) { _ in revision += 1 }
-        .task(id: "\(showHidden)-\(revision)") {
+        .task(id: "\(show.rawValue)-\(includeHidden)-\(revision)") {
             requestID = UUID(); isLoading = false
             people = []; page = 1; hasMore = true; error = nil
             await loadMore()
         }
+    }
+
+    private var arrangement: PeopleArrangement { PeopleArrangement(show: show, includeHidden: includeHidden) }
+
+    private var viewOptions: some View {
+        Menu {
+            Picker("Show", selection: $show) {
+                ForEach(PeopleShow.allCases) { Text($0.title).tag($0) }
+            }
+            .pickerStyle(.inline)
+            Divider()
+            Toggle("Include Hidden People", isOn: Binding(get: { arrangement.withHidden }, set: { includeHidden = $0 }))
+                .disabled(show == .hidden)
+        } label: {
+            Label("View Options", systemImage: arrangement.isFiltered ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
+        }
+        .help("View Options")
     }
 
     private func changed() {
@@ -108,14 +135,22 @@ struct PeopleView: View {
         let currentRequest = requestID
         isLoading = true
         defer { if currentRequest == requestID { isLoading = false } }
+        let arrangement = arrangement
         do {
-            let response = try await session.client.peoplePage(page: page, withHidden: showHidden)
-            try Task.checkCancellation()
-            guard currentRequest == requestID else { return }
-            let known = Set(people.map(\.id))
-            people += response.people.filter { (showHidden || !$0.isHidden) && !known.contains($0.id) }
-            hasMore = response.hasNextPage ?? (!response.people.isEmpty && page * 100 < response.total)
-            page += 1
+            // A filtered page can come back empty in the app; keep going so the next one can load.
+            var added = 0
+            repeat {
+                let response = try await session.client.peoplePage(page: page, withHidden: arrangement.withHidden,
+                                                                   filters: arrangement.filters(server: session.version))
+                try Task.checkCancellation()
+                guard currentRequest == requestID else { return }
+                let known = Set(people.map(\.id))
+                let shown = response.people.filter { arrangement.includes(isFavorite: $0.isFavorite, isHidden: $0.isHidden) && !known.contains($0.id) }
+                people += shown
+                added += shown.count
+                hasMore = response.hasNextPage ?? (!response.people.isEmpty && page * 100 < response.total)
+                page += 1
+            } while added == 0 && hasMore
         } catch is CancellationError {
         } catch {
             guard currentRequest == requestID else { return }
