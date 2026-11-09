@@ -295,6 +295,7 @@ struct AssetGridView: View {
         }
         .onAppear { scrollToViewerTarget(proxy) }
         .onChange(of: model.viewerScrollTarget) { scrollToViewerTarget(proxy) }
+            Color.clear.frame(height: 0).id("gridTop")
         }
         .macOriginalDragContainer(model: model, client: session.client)
         .fastWheelScrolling()
@@ -317,6 +318,7 @@ struct AssetGridView: View {
     }
 
     private func scrollToViewerTarget(_ proxy: ScrollViewProxy) {
+        .onChange(of: model.scrollToTopRevision) { proxy.scrollTo("gridTop", anchor: .top) }
         guard let id = model.viewerScrollTarget else { return }
         for section in model.sections {
             if let index = section.assets?.firstIndex(where: { $0.id == id }) {

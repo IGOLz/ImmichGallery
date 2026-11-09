@@ -103,11 +103,23 @@ struct SidebarNavigationLabel: View {
 struct SidebarSelectionRow<Content: View>: View {
     let item: SidebarItem
     @Binding var selection: SidebarItem?
-    @ViewBuilder let content: Content
+    let onReselect: (() -> Void)?
+    let content: Content
     @Environment(\.controlActiveState) private var activeState
 
+    init(item: SidebarItem, selection: Binding<SidebarItem?>, onReselect: (() -> Void)? = nil,
+         @ViewBuilder content: () -> Content) {
+        self.item = item
+        self._selection = selection
+        self.onReselect = onReselect
+        self.content = content()
+    }
+
     var body: some View {
-        Button { selection = item } label: {
+        Button {
+            if selection == item { onReselect?() }
+            else { selection = item }
+        } label: {
             SidebarRowContent(selected: selection == item, active: activeState == .key) { content }
         }
         .buttonStyle(.plain)

@@ -114,6 +114,7 @@ final class AssetGridModel {
     var selection: Set<String> = []
     var viewerID: String?
     var viewerScrollTarget: String? // Viewer
+    var scrollToTopRevision = 0
     func viewerLoadSection(_ section: Int) async {
         guard sections.indices.contains(section), sections[section].assets == nil else { return }
         await loadSection(id: sections[section].id).value
