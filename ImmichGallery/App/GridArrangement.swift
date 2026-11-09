@@ -11,8 +11,8 @@ enum GridPage: String {
 
     /// A Favorites filter adds nothing on Favorites, and partners' favorites are their own.
     var offersFavoritesFilter: Bool { ![.favorites, .partner].contains(self) }
-    /// Large Files mixes photos and videos; every other page is either a timeline or Videos.
-    var offersMediaTypeFilter: Bool { self == .largeFiles }
+    /// Photos or videos only. Timeline pages switch to the search API for it, which can't search a partner's library.
+    var offersMediaTypeFilter: Bool { ![.videos, .partner].contains(self) }
     /// Date Added orders the timeline only; search has no upload-date order.
     var offersSortBy: Bool { ![.videos, .largeFiles].contains(self) }
     /// Large Files is always largest first.
@@ -86,6 +86,13 @@ struct GridArrangement: Equatable {
     /// Date Added needs `orderBy` on the timeline API, new in Immich v3.0. Older servers keep Date Taken.
     static func supportsDateAdded(_ version: ServerVersion?) -> Bool { (version?.major ?? 0) >= 3 }
 
+    /// Timeline pages show photos or videos only through the search API, since the timeline API has no
+    /// type filter. Search groups into months by date taken and leaves out partners' photos.
+    var searchesTimeline: Bool { mediaType != .all }
+
+    /// Sorting by Date Added: on servers with it, and not while searching, which has no upload-date order.
+    func sortsByDateAdded(_ dateAdded: Bool) -> Bool { dateAdded && sortBy == .dateAdded && !searchesTimeline }
+
     func applied(to query: TimelineQuery, dateAdded: Bool) -> TimelineQuery {
         var query = query
         if show == .favorites {
@@ -94,14 +101,14 @@ struct GridArrangement: Equatable {
             query.withPartners = nil
         }
         if order == .oldestFirst { query.order = order.rawValue }
-        if dateAdded && sortBy == .dateAdded { query.orderBy = sortBy.rawValue }
+        if sortsByDateAdded(dateAdded) { query.orderBy = sortBy.rawValue }
         return query
     }
 
     /// The month an asset falls in, as the first seven characters of a bucket ID ("2026-11").
     /// Date Added buckets go by the upload time in UTC, Date Taken buckets by the photo's own clock.
     func month(localDateTime: String, createdAt: String?, dateAdded: Bool) -> Substring? {
-        guard dateAdded && sortBy == .dateAdded else { return localDateTime.prefix(7) }
+        guard sortsByDateAdded(dateAdded) else { return localDateTime.prefix(7) }
         return createdAt.flatMap(ImmichDate.parse).map { Self.utcMonth.string(from: $0).prefix(7) }
     }
 

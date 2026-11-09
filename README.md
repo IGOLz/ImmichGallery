@@ -81,7 +81,7 @@ The demo is shared with everyone and doesn't accept uploads.
 | Feature                                                          | Immich Gallery |
 | :--------------------------------------------------------------- | :------------: |
 | Timeline grouped by month, with ThumbHash placeholders           | ✅ |
-| View options: favorites only, newest or oldest first, date taken or date added; photos or videos in Large Files | ✅ |
+| View options: favorites only, photos or videos only, newest or oldest first, date taken or date added | ✅ |
 | Favorites, Videos, Archive, Recently Deleted                     | ✅ |
 | Viewer with zoom, video, Live Photos, slideshow and full screen  | ✅ |
 | HDR photos on HDR displays (gain-map HEIC/JPEG, HLG, PQ)        | ✅ |
@@ -95,7 +95,7 @@ The demo is shared with everyone and doesn't accept uploads.
 | People: rename, merge, hide, birthday, assign faces; show favorites or hidden people | ✅ |
 | Smart (CLIP), file name, description and OCR search              | ✅ |
 | Search filters: people, place, camera, date, type, rating        | ✅ |
-| Global map with clusters, places grouped by country, memories   | ✅ |
+| Global map with clusters, places grouped by country (collapsible), memories | ✅ |
 | Tags and folder view                                             | ✅ |
 | Locked Folder (PIN)                                              | ✅ |
 | Stacks, duplicates, large files                                  | ✅ |

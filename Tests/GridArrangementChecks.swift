@@ -64,6 +64,19 @@ import Foundation
         precondition(large == GridArrangement(mediaType: .photos) && large.isFiltered && large.assetType == "IMAGE" && large.isFavorite == nil)
         precondition(GridArrangement().assetType == nil && GridArrangement().isFavorite == nil)
         precondition(GridMediaType(rawValue: "VIDEO") == .videos)
+
+        // Timeline pages: photos or videos only through search, without Date Added; not for partners.
+        defaults.set("VIDEO", forKey: "grid.library.mediaType")
+        defaults.set("VIDEO", forKey: "grid.locked.mediaType")
+        defaults.set("VIDEO", forKey: "grid.partner.mediaType")
+        let libraryVideos = GridArrangement(page: .library, defaults: defaults)
+        precondition(libraryVideos.mediaType == .videos && libraryVideos.searchesTimeline && libraryVideos.isFiltered)
+        precondition(!libraryVideos.sortsByDateAdded(true) && GridArrangement(sortBy: .dateAdded).sortsByDateAdded(true))
+        precondition(libraryVideos.month(localDateTime: "2026-01-01T00:30:00.000Z", createdAt: "2025-12-31T23:30:00.000Z", dateAdded: true) == "2026-01")
+        precondition(GridArrangement(page: .locked, defaults: defaults).searchesTimeline)
+        precondition(!GridArrangement(page: .partner, defaults: defaults).searchesTimeline)
+        precondition([GridPage.library, .favorites, .archive, .person, .tag, .locked, .largeFiles].allSatisfy(\.offersMediaTypeFilter))
+        precondition(!GridPage.videos.offersMediaTypeFilter && !GridPage.partner.offersMediaTypeFilter)
         defaults.removePersistentDomain(forName: "GridArrangementChecks")
         print("Grid view options checks passed.")
     }

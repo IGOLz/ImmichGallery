@@ -7,6 +7,8 @@ enum PlacesGroupBy: String, CaseIterable, Identifiable {
     case none = "None", country = "Country"
     var id: Self { self }
     var title: LocalizedStringResource { self == .none ? "No Grouping" : "Country" }
+    /// Where CollapsedGroups keeps this grouping's collapsed groups.
+    var collapsingKey: String? { self == .none ? nil : rawValue }
 }
 
 struct PlacesGroup: Identifiable {

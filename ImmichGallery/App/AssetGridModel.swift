@@ -186,7 +186,10 @@ final class AssetGridModel {
         (arrangement ?? GridArrangement()).month(localDateTime: asset.localDateTime, createdAt: asset.createdAt, dateAdded: dateAdded)
     }
 
-    var isPaged: Bool { source.timelineQuery == nil }
+    /// A timeline page showing photos or videos only, through the search API.
+    private var searchesTimeline: Bool { source.timelineQuery != nil && arrangement?.searchesTimeline == true }
+
+    var isPaged: Bool { source.timelineQuery == nil || searchesTimeline }
     var showsSectionHeaders: Bool {
         switch source { case .search, .filteredSearch, .largeFiles: false; default: true }
     }
@@ -268,7 +271,7 @@ final class AssetGridModel {
         if sections.isEmpty { state = .loading }
         arrangement = source.gridPage.map { GridArrangement(page: $0) }
         do {
-            if let query = timelineQuery {
+            if let query = timelineQuery, !searchesTimeline {
                 var buckets = try await source.albumID != nil
                     ? session.client.albumTimeBuckets(query, order: albumOrder)
                     : session.client.timeBuckets(query)
@@ -352,6 +355,13 @@ final class AssetGridModel {
         guard let session, let page = nextPage else { return }
         let result: SearchResponse.Assets
         switch source {
+        case _ where searchesTimeline:
+            // Photos or videos only on a timeline page: the timeline API has no type filter, search does.
+            guard let query = source.timelineQuery, let arrangement else { return }
+            result = try await session.client.metadataSearch(
+                type: arrangement.mediaType == .videos ? .video : .image, visibility: query.visibility,
+                isFavorite: query.isFavorite ?? arrangement.isFavorite, personIds: query.personId.map { [$0] },
+                tagIds: query.tagId.map { [$0] }, order: arrangement.order.rawValue, page: page)
         case .largeFiles:
             let assets = try await session.client.assetsLargeFiles(type: arrangement?.assetType, isFavorite: arrangement?.isFavorite)
             nextPage = nil
@@ -388,7 +398,8 @@ final class AssetGridModel {
         } else {
             nextPage = nil
         }
-        append(result.items.filter { $0.visibility != "locked" }.map(AssetItem.init))
+        // Search without a visibility also finds Live Photos' hidden video parts.
+        append(result.items.filter { $0.visibility != "locked" && !(searchesTimeline && $0.visibility == "hidden") }.map(AssetItem.init))
         // A page containing only locked results must not strand the pagination trigger.
         if result.items.allSatisfy({ $0.visibility == "locked" }), nextPage != nil {
             try await fetchNextPage()

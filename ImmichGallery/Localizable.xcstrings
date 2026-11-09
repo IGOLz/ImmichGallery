@@ -1,6 +1,26 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Shows the places in this country": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostra i luoghi di questo paese"
+          }
+        }
+      }
+    },
+    "Hides the places in this country": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nasconde i luoghi di questo paese"
+          }
+        }
+      }
+    },
     "Covers": {
       "localizations": {
         "it": {

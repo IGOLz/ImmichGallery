@@ -420,6 +420,8 @@ struct SectionHeader: View {
 
     let title: String
     var disclosure: Disclosure?
+    /// Albums and Places: how many items the group holds.
+    var count: Int?
 
     var body: some View {
         HStack {
@@ -431,6 +433,7 @@ struct SectionHeader: View {
                         .foregroundStyle(.secondary)
                 }
                 Text(title)
+                if let count { Text(count, format: .number).foregroundStyle(.secondary).monospacedDigit() }
             }
                 .font(.headline)
                 .padding(.horizontal, 14)

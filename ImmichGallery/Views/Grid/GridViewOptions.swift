@@ -34,9 +34,11 @@ struct GridViewOptions: View {
                 .pickerStyle(.inline)
             }
             if page.offersSortBy {
-                Picker("Sort By", selection: Binding(get: { dateAddedAvailable ? sortBy : .dateTaken }, set: { sortBy = $0 })) {
+                // Photos or videos only come from search, which can't order by upload date.
+                let dateAdded = dateAddedAvailable && mediaType == .all
+                Picker("Sort By", selection: Binding(get: { dateAdded ? sortBy : .dateTaken }, set: { sortBy = $0 })) {
                     ForEach(GridSortBy.allCases) { option in
-                        Text(option.title).tag(option).disabled(option == .dateAdded && !dateAddedAvailable)
+                        Text(option.title).tag(option).disabled(option == .dateAdded && !dateAdded)
                     }
                 }
                 .pickerStyle(.inline)

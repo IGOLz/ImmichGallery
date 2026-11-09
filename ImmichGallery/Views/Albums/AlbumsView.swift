@@ -51,14 +51,14 @@ struct AlbumsView: View {
         .task { await session.reloadAlbums() }
     }
 
-    private var collapsed: AlbumsCollapsedGroups { AlbumsCollapsedGroups(stored: collapsedGroups) }
+    private var collapsed: CollapsedGroups { CollapsedGroups(stored: collapsedGroups) }
 
     private func covers(_ groups: [AlbumsGroup]) -> some View {
         let groupBy = arrangement.effectiveGroupBy
         return ScrollView {
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 170, maximum: 240), spacing: 20)], spacing: 24, pinnedViews: [.sectionHeaders]) {
                 ForEach(groups) { group in
-                    let isCollapsed = collapsed.isCollapsed(group.id, in: groupBy)
+                    let isCollapsed = collapsed.isCollapsed(group.id, in: groupBy.collapsingKey)
                     Section {
                         if !isCollapsed {
                             ForEach(group.albums) { album in
@@ -71,10 +71,10 @@ struct AlbumsView: View {
                             // Like Immich, a group header collapses and expands its group.
                             Button {
                                 var groups = collapsed
-                                groups.toggle(group.id, in: groupBy)
+                                groups.toggle(group.id, in: groupBy.collapsingKey)
                                 collapsedGroups = groups.stored
                             } label: {
-                                SectionHeader(title: title(header), disclosure: isCollapsed ? .collapsed : .expanded)
+                                SectionHeader(title: title(header), disclosure: isCollapsed ? .collapsed : .expanded, count: group.albums.count)
                                     .contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
@@ -171,7 +171,8 @@ struct AlbumsView: View {
                 ForEach(AlbumsFilter.allCases) { Text($0.title).tag($0) }
             }
             .pickerStyle(.inline)
-            Section("Group By") {
+            // No Section around these: an inline picker in a menu already shows its label as the heading.
+            Group {
                 Picker("Group By", selection: Binding(
                     get: { arrangement.effectiveGroupBy },
                     set: { option in
@@ -190,19 +191,19 @@ struct AlbumsView: View {
                     let groupBy = arrangement.effectiveGroupBy
                     Button("Expand All Groups") {
                         var groups = collapsed
-                        groups.set([], in: groupBy)
+                        groups.set([], in: groupBy.collapsingKey)
                         collapsedGroups = groups.stored
                     }
                     .disabled(groupBy == .none)
                     Button("Collapse All Groups") {
                         var groups = collapsed
-                        groups.set(arrangement.groups(session.albums, userID: session.user?.id).map(\.id), in: groupBy)
+                        groups.set(arrangement.groups(session.albums, userID: session.user?.id).map(\.id), in: groupBy.collapsingKey)
                         collapsedGroups = groups.stored
                     }
                     .disabled(groupBy == .none)
                 }
             }
-            Section("Sort By") {
+            Group {
                 Picker("Sort By", selection: Binding(
                     get: { sortBy },
                     set: { option in

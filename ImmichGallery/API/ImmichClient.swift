@@ -263,14 +263,16 @@ extension ImmichClient {
 
     /// Metadata search (used for filename search and media-type collections).
     func metadataSearch(
-        type: AssetType? = nil, fileName: String? = nil, visibility: String? = nil, isFavorite: Bool? = nil, order: String = "desc",
-        page: SearchPage, size: Int = 250
+        type: AssetType? = nil, fileName: String? = nil, visibility: String? = nil, isFavorite: Bool? = nil,
+        personIds: [String]? = nil, tagIds: [String]? = nil, order: String = "desc", page: SearchPage, size: Int = 250
     ) async throws -> SearchResponse.Assets {
         struct Body: Encodable {
             var type: String?
             var originalFileName: String?
             var visibility: String?
             var isFavorite: Bool?
+            var personIds: [String]?
+            var tagIds: [String]?
             var page: Int?
             var cursor: String?
             var size: Int
@@ -278,7 +280,7 @@ extension ImmichClient {
             var withStacked = true
         }
         let body = Body(type: type?.rawValue, originalFileName: fileName, visibility: visibility, isFavorite: isFavorite,
-                        page: page.page, cursor: page.cursor, size: size, order: order)
+                        personIds: personIds, tagIds: tagIds, page: page.page, cursor: page.cursor, size: size, order: order)
         let response: SearchResponse = try await send("POST", "search/metadata", body: body)
         return response.assets
     }

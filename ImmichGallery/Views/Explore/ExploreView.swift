@@ -46,26 +46,47 @@ struct ExplorePlacesView: View {
     @State private var error: String?
     // Places: the same grouping and default as the places page of the Immich web app.
     @AppStorage("places.groupBy") private var groupBy = PlacesGroupBy.none
+    @AppStorage("places.collapsedGroups") private var collapsedGroups = "{}"
+    private var collapsed: CollapsedGroups { CollapsedGroups(stored: collapsedGroups) }
     var body: some View {
+        let groups = PlacesArrangement(groupBy: groupBy).groups(cities)
         ScrollView {
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 170, maximum: 240))], spacing: 20, pinnedViews: [.sectionHeaders]) {
-                ForEach(PlacesArrangement(groupBy: groupBy).groups(cities)) { group in
+                ForEach(groups) { group in
+                    let isCollapsed = collapsed.isCollapsed(group.id, in: groupBy.collapsingKey)
                     Section {
-                        ForEach(group.places) { asset in
-                            if let city = asset.exifInfo?.city {
-                                NavigationLink {
-                                    AssetGridContainer(source: .explore(.city(city)), title: Text(city))
-                                } label: {
-                                    VStack(alignment: .leading) {
-                                        RemoteThumbnail(pipeline: session.pipeline, assetID: asset.id).aspectRatio(1, contentMode: .fit).clipShape(.rect(cornerRadius: 10))
-                                        Text(city).font(.headline)
-                                        Text(asset.exifInfo?.country ?? "").foregroundStyle(.secondary)
-                                    }
-                                }.buttonStyle(.plain)
+                        if !isCollapsed {
+                            ForEach(group.places) { asset in
+                                if let city = asset.exifInfo?.city {
+                                    NavigationLink {
+                                        AssetGridContainer(source: .explore(.city(city)), title: Text(city))
+                                    } label: {
+                                        VStack(alignment: .leading) {
+                                            RemoteThumbnail(pipeline: session.pipeline, assetID: asset.id).aspectRatio(1, contentMode: .fit).clipShape(.rect(cornerRadius: 10))
+                                            Text(city).font(.headline)
+                                            // The group header already names the country.
+                                            if group.header == nil { Text(asset.exifInfo?.country ?? "").foregroundStyle(.secondary) }
+                                        }
+                                    }.buttonStyle(.plain)
+                                }
                             }
                         }
                     } header: {
-                        if let header = group.header { SectionHeader(title: title(header)).padding(.horizontal, -10) }
+                        if let header = group.header {
+                            // Like Immich, a country header collapses and expands its places, so collapsing
+                            // all groups turns the page into a list of countries.
+                            Button {
+                                var groups = collapsed
+                                groups.toggle(group.id, in: groupBy.collapsingKey)
+                                collapsedGroups = groups.stored
+                            } label: {
+                                SectionHeader(title: title(header), disclosure: isCollapsed ? .collapsed : .expanded, count: group.places.count)
+                                    .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            .padding(.horizontal, -10)
+                            .accessibilityHint(isCollapsed ? Text("Shows the places in this country") : Text("Hides the places in this country"))
+                        }
                     }
                 }
             }.padding(20)
@@ -77,6 +98,18 @@ struct ExplorePlacesView: View {
                         ForEach(PlacesGroupBy.allCases) { Text($0.title).tag($0) }
                     }
                     .pickerStyle(.inline)
+                    Button("Expand All Groups") {
+                        var all = collapsed
+                        all.set([], in: groupBy.collapsingKey)
+                        collapsedGroups = all.stored
+                    }
+                    .disabled(groupBy == .none)
+                    Button("Collapse All Groups") {
+                        var all = collapsed
+                        all.set(groups.map(\.id), in: groupBy.collapsingKey)
+                        collapsedGroups = all.stored
+                    }
+                    .disabled(groupBy == .none)
                 } label: {
                     Label("View Options", systemImage: "line.3.horizontal.decrease.circle")
                 }
