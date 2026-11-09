@@ -24,9 +24,13 @@ final class AccountOperation {
 
 /// Dates from Immich may include fractional seconds.
 func accountDate(_ value: String) -> String {
+    accountDateValue(value)?.formatted(date: .abbreviated, time: .shortened) ?? value
+}
+
+func accountDateValue(_ value: String) -> Date? {
     let formatter = ISO8601DateFormatter()
     formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-    let date = formatter.date(from: value)
+    if let date = formatter.date(from: value) { return date }
     formatter.formatOptions = [.withInternetDateTime]
-    return (date ?? formatter.date(from: value))?.formatted(date: .abbreviated, time: .shortened) ?? value
+    return formatter.date(from: value)
 }

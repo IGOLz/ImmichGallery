@@ -7,20 +7,15 @@ struct AccountSettingsView: View {
     @State private var operation = AccountOperation()
     @State private var name = ""
     @State private var importing = false
-    @State private var picture: NSImage?
 
     var body: some View {
         Form {
             Section("Profile") {
                 HStack {
-                    Group {
-                        if let picture { Image(nsImage: picture).resizable().scaledToFill() }
-                        else { Image(systemName: "person.crop.circle.fill").resizable().foregroundStyle(.secondary) }
-                    }
-                    .frame(width: 64, height: 64).clipShape(Circle())
+                    AccountAvatar(services: session, size: 64)
                     VStack(alignment: .leading) {
+                        Text(session.user?.name ?? "").font(.headline)
                         Text(session.user?.email ?? "").textSelection(.enabled)
-                        Text(session.client.serverURL.absoluteString).foregroundStyle(.secondary)
                     }
                 }
                 TextField("Name", text: $name)
@@ -37,7 +32,6 @@ struct AccountSettingsView: View {
                         operation.run {
                             try await session.client.removeAccountPicture()
                             try await session.refreshAccountUser()
-                            picture = nil
                         }
                     }.disabled(session.user?.profileImagePath?.isEmpty != false)
                 }
@@ -51,14 +45,21 @@ struct AccountSettingsView: View {
                     } else { LabeledContent("Quota", value: "Unlimited") }
                 } else { Text("Storage usage is unavailable.").foregroundStyle(.secondary) }
             }
+            Section("Server") {
+                LabeledContent("Address") { Text(session.client.serverURL.absoluteString).textSelection(.enabled) }
+                LabeledContent("Version", value: session.version?.description ?? "—")
+                LabeledContent("Signed in with") {
+                    switch session.client.credential {
+                    case .apiKey: Text("API Key")
+                    default: Text("Password")
+                    }
+                }
+            }
             AccountOperationStatus(operation: operation)
         }
         .formStyle(.grouped)
         .disabled(operation.busy)
-        .task {
-            name = session.user?.name ?? ""
-            await loadPicture()
-        }
+        .task { name = session.user?.name ?? "" }
         .fileImporter(isPresented: $importing, allowedContentTypes: [.image]) { result in
             operation.run {
                 let url = try result.get()
@@ -69,19 +70,8 @@ struct AccountSettingsView: View {
                 }.value
                 try await session.client.uploadAccountPicture(jpeg)
                 try await session.refreshAccountUser()
-                await loadPicture()
             }
         }
-    }
-
-    private func loadPicture() async {
-        guard let id = session.user?.id else { return }
-        do {
-            var request = try session.client.request("users/\(id)/profile-image")
-            request.cachePolicy = .reloadIgnoringLocalCacheData
-            let data = try await session.client.data(for: request)
-            picture = NSImage(data: data)
-        } catch { picture = nil }
     }
 }
 
@@ -95,8 +85,10 @@ struct AccountOperationStatus: View {
 }
 
 struct AccountSettingsTabs: View {
+    /// Stored so the account menu can open Settings on the Account tab.
+    static let selectionKey = "settingsTab"
     @Environment(AppModel.self) private var app
-    @State private var tab = "general"
+    @AppStorage(selectionKey) private var tab = "general"
     var body: some View {
         TabView(selection: $tab) {
             SettingsView().tabItem { Label("General", systemImage: "gearshape") }.tag("general")
@@ -110,7 +102,11 @@ struct AccountSettingsTabs: View {
             }
             AccountSwitcherView().tabItem { Label("Accounts", systemImage: "person.2") }.tag("accounts")
             UpdateSettingsView().tabItem { Label("Updates", systemImage: "arrow.triangle.2.circlepath") }.tag("updates")
-        }.frame(width: 640, height: tab == "general" ? 440 : tab == "updates" ? 320 : 650)
+        }
+        .frame(width: 640, height: tab == "general" ? 440 : tab == "updates" ? 320 : 650)
+        .onChange(of: app.services == nil, initial: true) { _, signedOut in
+            if signedOut, !["general", "accounts", "updates"].contains(tab) { tab = "general" }
+        }
     }
 }
 
@@ -150,42 +146,6 @@ struct AccountSwitcherView: View {
             }.frame(width: 500, height: 600).environment(app)
                 .onChange(of: app.services.map(ObjectIdentifier.init)) { _, _ in adding = false }
         }
-    }
-}
-
-struct AccountMenu: View {
-    @Environment(AppModel.self) private var app
-    @State private var error: String?
-    @State private var adding = false
-    var body: some View {
-        Menu {
-            Text(app.services?.user?.email ?? "Account")
-            SettingsLink { Text("Account Settings…") }
-            ForEach(app.entries) { entry in
-                Button {
-                    Task { do { try await app.switchAccount(entry) } catch { self.error = error.localizedDescription } }
-                } label: {
-                    if app.currentAccountID == entry.id {
-                        Label("\(entry.email) · \(entry.account.serverURL.host() ?? "")", systemImage: "checkmark")
-                    } else { Text("\(entry.email) · \(entry.account.serverURL.host() ?? "")") }
-                }.disabled(app.currentAccountID == entry.id || app.switching)
-            }
-            Divider()
-            Button("Add Account…") { adding = true }.disabled(app.switching)
-            Button("Sign Out", role: .destructive) { Task { await app.signOut() } }.disabled(app.switching)
-        } label: {
-            Label("Account", systemImage: "person.crop.circle")
-        }
-        .sheet(isPresented: $adding) {
-            VStack {
-                LoginView()
-                Button("Cancel") { adding = false }.keyboardShortcut(.cancelAction).padding()
-            }.frame(width: 500, height: 600).environment(app)
-                .onChange(of: app.services.map(ObjectIdentifier.init)) { _, _ in adding = false }
-        }
-        .alert("Could Not Switch Account", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) {
-            Button("OK") { error = nil }
-        } message: { Text(error ?? "") }
     }
 }
 

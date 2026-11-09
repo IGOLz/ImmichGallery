@@ -171,6 +171,18 @@ struct AppCommands: Commands {
     var body: some Commands {
         CommandGroup(after: .appSettings) {
             if session != nil {
+                if app.entries.count > 1 { // Account: reachable while the sidebar is hidden.
+                    Menu("Switch Account") {
+                        ForEach(app.entries) { entry in
+                            Button("\(entry.email) · \(entry.account.serverURL.host() ?? "")") {
+                                Task {
+                                    do { try await app.switchAccount(entry) }
+                                    catch { app.accountError = error.localizedDescription }
+                                }
+                            }.disabled(app.currentAccountID == entry.id || app.switching)
+                        }
+                    }
+                }
                 Button("Sign Out…") { Task { await app.signOut() } }
             }
         }

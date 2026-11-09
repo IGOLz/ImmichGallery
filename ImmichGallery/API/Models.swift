@@ -56,6 +56,7 @@ struct User: Decodable, Sendable, Identifiable {
     var shouldChangePassword: Bool?
     var isAdmin: Bool? // Admin: absent on older servers means no admin access.
     var profileImagePath: String?
+    var avatarColor: String? // Account: Immich's colour for the initials avatar.
     var quotaUsageInBytes: Int64?
     var quotaSizeInBytes: Int64?
 
