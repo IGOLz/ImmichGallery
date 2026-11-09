@@ -222,7 +222,7 @@ struct AppCommands: Commands {
                 }
                 if let grid { Task { await grid.reload() } }
             }
-                .keyboardShortcut("r", modifiers: .command)
+                .keyboardShortcut("r", modifiers: [.command, .shift])
                 .disabled(grid == nil)
             Divider()
             Button(showInspector ? "Hide Info" : "Show Info") { showInspector.toggle() }

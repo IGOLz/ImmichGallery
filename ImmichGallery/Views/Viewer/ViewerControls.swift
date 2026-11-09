@@ -81,6 +81,15 @@ struct ViewerCommands: Commands {
             Button("Open Full-Screen Viewer") { state?.present(slideshow: false) }.disabled(state?.currentID == nil)
             Button("Rotate View Temporarily Left") { state?.rotation -= 90 }.disabled(!canRotate)
             Button("Rotate View Temporarily Right") { state?.rotation += 90 }.disabled(!canRotate)
+            if let presentation = context.presentation {
+                Button("Rotate Photo Clockwise") {
+                    if let id = presentation.model.viewerID {
+                        Task { await presentation.session.metadata.rotate(id, clockwise: true, session: presentation.session) }
+                    }
+                }
+                .keyboardShortcut("r", modifiers: .command)
+                .disabled(presentation.model.viewerID.map { presentation.session.metadata.imageEligibility[$0] != true } ?? true)
+            }
             Button("Show in All Photos") { state?.showInLibrary() }.disabled(state?.currentID == nil)
         }
     }
@@ -141,6 +150,11 @@ struct ViewerPresentation: View {
         .onKeyPress(keys: ["c"]) { copyViewerImage($0, state: state) }
         .onContinuousHover { phase in
             guard case .active = phase else { return }
+        .task(id: state.model.viewerID) {
+            if let id = state.model.viewerID {
+                await state.session.metadata.checkImageEligibility([id], session: state.session)
+            }
+        }
             if !state.controlsVisible { state.controlsVisible = true }
             if Date().timeIntervalSince(lastInteraction) > 0.25 { lastInteraction = .now }
         }
