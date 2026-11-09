@@ -21,6 +21,7 @@ struct SidebarView: View {
     @State private var displayedLayout = UserDefaults.standard.string(forKey: "sidebarLayout") ?? ""
     @State private var viewport = CGRect.zero
     @State private var renaming: String?
+    @State private var renameDraft = ""
     @State private var removing: SidebarSection?
     @State private var confirmingReset = false
     @GestureState private var gestureActive = false
@@ -88,7 +89,13 @@ struct SidebarView: View {
             guard displayedLayout != value else { return }
             withAnimation(reorderAnimation) { displayedLayout = value }
         }
-        .onChange(of: editing) { _, value in if !value { renaming = nil } }
+        .onChange(of: editing) { _, value in
+            if !value { finishRenaming() }
+            else if renaming == nil { sidebarFocused = true }
+        }
+        .onChange(of: renaming) { _, value in
+            if value == nil && editing { sidebarFocused = true }
+        }
         .confirmationDialog("Delete this custom section?", isPresented: Binding(get: { removing != nil }, set: { if !$0 { removing = nil } }), titleVisibility: .visible) {
             Button("Delete Section", role: .destructive) {
                 if let section = removing { update { $0.removeSection(id: section.id) } }
@@ -110,7 +117,7 @@ struct SidebarView: View {
             SidebarSectionHeader(section: section, editing: editing, renaming: $renaming,
                                  setHidden: { hidden in update { $0.setSectionHidden(hidden, id: section.id) } },
                                  setCollapsed: { collapsed in update { $0.setSectionCollapsed(collapsed, id: section.id) } },
-                                 rename: { name in update { $0.renameSection(id: section.id, to: name) } }) {
+                                 rename: { name in update { $0.renameSection(id: section.id, to: name) } }, name: $renameDraft) {
                 headerMenu(section, layout: layout)
             }
             .modifier(SidebarDropRegion(target: SidebarDropTarget(sectionID: section.id), frames: $frames))
@@ -208,6 +215,13 @@ struct SidebarView: View {
         if !editing {
             Button("Edit Sidebar") { editing = true }
         }
+    }
+
+    private func finishRenaming() {
+        guard let id = renaming else { return }
+        let name = renameDraft.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !name.isEmpty { update { $0.renameSection(id: id, to: name) } }
+        renaming = nil
     }
 
     private func shownLinks(in sectionID: String, layout: SidebarLayout) -> [SidebarLink] {

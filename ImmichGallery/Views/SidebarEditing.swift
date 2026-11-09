@@ -9,9 +9,9 @@ struct SidebarSectionHeader<MenuItems: View>: View {
     let setHidden: (Bool) -> Void
     let setCollapsed: (Bool) -> Void
     let rename: (String) -> Void
+    @Binding var name: String
     @ViewBuilder let menu: MenuItems
     @State private var hovering = false
-    @State private var name = ""
     @FocusState private var nameFocused: Bool
 
     var body: some View {
