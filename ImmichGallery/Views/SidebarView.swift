@@ -114,7 +114,8 @@ struct SidebarView: View {
                 headerMenu(section, layout: layout)
             }
             .modifier(SidebarDropRegion(target: SidebarDropTarget(sectionID: section.id), frames: $frames))
-            if !section.isCollapsed {
+            // Editing exposes every item without changing the saved collapsed state.
+            if editing || !section.isCollapsed {
                 if editing && section.listsAlbums {
                     VStack(alignment: .leading, spacing: 4) {
                         albumLimitPicker(in: section.id, layout: layout)
