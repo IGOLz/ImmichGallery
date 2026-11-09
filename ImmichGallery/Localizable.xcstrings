@@ -1,6 +1,456 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Cities": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Città"
+          }
+        }
+      }
+    },
+    "Countries": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paesi"
+          }
+        }
+      }
+    },
+    "%lld places": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld place"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld places"
+                }
+              }
+            }
+          }
+        },
+        "it": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld luogo"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld luoghi"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Covers": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copertine"
+          }
+        }
+      }
+    },
+    "List": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elenco"
+          }
+        }
+      }
+    },
+    "View": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vista"
+          }
+        }
+      }
+    },
+    "Expand All Groups": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Espandi tutti i gruppi"
+          }
+        }
+      }
+    },
+    "Collapse All Groups": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comprimi tutti i gruppi"
+          }
+        }
+      }
+    },
+    "Shared": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Condiviso"
+          }
+        }
+      }
+    },
+    "Shows the albums in this group": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostra gli album di questo gruppo"
+          }
+        }
+      }
+    },
+    "Hides the albums in this group": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nasconde gli album di questo gruppo"
+          }
+        }
+      }
+    },
+    "Most Items": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Più elementi"
+          }
+        }
+      }
+    },
+    "Largest Size": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dimensione maggiore"
+          }
+        }
+      }
+    },
+    "Photos and Videos": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Foto e video"
+          }
+        }
+      }
+    },
+    "All Time": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sempre"
+          }
+        }
+      }
+    },
+    "Past 24 Hours": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ultime 24 ore"
+          }
+        }
+      }
+    },
+    "Past 7 Days": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ultimi 7 giorni"
+          }
+        }
+      }
+    },
+    "Past 30 Days": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ultimi 30 giorni"
+          }
+        }
+      }
+    },
+    "Past Year": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ultimo anno"
+          }
+        }
+      }
+    },
+    "Past 3 Years": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ultimi 3 anni"
+          }
+        }
+      }
+    },
+    "Custom Range": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Intervallo personalizzato"
+          }
+        }
+      }
+    },
+    "All People": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tutte le persone"
+          }
+        }
+      }
+    },
+    "Hidden People": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Persone nascoste"
+          }
+        }
+      }
+    },
+    "Include Hidden People": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Includi persone nascoste"
+          }
+        }
+      }
+    },
+    "No Matching People": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nessuna persona corrispondente"
+          }
+        }
+      }
+    },
+    "No people match the selected view options.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nessuna persona corrisponde alle opzioni vista selezionate."
+          }
+        }
+      }
+    },
+    "Show All People": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostra tutte le persone"
+          }
+        }
+      }
+    },
+    "Unknown Country": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paese sconosciuto"
+          }
+        }
+      }
+    },
+    "All Links": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tutti i link"
+          }
+        }
+      }
+    },
+    "Album Links": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link di album"
+          }
+        }
+      }
+    },
+    "Individual Shares": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Condivisioni singole"
+          }
+        }
+      }
+    },
+    "Hide Expired Links": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nascondi link scaduti"
+          }
+        }
+      }
+    },
+    "No Matching Links": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nessun link corrispondente"
+          }
+        }
+      }
+    },
+    "No links match the selected view options.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nessun link corrisponde alle opzioni vista selezionate."
+          }
+        }
+      }
+    },
+    "Show All Links": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostra tutti i link"
+          }
+        }
+      }
+    },
+    "All Items": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tutti gli elementi"
+          }
+        }
+      }
+    },
+    "Date Added": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Data di aggiunta"
+          }
+        }
+      }
+    },
+    "View Options. Sorting by Date Added needs Immich v3.0 or later.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opzioni vista. L'ordinamento per data di aggiunta richiede Immich v3.0 o successivo."
+          }
+        }
+      }
+    },
+    "No Matching Photos": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nessuna foto corrispondente"
+          }
+        }
+      }
+    },
+    "No photos match the selected view options.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nessuna foto corrisponde alle opzioni vista selezionate."
+          }
+        }
+      }
+    },
+    "Show All Items": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostra tutti gli elementi"
+          }
+        }
+      }
+    },
+    "This item isn't shown in All Photos with its current view options. Choose All Items in View Options to find it.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Questo elemento non è visibile in Tutte le foto con le opzioni vista attuali. Scegli Tutti gli elementi in Opzioni vista per trovarlo."
+          }
+        }
+      }
+    },
     "No Matching Albums": {
       "localizations": {
         "it": {

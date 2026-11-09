@@ -9,6 +9,7 @@ struct AssetsDuplicatesView: View {
     @State private var error: String?
     @State private var pending: AssetsDuplicate?
     @State private var dismissGroup = false
+    @AppStorage("duplicates.sortBy") private var sortBy = DuplicatesSortBy.server
     var body: some View {
         Group {
             if loading { ProgressView() }
@@ -17,7 +18,7 @@ struct AssetsDuplicatesView: View {
             } else {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 28) {
-                        ForEach(groups) { group in
+                        ForEach(DuplicatesArrangement(sortBy: sortBy).sorted(groups)) { group in
                             VStack(alignment: .leading) {
                                 Text("\(group.assets.count) similar items").font(.headline)
                                 ScrollView(.horizontal) {
@@ -50,7 +51,20 @@ struct AssetsDuplicatesView: View {
         }
         .navigationTitle("Duplicates")
         .disabled(busy)
-        .toolbar { ToolbarItem { Button("Reload", systemImage: "arrow.clockwise") { Task { await load() } } } }
+        .toolbar {
+            ToolbarItem {
+                Menu {
+                    Picker("Sort By", selection: $sortBy) {
+                        ForEach(DuplicatesSortBy.allCases) { Text($0.title).tag($0) }
+                    }
+                    .pickerStyle(.inline)
+                } label: {
+                    Label("View Options", systemImage: "line.3.horizontal.decrease.circle")
+                }
+                .help("View Options")
+            }
+            ToolbarItem { Button("Reload", systemImage: "arrow.clockwise") { Task { await load() } } }
+        }
         .task { await load() }
         .confirmationDialog(dismissGroup ? "Dismiss this duplicate group?" : (session.features.trash ? "Move unselected items to Recently Deleted?" : "Permanently delete unselected items?"),
                             isPresented: Binding(get: { pending != nil }, set: { if !$0 { pending = nil } }), titleVisibility: .visible) {

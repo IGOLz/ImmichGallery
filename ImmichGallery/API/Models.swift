@@ -148,6 +148,7 @@ struct AssetResponse: Decodable, Sendable, Identifiable {
     var originalMimeType: String?
     let fileCreatedAt: String
     let localDateTime: String
+    var createdAt: String? // When it was added to Immich.
     var isFavorite: Bool
     var isTrashed: Bool
     var visibility: String?
