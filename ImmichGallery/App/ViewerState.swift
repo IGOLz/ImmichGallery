@@ -163,12 +163,16 @@ final class ViewerState: NSObject, NSWindowDelegate {
                     let (temporaryFile, response) = try await session.client.session.download(for: session.client.originalRequest(id))
                     defer { try? FileManager.default.removeItem(at: temporaryFile) }
                     guard (response as? HTTPURLResponse)?.statusCode == 200 else { throw CocoaError(.fileReadUnknown) }
-                    let directory = FileManager.default.temporaryDirectory.appendingPathComponent("ViewerClipboard/\(UUID().uuidString)")
+                    guard session.lockedFolder?.isDiscarded != true else { return }
+                    // Locked Folder copies stay in its own folder, which is removed on lock.
+                    let directory = (session.client.transferRoot?.appendingPathComponent("Clipboard")
+                        ?? FileManager.default.temporaryDirectory.appendingPathComponent("ViewerClipboard")).appendingPathComponent(UUID().uuidString)
                     try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
                     let file = directory.appendingPathComponent((asset.originalFileName as NSString).lastPathComponent)
                     try FileManager.default.copyItem(at: temporaryFile, to: file)
                     NSPasteboard.general.clearContents()
                     NSPasteboard.general.writeObjects([file as NSURL])
+                    session.lockedFolder?.pasteboardChangeCount = NSPasteboard.general.changeCount
                 } else {
                     let image: NSImage
                     if original {
@@ -182,14 +186,17 @@ final class ViewerState: NSObject, NSWindowDelegate {
                         guard let preview = await session.pipeline.thumbnail(id, size: .preview) else { throw CocoaError(.fileReadCorruptFile) }
                         image = NSImage(cgImage: preview, size: .zero)
                     }
+                    guard session.lockedFolder?.isDiscarded != true else { return }
                     NSPasteboard.general.clearContents()
                     NSPasteboard.general.writeObjects([image])
+                    session.lockedFolder?.pasteboardChangeCount = NSPasteboard.general.changeCount
                 }
             } catch { model.lastError = error.localizedDescription; session.handle(error) }
         }
     }
 
     func showInLibrary() {
+        guard model.source != .locked else { return }
         guard let id = currentID else { return }
         Self.showInLibrary(id: id, model: model, session: session, close: { self.close() })
     }
@@ -200,6 +207,7 @@ final class ViewerState: NSObject, NSWindowDelegate {
     }
 
     static func showInLibrary(id: String, model: AssetGridModel, session: LibrarySession, close: @escaping () -> Void = {}) {
+        guard model.source != .locked, session.lockedFolder == nil else { return }
         Task {
             do {
                 let asset = try await session.client.asset(id)

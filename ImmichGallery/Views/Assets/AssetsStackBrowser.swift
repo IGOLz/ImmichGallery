@@ -49,7 +49,7 @@ struct AssetsStackBrowser: View {
                 AssetsPreview(asset: asset).frame(maxWidth: .infinity, maxHeight: .infinity)
                 ScrollView(.horizontal) {
                     HStack {
-                        ForEach(stack.assets.filter { $0.visibility != "locked" }) { member in
+                        ForEach(stack.assets) { member in
                             Button { selected = member.id } label: {
                                 ThumbnailCell(asset: AssetItem(member), isSelected: selected == member.id, size: .thumbnail)
                                     .frame(width: 80, height: 80)
@@ -79,7 +79,7 @@ struct AssetsStackBrowser: View {
     private func load() async {
         do {
             let loaded = try await session.client.assetsStack(stackID)
-            stack = AssetsStack(id: loaded.id, primaryAssetId: loaded.primaryAssetId, assets: loaded.assets.filter { $0.visibility != "locked" })
+            stack = AssetsStack(id: loaded.id, primaryAssetId: loaded.primaryAssetId, assets: loaded.assets.filter { ($0.visibility == "locked") == (model.source == .locked) })
             if stack?.assets.contains(where: { $0.id == selected }) != true { selected = stack?.primaryAssetId }
         } catch ImmichError.http(404, _) { dismiss() }
         catch { session.handle(error); self.error = error.localizedDescription }

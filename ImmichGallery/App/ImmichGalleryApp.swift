@@ -11,6 +11,7 @@ struct ImmichGalleryApp: App {
         SharingTemporaryFiles.sweep() // Sharing
         Task.detached { UploadMultipart.sweepStale() } // Upload
         ViewerState.pruneClipboard() // Viewer
+        LockedFolderMedia.sweep() // Explore
     }
 
     var body: some Scene {
@@ -195,7 +196,7 @@ struct AppCommands: Commands {
 
         CommandGroup(after: .importExport) {
             Button("Export Unmodified Original…") {
-                if let grid { Exporter.exportOriginals(grid.selectedItems.map(\.id), session: session) }
+                if let grid { Exporter.exportOriginals(grid.selectedItems.map(\.id), session: grid.session ?? session) }
             }
             .keyboardShortcut("e", modifiers: [.command, .shift])
             .disabled(grid?.selection.isEmpty ?? true)
@@ -243,7 +244,8 @@ struct AppCommands: Commands {
         }
 
         CommandMenu("Image") {
-            if let session = session {
+            // A Locked Folder grid has its own session, with its own client.
+            if let session = grid?.session ?? session {
                 let metadataIDs = grid?.viewerID.map { [$0] } ?? Array(grid?.selection ?? [])
                 MetadataMenuItems(ids: metadataIDs, canEditImage: true, menuBarShortcuts: true)
                     .environment(session)
@@ -251,17 +253,22 @@ struct AppCommands: Commands {
                 Divider()
             }
             let ids = grid?.viewerID.map { [$0] } ?? grid?.selectedItems.map(\.id) ?? []
-            if let session = session { AlbumSelectionMenu(session: session, model: grid, ids: ids) } // Albums
-            if session != nil, grid?.source != .trash { WidgetChosenMenuItem(ids: ids) } // Widget
-            Button("Move to Locked Folder") { if let grid { Task { await grid.moveToLockedFolder(ids) } } }
-                .disabled(ids.isEmpty || grid?.canMutate(ids) != true) // Explore
+            if grid?.source == .locked {
+                Button("Remove from Locked Folder") { if let grid { Task { await grid.removeFromLockedFolder(ids) } } }
+                    .disabled(grid?.canMutate(ids) != true) // Explore
+            } else {
+                if let session = session { AlbumSelectionMenu(session: session, model: grid, ids: ids) } // Albums
+                if session != nil, grid?.source != .trash { WidgetChosenMenuItem(ids: ids) } // Widget
+                Button("Move to Locked Folder") { if let grid { Task { await grid.moveToLockedFolder(ids) } } }
+                    .disabled(ids.isEmpty || grid?.canMutate(ids) != true) // Explore
+            }
             // "." and ⌘⌫ are handled by the grid/viewer so they don't steal keys from text fields.
             Button("Favorite (.)") { if let grid { Task { await grid.toggleFavorite(ids) } } }
                 .disabled(grid?.canMutate(ids) != true)
             if grid?.source == .archive {
                 Button("Unarchive") { if let grid { Task { await grid.setArchived(ids, false) } } }
                     .disabled(grid?.canMutate(ids) != true)
-            } else {
+            } else if grid?.source != .locked {
                 Button(String(localized: "Archive Selected Photos")) { if let grid { Task { await grid.setArchived(ids, true) } } }
                     .keyboardShortcut("a", modifiers: [.command, .control])
                     .disabled(ids.isEmpty || grid?.canMutate(ids) != true)

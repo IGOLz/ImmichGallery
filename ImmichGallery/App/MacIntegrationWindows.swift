@@ -109,5 +109,6 @@ final class MacIntegrationLifecycle: NSObject, NSApplicationDelegate {
     func applicationWillTerminate(_ notification: Notification) {
         MacQuickLook.shared.dismiss()
         MacTransferCache.prune()
+        LockedFolderMedia.sweep()
     }
 }

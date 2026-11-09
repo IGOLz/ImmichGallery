@@ -306,6 +306,46 @@ final class PagingProtocol: URLProtocol, @unchecked Sendable {
         services.removeFromGrids(["asset-a"])
         assert(closedViewers == 2 && firstPrivateGrid.viewerID == nil && secondPrivateGrid.viewerID == nil)
         assert(services.hiddenAssetIDs == ["asset-a"])
+        // Locked Folder: its own grid source, uncached client, pipeline and files. Access errors check the unlock
+        // instead of signing out, and discarding removes the files.
+        assert(AssetItem.from(columns, includingLocked: true).map(\.id) == ["public", "private"])
+        assert(GridSource.locked.timelineQuery?.visibility == "locked" && !GridSource.locked.excludesArchived)
+        let lockedMedia = LockedFolderMedia(account: client)
+        let lockedWindow = LibrarySession(services: services, lockedFolder: lockedMedia)
+        assert(!lockedWindow.gridModel(for: .locked).isPaged)
+        assert(lockedWindow.client === lockedMedia.client && lockedWindow.pipeline === lockedMedia.pipeline)
+        assert(lockedWindow.pipeline !== session.pipeline && session.client === client)
+        assert(lockedMedia.client.session.configuration.urlCache == nil)
+        let lockedRoot = lockedMedia.client.transferRoot!
+        assert(lockedRoot.deletingLastPathComponent().standardizedFileURL.path == MacTransferCache.lockedRoot.standardizedFileURL.path)
+        assert(lockedMedia.client.with(credential: .accessToken("renewed")).transferRoot == lockedRoot)
+        var lockedFailures = 0, signOuts = 0
+        lockedMedia.onRequestFailed = { lockedFailures += 1 }
+        services.onUnauthorized = { signOuts += 1 }
+        lockedWindow.handle(ImmichError.unauthorized(nil))
+        lockedWindow.handle(CancellationError())
+        assert(lockedFailures == 1 && signOuts == 0)
+        session.handle(ImmichError.unauthorized(nil))
+        assert(signOuts == 1)
+        services.onUnauthorized = {}
+        try FileManager.default.createDirectory(at: lockedRoot.appendingPathComponent("Previews"), withIntermediateDirectories: true)
+        lockedMedia.discard()
+        assert(!FileManager.default.fileExists(atPath: lockedRoot.path))
+        assert(lockedMedia.isDiscarded)
+        let now = Date()
+        var inactivity = LockedFolderInactivity()
+        inactivity.resignActive(now: now)
+        assert(!inactivity.becomeActive(now: now.addingTimeInterval(60)))
+        inactivity.resignActive(now: now)
+        assert(inactivity.becomeActive(now: now.addingTimeInterval(LockedFolderInactivity.timeout)))
+        assert(inactivity.deadline == nil)
+        lockedMedia.requestFailed()
+        assert(lockedFailures == 1, "Discarded media must not launch another status check")
+        do {
+            _ = try MacTransferCache.create(preview: true, root: lockedRoot)
+            assertionFailure("A late download must not recreate private files after lock")
+        } catch is CancellationError {}
+        assert(!FileManager.default.fileExists(atPath: lockedRoot.path))
         print("Offline paging, concurrent restore, shared services, local presentation, ownership and locked visibility checks passed")
     }
 }

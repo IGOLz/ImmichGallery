@@ -75,9 +75,9 @@ struct AssetViewer: View {
                 Divider()
             }
             if isPresentation {
-                Button("Show in All Photos") { viewer?.showInLibrary() }
+                if model.source != .locked { Button("Show in All Photos") { viewer?.showInLibrary() } }
                 AssetsExportMenu(ids: [item.id])
-                if model.canMutate([item.id]) {
+                if model.canMutate([item.id]), model.source != .locked {
                     Button("Move to Locked Folder") { Task { await model.moveToLockedFolder([item.id]) } }
                 }
             } else {

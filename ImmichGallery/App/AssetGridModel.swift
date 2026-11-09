@@ -5,6 +5,7 @@ import Observation
 /// What a grid shows.
 enum GridSource: Hashable {
     case library, favorites, videos, archive, trash
+    case locked // Explore: only shown in an unlocked Locked Folder session
     case largeFiles, geolocation // Assets
     case album(String)
     case partner(String) // Sharing
@@ -31,6 +32,7 @@ enum GridSource: Hashable {
         case .favorites: TimelineQuery(visibility: nil, isFavorite: true)
         case .archive: TimelineQuery(visibility: "archive")
         case .trash: TimelineQuery(visibility: nil, isTrashed: true)
+        case .locked: TimelineQuery(visibility: "locked")
         case .album(let id): TimelineQuery(visibility: nil, albumId: id)
         case .partner(let id): TimelineQuery(userId: id) // Sharing
         case .person(let id): TimelineQuery(personId: id)
@@ -54,6 +56,7 @@ extension GridSource {
         case .partner: .partner // Sharing
         case .person: .person
         case .explore(.tag): .tag // Explore
+        case .locked: .locked // Explore
         default: nil
         }
     }
@@ -89,8 +92,8 @@ struct AssetItem: Identifiable, Hashable, Sendable {
         fileSizeInBytes = r.exifInfo?.fileSizeInByte
     }
 
-    static func from(_ c: TimeBucketAssets) -> [AssetItem] {
-        c.id.indices.filter { c.visibility?.indices.contains($0) != true || c.visibility?[$0] != "locked" }.map { i in
+    static func from(_ c: TimeBucketAssets, includingLocked: Bool = false) -> [AssetItem] {
+        c.id.indices.filter { includingLocked || c.visibility?.indices.contains($0) != true || c.visibility?[$0] != "locked" }.map { i in
             AssetItem(
                 id: c.id[i], ownerId: c.ownerId.flatMap { $0.indices.contains(i) ? $0[i] : nil }, isVideo: !c.isImage[i], isFavorite: c.isFavorite[i], isTrashed: c.isTrashed[i],
                 thumbhash: c.thumbhash[i], ratio: c.ratio[i] ?? 1, durationMS: c.duration[i]?.milliseconds,
@@ -121,7 +124,8 @@ final class AssetGridModel {
     enum LoadState: Equatable { case idle, loading, loaded, failed(String) }
 
     let source: GridSource
-    @ObservationIgnored private weak var session: LibrarySession?
+    /// The session that owns this grid (Locked Folder: its own session, so menu commands use its client).
+    @ObservationIgnored private(set) weak var session: LibrarySession?
 
     var albumOrder = "desc" // Albums
     /// The page's view options, read from its saved settings on every reload.
@@ -355,7 +359,7 @@ final class AssetGridModel {
                 try Task.checkCancellation()
                 guard generation == loadGeneration,
                       let i = sections.firstIndex(where: { $0.id == id }) else { return }
-                var assets = AssetItem.from(columns).filter { self.source != .geolocation || (session.user?.id != nil && $0.ownerId == session.user?.id) }
+                var assets = AssetItem.from(columns, includingLocked: source == .locked).filter { self.source != .geolocation || (session.user?.id != nil && $0.ownerId == session.user?.id) }
                 if case .explore(.map(let query)) = source { assets.removeAll { !query.includes($0.date) } }
                 sections[i].assets = assets
                 sections[i].count = assets.count
@@ -438,7 +442,8 @@ final class AssetGridModel {
             nextPage = nil
         }
         // Search without a visibility also finds Live Photos' hidden video parts.
-        let visibleItems = result.items.filter { $0.visibility != "locked" && !(searchesTimeline && $0.visibility == "hidden") }
+        let keepsLocked = source == .locked
+        let visibleItems = result.items.filter { (keepsLocked || $0.visibility != "locked") && !(searchesTimeline && $0.visibility == "hidden") }
         append(visibleItems.map(AssetItem.init))
         // Any fully filtered page must advance, since it has no cells to trigger pagination.
         if visibleItems.isEmpty, nextPage != nil {
@@ -561,7 +566,7 @@ final class AssetGridModel {
     }
 
     func moveToLockedFolder(_ ids: [String]) async {
-        guard canMutate(ids), let session else { return }
+        guard canMutate(ids), source != .locked, let session else { return }
         do {
             try await session.client.setVisibility(ids, "locked")
             session.exploreRemoveFromGrids(Set(ids))
@@ -575,8 +580,18 @@ final class AssetGridModel {
         } catch { report(error) }
     }
 
+    func removeFromLockedFolder(_ ids: [String]) async {
+        guard canMutate(ids), source == .locked, let session else { return }
+        do {
+            try await session.client.setVisibility(ids, "timeline")
+            remove(ids)
+            session.services.hiddenAssetIDs.subtract(ids)
+            session.invalidateGrids(except: self)
+        } catch { report(error) }
+    }
+
     func setArchived(_ ids: [String], _ archived: Bool) async {
-        guard canMutate(ids), let session else { return }
+        guard canMutate(ids), source != .locked, let session else { return }
         do {
             try await session.client.setVisibility(ids, archived ? "archive" : "timeline")
             if source == .archive || source.excludesArchived {
@@ -589,7 +604,8 @@ final class AssetGridModel {
     func delete(_ ids: [String], permanently: Bool) async {
         guard canDelete(ids), let session else { return }
         do {
-            try await session.client.delete(ids, force: permanently)
+            // Locked items are deleted permanently, as in Immich: trash doesn't show them.
+            try await session.client.delete(ids, force: permanently || source == .locked)
             remove(ids)
             session.invalidateGrids(except: self)
             await session.reloadAlbums()

@@ -47,3 +47,9 @@ No live server was contacted, no Keychain item was read, and no app was launched
 ## Deliberate omissions
 
 Widgets are covered in `Widget.md`. A menu bar extra and unattended export intent remain outside this change. No project settings were changed by the review fixes.
+
+## Locked Folder
+
+Unlocked grids use a separate `LibrarySession` backed by `LockedFolderMedia`, an uncached client and a memory image cache. Quick Look, drag and clipboard originals use a per-unlock directory under `MacTransferCache.lockedRoot`. Locking revokes that directory before deleting it, preventing late downloads from recreating files. Copied content is cleared only while it still owns the pasteboard. Files are also removed at quit and at the next launch.
+
+Locking clears all windows sharing the account session. Screen lock, sleep, leaving the page and the Lock button lock immediately. Switching to another app allows a 15-minute grace period, enforced locally because background notification polling can extend the server unlock. Returning after that deadline still locks before cancelling the inactivity timer.

@@ -17,7 +17,7 @@ cases = {
     'password-banner': api + ['Tests/PasswordBannerChecks.swift'],
     'metadata-state': models + ['ImmichGallery/API/Models+Metadata.swift', app('MetadataState'), 'scripts/verify-metadata-state.swift'],
     'admin-refresh': models + ['ImmichGallery/API/Models+Admin.swift', 'ImmichGallery/API/ImmichClient+Admin.swift', app('AdminModel'), 'scripts/check-admin-refresh.swift'],
-    'paging-and-services': api + [app(s) for s in ['AppModel', 'AssetGridModel', 'GridArrangement', 'AlbumsActions', 'MetadataState', 'SharingModel', 'UploadQueue']] + [support('ImagePipeline'), support('Formatters'), 'scripts/check-search-paging.swift'],
+    'paging-and-services': api + [app(s) for s in ['AppModel', 'AssetGridModel', 'GridArrangement', 'AlbumsActions', 'LockedFolderMedia', 'MetadataState', 'SharingModel', 'UploadQueue']] + [support('ImagePipeline'), support('Formatters'), 'scripts/check-search-paging.swift'],
     'sharing': api + [app('SharingModel'), 'scripts/checks/SharingModelCheck.swift'],
     'upload': api + [app('UploadQueue'), 'scripts/verify-upload.swift'],
     'map-annotation': api + [support('ImagePipeline'), app('ExploreClustering'), 'ImmichGallery/Views/Albums/RemoteThumbnail.swift', 'ImmichGallery/Views/Explore/ExploreMapAnnotation.swift', 'Tests/MapAnnotationChecks.swift'],

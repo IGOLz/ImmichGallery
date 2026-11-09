@@ -64,22 +64,19 @@ extension ImmichClient {
         try await send("POST", "auth/session/unlock", body: Body(pinCode: pin))
     }
     func exploreLock() async throws { try await send("POST", "auth/session/lock") }
-    func exploreLocked(page: Int) async throws -> SearchResponse.Assets {
-        struct Body: Encodable { let visibility = "locked"; let page: Int; let size = 250 }
-        let response: SearchResponse = try await send("POST", "search/metadata", body: Body(page: page))
-        return response.assets
-    }
     var exploreSupportsLockedFolder: Bool {
         if case .accessToken = credential { return true }
         return false
     }
-    func explorePrivateClient() -> ImmichClient {
+    /// No URL cache, so Locked Folder media never reaches the disk cache.
+    func explorePrivateClient(transferRoot: URL? = nil) -> ImmichClient {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.httpAdditionalHeaders = ["User-Agent": Self.userAgent]
         configuration.httpMaximumConnectionsPerHost = 8
         configuration.timeoutIntervalForRequest = 30
         configuration.urlCache = nil
         configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
-        return ImmichClient(serverURL: serverURL, apiURL: apiURL, credential: credential, session: URLSession(configuration: configuration))
+        return ImmichClient(serverURL: serverURL, apiURL: apiURL, credential: credential, session: URLSession(configuration: configuration),
+                            transferRoot: transferRoot)
     }
 }
