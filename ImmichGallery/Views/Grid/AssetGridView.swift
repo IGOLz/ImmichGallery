@@ -67,10 +67,8 @@ struct AssetGridHost<Header: View>: View {
                     tagRequest = ExploreTagRequest(ids: ids, removing: removing)
                 })
                     .id("\(item.id)-\(session.metadata.imageRevision)") // Metadata
-                    .transition(.opacity)
             }
         }
-        .animation(.easeOut(duration: 0.18), value: model.viewerID)
         .modifier(MetadataHost(model: model)) // Metadata
         .navigationTitle(viewerItem?.date.map { Text(ImmichDate.day($0)) } ?? title)
         .navigationSubtitle(subtitle)

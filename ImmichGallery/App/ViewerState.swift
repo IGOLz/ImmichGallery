@@ -39,9 +39,6 @@ final class ViewerState: NSObject, NSWindowDelegate {
     var shuffle = UserDefaults.standard.bool(forKey: "viewer.shuffle") {
         didSet { UserDefaults.standard.set(shuffle, forKey: "viewer.shuffle"); Task { await rebuildSequence() } }
     }
-    var fade = UserDefaults.standard.object(forKey: "viewer.fade") as? Bool ?? true {
-        didSet { UserDefaults.standard.set(fade, forKey: "viewer.fade") }
-    }
     var limitVideos = UserDefaults.standard.bool(forKey: "viewer.limitVideos") {
         didSet { UserDefaults.standard.set(limitVideos, forKey: "viewer.limitVideos") }
     }

@@ -110,7 +110,6 @@ struct ViewerPresentation: View {
             if let id = state.model.viewerID, let item = state.model.item(id) {
                 AssetViewer(model: state.model, item: item, playLive: $live, onDelete: { _ in }, isPresentation: true)
                     .id(id)
-                    .transition(state.fade ? .opacity : .identity)
             }
             if state.controlsVisible {
                 HStack(spacing: 20) {
@@ -133,7 +132,6 @@ struct ViewerPresentation: View {
             }
         }
         .environment(\.colorScheme, .dark)
-        .animation(state.fade ? .easeInOut(duration: 0.35) : nil, value: state.model.viewerID)
         .focusedSceneValue(\.viewerState, state)
         .alert("Something Went Wrong", isPresented: Binding(get: { state.model.lastError != nil }, set: { if !$0 { state.model.lastError = nil } })) {
             Button("OK") {}
@@ -176,7 +174,6 @@ struct ViewerSlideshowSettings: View {
                 ForEach([2.0, 3, 5, 10, 15, 30], id: \.self) { Text("\(Int($0)) seconds").tag($0) }
             }
             Toggle("Shuffle", isOn: $state.shuffle)
-            Toggle("Fade Transition", isOn: $state.fade)
             Toggle("Limit Videos to Slide Interval", isOn: $state.limitVideos)
             Text("Videos otherwise play to the end. Space pauses or resumes playback.").font(.caption).foregroundStyle(.secondary)
         }.padding(20).frame(width: 320)
