@@ -47,7 +47,10 @@ struct SidebarView: View {
                                         Button("Customize Sidebar…") { customizing = true }
                                     }
                                 ForEach(links, id: \.self) { link in
-                                    SidebarSelectionRow(item: link.presentation.destination, selection: focusedSelection) {
+                                    SidebarSelectionRow(item: link.presentation.destination, selection: focusedSelection,
+                                                        onReselect: link == .library ? {
+                                                            session.gridModel(for: .library).scrollToTopRevision += 1
+                                                        } : nil) {
                                         SidebarNavigationRow(link: link, sectionID: section.id, layout: $storedLayout,
                                                              visibleLinks: links, customize: { customizing = true })
                                     }
