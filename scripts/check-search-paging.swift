@@ -331,6 +331,14 @@ final class PagingProtocol: URLProtocol, @unchecked Sendable {
         try FileManager.default.createDirectory(at: lockedRoot.appendingPathComponent("Previews"), withIntermediateDirectories: true)
         lockedMedia.discard()
         assert(!FileManager.default.fileExists(atPath: lockedRoot.path))
+        assert(lockedMedia.isDiscarded)
+        lockedMedia.requestFailed()
+        assert(lockedFailures == 1, "Discarded media must not launch another status check")
+        do {
+            _ = try MacTransferCache.create(preview: true, root: lockedRoot)
+            assertionFailure("A late download must not recreate private files after lock")
+        } catch is CancellationError {}
+        assert(!FileManager.default.fileExists(atPath: lockedRoot.path))
         print("Offline paging, concurrent restore, shared services, local presentation, ownership and locked visibility checks passed")
     }
 }

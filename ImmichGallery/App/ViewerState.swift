@@ -163,6 +163,7 @@ final class ViewerState: NSObject, NSWindowDelegate {
                     let (temporaryFile, response) = try await session.client.session.download(for: session.client.originalRequest(id))
                     defer { try? FileManager.default.removeItem(at: temporaryFile) }
                     guard (response as? HTTPURLResponse)?.statusCode == 200 else { throw CocoaError(.fileReadUnknown) }
+                    guard session.lockedFolder?.isDiscarded != true else { return }
                     // Locked Folder copies stay in its own folder, which is removed on lock.
                     let directory = (session.client.transferRoot?.appendingPathComponent("Clipboard")
                         ?? FileManager.default.temporaryDirectory.appendingPathComponent("ViewerClipboard")).appendingPathComponent(UUID().uuidString)
@@ -185,6 +186,7 @@ final class ViewerState: NSObject, NSWindowDelegate {
                         guard let preview = await session.pipeline.thumbnail(id, size: .preview) else { throw CocoaError(.fileReadCorruptFile) }
                         image = NSImage(cgImage: preview, size: .zero)
                     }
+                    guard session.lockedFolder?.isDiscarded != true else { return }
                     NSPasteboard.general.clearContents()
                     NSPasteboard.general.writeObjects([image])
                     session.lockedFolder?.pasteboardChangeCount = NSPasteboard.general.changeCount

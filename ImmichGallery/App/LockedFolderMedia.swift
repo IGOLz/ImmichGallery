@@ -7,6 +7,7 @@ import Foundation
 final class LockedFolderMedia {
     let client: ImmichClient
     let pipeline: ImagePipeline
+    private(set) var isDiscarded = false
     /// A failed request may mean the unlock expired; the Locked Folder view checks and locks.
     var onRequestFailed: () -> Void = {}
     /// The pasteboard change made by copying a locked item. Cleared on lock if nothing replaced it.
@@ -17,12 +18,14 @@ final class LockedFolderMedia {
         pipeline = ImagePipeline(client: client)
     }
 
-    func requestFailed() { onRequestFailed() }
+    func requestFailed() { if !isDiscarded { onRequestFailed() } }
 
     func discard() {
+        isDiscarded = true
+        onRequestFailed = {}
         pipeline.removeAll()
         client.session.invalidateAndCancel()
-        if let root = client.transferRoot { try? FileManager.default.removeItem(at: root) }
+        if let root = client.transferRoot { MacTransferCache.discard(root: root) }
         if let pasteboardChangeCount, NSPasteboard.general.changeCount == pasteboardChangeCount { NSPasteboard.general.clearContents() }
         pasteboardChangeCount = nil
     }

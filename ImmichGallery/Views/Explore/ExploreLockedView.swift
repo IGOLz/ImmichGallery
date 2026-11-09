@@ -121,6 +121,8 @@ struct ExploreLockedView: View {
     /// Closes the viewer and Quick Look, then drops the session's grid, cached images, temporary files and any
     /// copied item still on the pasteboard, and locks the server session.
     private func lock() {
+        // A screen lock must invalidate an unlock that is still waiting for the server.
+        generation = UUID()
         expiryTask?.cancel()
         expiryTask = nil
         guard let locked = unlocked else { return }
