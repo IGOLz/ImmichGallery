@@ -15,16 +15,30 @@ struct SharedLinksView: View {
     @State private var deleting: SharedLink?
     @State private var showCreate = false
     @State private var albumID = ""
+    // Shared links: the Immich web app's tabs, as view options.
+    @AppStorage("sharedLinks.filter") private var filter = SharedLinksFilter.all
+    @AppStorage("sharedLinks.hideExpired") private var hideExpired = false
+
+    private var arrangement: SharedLinksArrangement { SharedLinksArrangement(filter: filter, hideExpired: hideExpired) }
 
     var body: some View {
         @Bindable var sharing = session.sharing
+        let links = arrangement.links(sharing.links)
         Group {
             if !sharing.linksAvailable {
                 ContentUnavailableView("Shared Links Unavailable", systemImage: "link", description: Text("Shared links are disabled or unavailable on this server."))
+            } else if links.isEmpty && !sharing.links.isEmpty {
+                ContentUnavailableView {
+                    Label("No Matching Links", systemImage: "line.3.horizontal.decrease.circle")
+                } description: {
+                    Text("No links match the selected view options.")
+                } actions: {
+                    Button("Show All Links") { filter = .all; hideExpired = false }
+                }
             } else {
                 List {
                     if sharing.links.isEmpty { Text("No public links. Select photos or choose an album to create one.").foregroundStyle(.secondary) }
-                    ForEach(sharing.links) { link in
+                    ForEach(links) { link in
                         VStack(alignment: .leading, spacing: 8) {
                             HStack {
                                 Label(link.title, systemImage: link.type == "ALBUM" ? "rectangle.stack" : "photo.on.rectangle")
@@ -45,6 +59,7 @@ struct SharedLinksView: View {
         }
         .navigationTitle("Shared Links")
         .toolbar {
+            ToolbarItem { viewOptions.disabled(!sharing.linksAvailable) }
             ToolbarItem {
                 Menu("Share Album", systemImage: "plus") {
                     ForEach(session.albums) { album in
@@ -64,6 +79,20 @@ struct SharedLinksView: View {
         } message: { Text("Anyone with this link will lose access. The photos remain in your library.") }
         .sharingError()
         .task { await sharing.reload() }
+    }
+
+    private var viewOptions: some View {
+        Menu {
+            Picker("Show", selection: $filter) {
+                ForEach(SharedLinksFilter.allCases) { Text($0.title).tag($0) }
+            }
+            .pickerStyle(.inline)
+            Divider()
+            Toggle("Hide Expired Links", isOn: $hideExpired)
+        } label: {
+            Label("View Options", systemImage: arrangement.isFiltered ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
+        }
+        .help("View Options")
     }
 
     private func copy(_ link: SharedLink) async {

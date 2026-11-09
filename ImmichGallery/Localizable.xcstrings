@@ -1,6 +1,76 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "All Links": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tutti i link"
+          }
+        }
+      }
+    },
+    "Album Links": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link di album"
+          }
+        }
+      }
+    },
+    "Individual Shares": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Condivisioni singole"
+          }
+        }
+      }
+    },
+    "Hide Expired Links": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nascondi link scaduti"
+          }
+        }
+      }
+    },
+    "No Matching Links": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nessun link corrispondente"
+          }
+        }
+      }
+    },
+    "No links match the selected view options.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nessun link corrisponde alle opzioni vista selezionate."
+          }
+        }
+      }
+    },
+    "Show All Links": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostra tutti i link"
+          }
+        }
+      }
+    },
     "All Items": {
       "localizations": {
         "it": {
