@@ -42,6 +42,7 @@ struct AssetGridHost<Header: View>: View {
     @AppStorage("showInspector") private var showInspector = false
     @AppStorage("gridThumbnailSize") private var thumbnailSize = GridMetrics.defaultSize
     @State private var pendingDelete: [String]?
+    @State private var deleteKeyMonitor: Any?
     @State private var tagRequest: ExploreTagRequest?
     @State private var playLive = false
 
@@ -97,13 +98,16 @@ struct AssetGridHost<Header: View>: View {
                 .inspectorColumnWidth(min: 260, ideal: 300, max: 420)
         }
         .task(id: session.macGridRevision) { await model.loadIfNeeded() }
+        .focusedSceneValue(\.deleteAssetsAction, DeleteAssetsAction {
+            let ids = model.viewerID.map { [$0] } ?? Array(model.selection)
+            requestDelete(ids)
+        })
         .onChange(of: session.upload.revision) { Task { await model.reload() } } // Upload
         .focusedSceneValue(\.gridModel, model)
         .confirmationDialog(deleteTitle, isPresented: Binding(get: { pendingDelete != nil }, set: { if !$0 { pendingDelete = nil } })) {
             Button(model.source == .trash ? "Delete Permanently" : "Delete", role: .destructive) {
-                let ids = pendingDelete ?? []
-                Task { await model.delete(ids, permanently: model.source == .trash || !session.features.trash) }
-            }
+                confirmDelete()
+            }.keyboardShortcut(.defaultAction)
         } message: {
             Text(model.source == .trash || !session.features.trash
                  ? "This can't be undone."
@@ -118,7 +122,8 @@ struct AssetGridHost<Header: View>: View {
             playLive = false
             if id == nil { showInspector = false }
         }
-        .onDisappear { showInspector = false }
+        .onChange(of: pendingDelete != nil) { _, active in updateDeleteKeyMonitor(active) }
+        .onDisappear { showInspector = false; updateDeleteKeyMonitor(false) }
         .modifier(ViewerIntegration(model: model))
     }
 
@@ -140,6 +145,25 @@ struct AssetGridHost<Header: View>: View {
     private func requestDelete(_ ids: [String]) {
         guard model.canDelete(ids) else { return }
         pendingDelete = ids
+    private func confirmDelete() {
+        guard let ids = pendingDelete else { return }
+        pendingDelete = nil
+        Task { await model.delete(ids, permanently: model.source == .trash || !session.features.trash) }
+    }
+
+    private func updateDeleteKeyMonitor(_ active: Bool) {
+        if let deleteKeyMonitor { NSEvent.removeMonitor(deleteKeyMonitor); self.deleteKeyMonitor = nil }
+        guard active else { return }
+        deleteKeyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            if event.modifierFlags.intersection(.deviceIndependentFlagsMask) == .command,
+               event.charactersIgnoringModifiers?.lowercased() == "d" {
+                confirmDelete()
+                return nil
+            }
+            return event
+        }
+    }
+
     }
 
     private var zoomOutButton: some View {

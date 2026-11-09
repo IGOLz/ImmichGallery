@@ -108,10 +108,11 @@ struct ViewerPresentation: View {
         ZStack(alignment: .bottom) {
             Color.black.ignoresSafeArea()
             if let id = state.model.viewerID, let item = state.model.item(id) {
-                AssetViewer(model: state.model, item: item, playLive: $live, onDelete: { _ in }, isPresentation: true)
+                AssetViewer(model: state.model, item: item, playLive: $live, onDelete: { _ in state.requestDeleteCurrent() }, isPresentation: true)
                     .id(id)
                     .transition(state.fade ? .opacity : .identity)
             }
+    @State private var deleteKeyMonitor: Any?
             if state.controlsVisible {
                 HStack(spacing: 20) {
                     Button { state.close() } label: { Label("Exit Full Screen", systemImage: "xmark") }
@@ -133,6 +134,13 @@ struct ViewerPresentation: View {
             }
         }
         .environment(\.colorScheme, .dark)
+        .confirmationDialog("Delete this photo?", isPresented: Binding(get: { state.pendingDelete != nil }, set: { if !$0 { state.pendingDelete = nil } })) {
+            Button(state.model.source == .trash ? "Delete Permanently" : "Delete", role: .destructive) {
+                confirmDelete()
+            }.keyboardShortcut(.defaultAction)
+        } message: {
+            Text(state.model.source == .trash || !state.session.features.trash ? "This can't be undone." : "Items are moved to Recently Deleted.")
+        }
         .animation(state.fade ? .easeInOut(duration: 0.35) : nil, value: state.model.viewerID)
         .focusedSceneValue(\.viewerState, state)
         .alert("Something Went Wrong", isPresented: Binding(get: { state.model.lastError != nil }, set: { if !$0 { state.model.lastError = nil } })) {
@@ -151,6 +159,8 @@ struct ViewerPresentation: View {
                     if state.controlsVisible {
                         state.controlsVisible = false
                         NSCursor.setHiddenUntilMouseMoves(true)
+        .onChange(of: state.pendingDelete != nil) { _, active in updateDeleteKeyMonitor(active) }
+        .onDisappear { updateDeleteKeyMonitor(false) }
                     }
                 }
                 guard state.slideshow, !state.paused, !state.settingsPresented else { continue }
@@ -177,6 +187,25 @@ struct ViewerSlideshowSettings: View {
             }
             Toggle("Shuffle", isOn: $state.shuffle)
             Toggle("Fade Transition", isOn: $state.fade)
+
+    private func confirmDelete() {
+        guard let id = state.pendingDelete else { return }
+        state.pendingDelete = nil
+        Task { await state.model.delete([id], permanently: state.model.source == .trash || !state.session.features.trash) }
+    }
+
+    private func updateDeleteKeyMonitor(_ active: Bool) {
+        if let deleteKeyMonitor { NSEvent.removeMonitor(deleteKeyMonitor); self.deleteKeyMonitor = nil }
+        guard active else { return }
+        deleteKeyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            if event.modifierFlags.intersection(.deviceIndependentFlagsMask) == .command,
+               event.charactersIgnoringModifiers?.lowercased() == "d" {
+                confirmDelete()
+                return nil
+            }
+            return event
+        }
+    }
             Toggle("Limit Videos to Slide Interval", isOn: $state.limitVideos)
             Text("Videos otherwise play to the end. Space pauses or resumes playback.").font(.caption).foregroundStyle(.secondary)
         }.padding(20).frame(width: 320)

@@ -157,6 +157,11 @@ extension FocusedValues {
     @Entry var sidebarActions: SidebarActions?
     @Entry var librarySession: LibrarySession?
     @Entry var gridModel: AssetGridModel?
+    @Entry var deleteAssetsAction: DeleteAssetsAction?
+}
+
+struct DeleteAssetsAction {
+    let perform: () -> Void
 }
 
 struct AppCommands: Commands {
@@ -164,6 +169,7 @@ struct AppCommands: Commands {
     @FocusedValue(\.searchActions) private var searchActions
     @FocusedValue(\.sidebarActions) private var sidebarActions
     @FocusedValue(\.gridModel) private var grid
+    @FocusedValue(\.deleteAssetsAction) private var deleteAssetsAction
     @FocusedValue(\.librarySession) private var session
     @AppStorage("gridThumbnailSize") private var thumbnailSize = GridMetrics.defaultSize
     @AppStorage("showInspector") private var showInspector = false
@@ -239,11 +245,22 @@ struct AppCommands: Commands {
                 Divider()
             }
             let ids = grid?.viewerID.map { [$0] } ?? grid?.selectedItems.map(\.id) ?? []
+            Button("Delete Photo…") {
+                if let presentation = ViewerCommandContext.shared.presentation {
+                    presentation.requestDeleteCurrent()
+                } else {
+                    deleteAssetsAction?.perform()
+                }
+            }
+            .keyboardShortcut(.delete, modifiers: .command)
+            .disabled(ViewerCommandContext.shared.presentation == nil &&
+                      (deleteAssetsAction == nil || grid?.canDelete(ids) != true))
+            Divider()
             if let session = session { AlbumSelectionMenu(session: session, model: grid, ids: ids) } // Albums
             if session != nil, grid?.source != .trash { WidgetChosenMenuItem(ids: ids) } // Widget
             Button("Move to Locked Folder") { if let grid { Task { await grid.moveToLockedFolder(ids) } } }
                 .disabled(ids.isEmpty || grid?.canMutate(ids) != true) // Explore
-            // "." and ⌘⌫ are handled by the grid/viewer so they don't steal keys from text fields.
+            // "." is handled by the grid/viewer so it doesn't steal keys from text fields.
             Button("Favorite (.)") { if let grid { Task { await grid.toggleFavorite(ids) } } }
                 .disabled(grid?.canMutate(ids) != true)
             if grid?.source == .archive {
