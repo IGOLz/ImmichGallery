@@ -449,7 +449,6 @@ struct ThumbnailCell: View {
             .overlay {
                 if isSelected {
                     Rectangle().strokeBorder(Color.accentColor, lineWidth: 3)
-                    Color.accentColor.opacity(0.12)
                 }
             }
             .contentShape(Rectangle())
