@@ -81,7 +81,7 @@ struct ViewerCommands: Commands {
             Button("Open Full-Screen Viewer") { state?.present(slideshow: false) }.disabled(state?.currentID == nil)
             Button("Rotate View Temporarily Left") { state?.rotation -= 90 }.disabled(!canRotate)
             Button("Rotate View Temporarily Right") { state?.rotation += 90 }.disabled(!canRotate)
-            Button("Show in All Photos") { state?.showInLibrary() }.disabled(state?.currentID == nil)
+            Button("Show in All Photos") { state?.showInLibrary() }.disabled(state?.currentID == nil || state?.model.source == .locked)
         }
     }
 }

@@ -40,6 +40,8 @@ final class ImmichClient: Sendable {
     let apiURL: URL
     let credential: Credential?
     let session: URLSession
+    /// Where originals for Quick Look, drags and copied files go when not the shared temporary folders (Locked Folder).
+    let transferRoot: URL?
 
     static let userAgent: String = {
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0"
@@ -58,15 +60,17 @@ final class ImmichClient: Sendable {
         return URLSession(configuration: config)
     }()
 
-    init(serverURL: URL, apiURL: URL, credential: Credential?, session: URLSession = ImmichClient.sharedSession) {
+    init(serverURL: URL, apiURL: URL, credential: Credential?, session: URLSession = ImmichClient.sharedSession,
+         transferRoot: URL? = nil) {
         self.serverURL = serverURL
         self.apiURL = apiURL
         self.credential = credential
         self.session = session
+        self.transferRoot = transferRoot
     }
 
     func with(credential: Credential) -> ImmichClient {
-        ImmichClient(serverURL: serverURL, apiURL: apiURL, credential: credential, session: session)
+        ImmichClient(serverURL: serverURL, apiURL: apiURL, credential: credential, session: session, transferRoot: transferRoot)
     }
 
     // MARK: - Request plumbing

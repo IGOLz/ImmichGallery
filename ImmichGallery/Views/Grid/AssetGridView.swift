@@ -101,12 +101,12 @@ struct AssetGridHost<Header: View>: View {
         .onChange(of: session.upload.revision) { Task { await model.reload() } } // Upload
         .focusedSceneValue(\.gridModel, model)
         .confirmationDialog(deleteTitle, isPresented: Binding(get: { pendingDelete != nil }, set: { if !$0 { pendingDelete = nil } })) {
-            Button(model.source == .trash ? "Delete Permanently" : "Delete", role: .destructive) {
+            Button(model.source == .trash || model.source == .locked ? "Delete Permanently" : "Delete", role: .destructive) {
                 let ids = pendingDelete ?? []
-                Task { await model.delete(ids, permanently: model.source == .trash || !session.features.trash) }
+                Task { await model.delete(ids, permanently: deletesPermanently) }
             }
         } message: {
-            Text(model.source == .trash || !session.features.trash
+            Text(deletesPermanently
                  ? "This can't be undone."
                  : "Items are moved to Recently Deleted.")
         }
@@ -131,9 +131,14 @@ struct AssetGridHost<Header: View>: View {
         return String(localized: "\(count) items")
     }
 
+    /// Locked items skip Recently Deleted, as in Immich.
+    private var deletesPermanently: Bool {
+        model.source == .trash || model.source == .locked || !session.features.trash
+    }
+
     private var deleteTitle: String {
         let n = pendingDelete?.count ?? 0
-        return model.source == .trash
+        return model.source == .trash || model.source == .locked
             ? String(localized: "Permanently delete \(n) items?")
             : String(localized: "Delete \(n) items?")
     }
@@ -183,8 +188,10 @@ struct AssetGridHost<Header: View>: View {
             }
         }
 
-        ToolbarItem { SharingMenu(assetIDs: ids, allowPublicLinks: model.canMutate(ids), albumID: { if case .album(let id) = model.source { return id }; return nil }()) } // Sharing
-        if #available(macOS 26, *) { ToolbarSpacer(.fixed) }
+        if model.source != .locked {
+            ToolbarItem { SharingMenu(assetIDs: ids, allowPublicLinks: model.canMutate(ids), albumID: { if case .album(let id) = model.source { return id }; return nil }()) } // Sharing
+            if #available(macOS 26, *) { ToolbarSpacer(.fixed) }
+        }
 
         if model.source == .trash {
             ToolbarItem {
@@ -270,6 +277,7 @@ struct AssetGridView: View {
         case .videos: ("No Videos", "video")
         case .archive: ("Archive Is Empty", "archivebox")
         case .trash: ("No Recently Deleted Items", "trash")
+        case .locked: ("Locked Folder Is Empty", "lock")
         case .search, .filteredSearch: ("No Results", "magnifyingglass")
         case .partner: ("No Partner Photos", "person.2")
         case .largeFiles: ("No Large Files", "externaldrive")
@@ -350,9 +358,10 @@ struct AssetGridView: View {
         )
         return Group {
             if let asset {
-                let albumIDs = AlbumAssetTransfer(ids: model.selection.contains(asset.id) ? Array(model.selection) : [asset.id])
+                // Locked items can't be dropped on albums; they can still be dragged out as files.
+                let albumIDs = model.source == .locked ? nil : AlbumAssetTransfer(ids: model.selection.contains(asset.id) ? Array(model.selection) : [asset.id])
                 if #available(macOS 26, *) {
-                    thumbnail.draggable(albumIDs)
+                    if let albumIDs { thumbnail.draggable(albumIDs) } else { thumbnail }
                 } else {
                     thumbnail.legacyAssetDrag(albumIDs: albumIDs, original: OriginalTransfer(id: asset.id, isVideo: asset.isVideo, client: session.client))
                 }
@@ -556,10 +565,21 @@ struct AssetActionsMenu: View {
             model.selection = [asset.id]
             showInspector = true
         }
-        ViewerContextMenu(model: model, asset: asset)
-        if model.source != .trash { WidgetChosenMenuItem(ids: ids) } // Widget
+        if model.source != .locked {
+            ViewerContextMenu(model: model, asset: asset)
+            if model.source != .trash { WidgetChosenMenuItem(ids: ids) } // Widget
+        }
         Divider()
-        if !model.canMutate(ids), model.source != .trash {
+        if model.source == .locked {
+            // Like Immich: no albums, sharing, tags or archive for locked items.
+            Button(asset.isFavorite ? "Unfavorite" : "Favorite") { Task { await model.setFavorite(ids, !asset.isFavorite) } }
+            AssetsContextMenu(model: model, ids: [asset.id] + ids.filter { $0 != asset.id })
+            MetadataMenuItems(ids: ids, canEditImage: !asset.isVideo && asset.livePhotoVideoID == nil).disabled(session.metadata.busy) // Metadata
+            AssetsExportMenu(ids: ids)
+            Divider()
+            Button("Remove from Locked Folder") { Task { await model.removeFromLockedFolder(ids) } }
+            Button("Delete Permanently…", role: .destructive) { onDelete(ids) }
+        } else if !model.canMutate(ids), model.source != .trash {
             SharingMenuItems(assetIDs: ids, allowPublicLinks: false)
             AssetsExportMenu(ids: ids)
         } else if model.source == .trash {

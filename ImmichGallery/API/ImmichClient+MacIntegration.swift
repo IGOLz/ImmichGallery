@@ -5,6 +5,8 @@ import Synchronization
 enum MacTransferCache {
     private static let active = Mutex<Set<String>>([])
     static let root = FileManager.default.temporaryDirectory.appendingPathComponent("MacIntegration", isDirectory: true)
+    /// Locked Folder files, outside `root` so pruning never races them. Removed on lock and at launch.
+    static let lockedRoot = FileManager.default.temporaryDirectory.appendingPathComponent("LockedFolder", isDirectory: true)
 
     static func create(preview: Bool, root: URL = MacTransferCache.root) throws -> URL {
         let folder = root.appendingPathComponent(preview ? "Previews" : "Drags", isDirectory: true)
@@ -47,7 +49,7 @@ extension ImmichClient {
             throw ImmichError.http((response as? HTTPURLResponse)?.statusCode ?? 0, nil)
         }
         try Task.checkCancellation()
-        let folder = try MacTransferCache.create(preview: preview)
+        let folder = try MacTransferCache.create(preview: preview, root: transferRoot ?? MacTransferCache.root)
         do {
             // Content-Disposition supplies the original filename without a second asset-details request.
             let name = ((response.suggestedFilename ?? id) as NSString).lastPathComponent

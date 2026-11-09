@@ -2713,16 +2713,6 @@
         }
       }
     },
-    "Back to Grid": {
-      "localizations": {
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Torna alla griglia"
-          }
-        }
-      }
-    },
     "Back to grid": {
       "localizations": {
         "it": {
@@ -5323,12 +5313,32 @@
         }
       }
     },
+    "Lock (⌃⌘L)": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Blocca (⌃⌘L)"
+          }
+        }
+      }
+    },
     "Locked Folder": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
             "value": "Cartella bloccata"
+          }
+        }
+      }
+    },
+    "Locked Folder Is Empty": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La cartella bloccata è vuota"
           }
         }
       }
@@ -5353,12 +5363,12 @@
         }
       }
     },
-    "Locks when you leave this view or the app becomes inactive.": {
+    "Locks when you leave the Locked Folder, lock the screen, or stop using it for a while.": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Si blocca quando esci da questa vista o l'app diventa inattiva."
+            "value": "Si blocca quando esci dalla cartella bloccata, blocchi lo schermo o non la usi per un po'."
           }
         }
       }

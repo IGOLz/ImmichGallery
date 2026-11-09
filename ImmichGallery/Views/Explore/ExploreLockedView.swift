@@ -1,48 +1,38 @@
 import SwiftUI
 
-/// This view never passes locked media to the shared image pipeline, grid cache, exporter or AVPlayer.
+/// Unlocks the Locked Folder with the account PIN and then shows it like any other grid. The grid runs in its
+/// own session whose media skips the disk cache; locking discards that session with its media and files.
+/// Like Immich, it stays unlocked while in use: it locks on leaving, on Lock, on screen lock or sleep, and when
+/// the server's unlock expires.
 struct ExploreLockedView: View {
     @Environment(LibrarySession.self) private var session
-    @Environment(\.scenePhase) private var scenePhase
-    @State private var client: ImmichClient?
     @State private var status: ExploreAuthStatus?
-    @State private var unlocked = false
+    @State private var unlocked: LibrarySession?
     @State private var pin = ""
     @State private var confirmation = ""
-    @State private var assets: [AssetResponse] = []
-    @State private var selected: AssetResponse?
     @State private var error: String?
     @State private var busy = false
-    @State private var page = 1
-    @State private var hasMore = false
+    @State private var verifying = false
     @State private var generation = UUID()
     @State private var expiryTask: Task<Void, Never>?
+
     var body: some View {
         Group {
             if !session.client.exploreSupportsLockedFolder {
                 ContentUnavailableView("Session Login Required", systemImage: "lock", description: Text("Sign in with email and password, or with single sign-on, to use Locked Folder. API keys cannot unlock a session."))
-            } else if unlocked, let client {
-                if let selected {
-                    VStack {
-                        ExplorePrivateImage(client: client, id: selected.id, preview: true, onFailure: mediaFailed).id(selected.id)
-                        HStack {
-                            Button("Back to Grid") { self.selected = nil }
-                            Button("Remove from Locked Folder") { restore(selected) }
-                        }.padding()
+            } else if let unlocked {
+                AssetGridContainer(source: .locked, title: Text("Locked Folder"))
+                    .environment(unlocked)
+                    .toolbar {
+                        // Beside the title, labelled and tinted, apart from the photo actions.
+                        ToolbarItem(placement: .navigation) {
+                            Button { lock() } label: { Label("Lock", systemImage: "lock.fill") }
+                                .labelStyle(.titleAndIcon)
+                                .buttonStyle(.borderedProminent)
+                                .keyboardShortcut("l", modifiers: [.command, .control])
+                                .help("Lock (⌃⌘L)")
+                        }
                     }
-                } else {
-                    ScrollView {
-                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 150, maximum: 220))]) {
-                            ForEach(assets) { asset in
-                                Button { selected = asset } label: {
-                                    ExplorePrivateImage(client: client, id: asset.id, onFailure: mediaFailed).aspectRatio(1, contentMode: .fit)
-                                }.buttonStyle(.plain)
-                                .contextMenu { Button("Remove from Locked Folder") { restore(asset) } }
-                            }
-                        }.padding()
-                        if hasMore { Button("Load More") { Task { await load() } }.disabled(busy) }
-                    }
-                }
             } else {
                 VStack(spacing: 16) {
                     Image(systemName: "lock.fill").font(.system(size: 48)).foregroundStyle(.secondary)
@@ -52,135 +42,96 @@ struct ExploreLockedView: View {
                     Button(status?.pinCode == false ? "Set PIN and Unlock" : "Unlock") { Task { await unlock() } }
                         .keyboardShortcut(.defaultAction)
                         .disabled(status == nil || busy || pin.range(of: "^[0-9]{6}$", options: .regularExpression) == nil || (status?.pinCode == false && pin != confirmation))
-                    Text("Locks when you leave this view or the app becomes inactive.").font(.caption).foregroundStyle(.secondary)
+                    Text("Locks when you leave the Locked Folder, lock the screen, or stop using it for a while.").font(.caption).foregroundStyle(.secondary)
                 }.frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-        .toolbar {
-            if unlocked {
-                Menu("Locked Folder", systemImage: "lock.fill") {
-                    Button("Remove from Locked Folder") { if let selected { restore(selected) } }.disabled(selected == nil)
-                    Button("Lock") { lock() }
-                }
-            }
-        }
         .task {
-            session.lockFolder = { lock(invalidate: true) }
+            session.lockFolder = { lock() }
             guard session.client.exploreSupportsLockedFolder else { return }
-            let privateClient = session.client.explorePrivateClient()
-            client = privateClient
-            do { status = try await privateClient.exploreAuth() }
+            do { status = try await Self.uncached(session.client) { try await $0.exploreAuth() } }
             catch { self.error = error.localizedDescription }
         }
         .onDisappear {
             session.lockFolder = {}
-            if unlocked { lock(invalidate: true) }
-            else { generation = UUID(); if !busy { client?.session.invalidateAndCancel() } }
-            client = nil
+            generation = UUID()
+            lock()
         }
-        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didResignActiveNotification)) { _ in lock() }
+        .onReceive(DistributedNotificationCenter.default().publisher(for: .init("com.apple.screenIsLocked"))) { _ in lock() }
+        .onReceive(NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.willSleepNotification)) { _ in lock() }
+        .onReceive(NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.sessionDidResignActiveNotification)) { _ in lock() }
         .alert("Locked Folder", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) { Button("OK") {} } message: { Text(error ?? "") }
     }
+
+    /// Status, unlock and lock requests skip the URL cache so a stale status is never reused.
+    /// Callers pass the account client, read before any await: the view may be gone afterwards.
+    private static func uncached<T>(_ account: ImmichClient, _ request: (ImmichClient) async throws -> T) async throws -> T {
+        let client = account.explorePrivateClient()
+        defer { client.session.finishTasksAndInvalidate() }
+        return try await request(client)
+    }
+
     private func unlock() async {
-        guard let client, session.client.exploreSupportsLockedFolder else { return }
         busy = true
         let attempt = generation
-        var didUnlock = false
-        var elevated = false
-        defer {
-            busy = false; pin = ""; confirmation = ""
-            if !didUnlock, attempt != generation { client.session.invalidateAndCancel() }
-        }
+        let account = session.client, services = session.services
+        defer { busy = false; pin = ""; confirmation = "" }
         do {
-            try await client.exploreUnlock(pin, setup: status?.pinCode == false)
-            elevated = true
-            guard attempt == generation, scenePhase == .active else { try? await client.exploreLock(); return }
-            status = try await client.exploreAuth()
-            guard attempt == generation, scenePhase == .active else { try? await client.exploreLock(); return }
-            guard status?.isElevated == true else { throw ImmichError.http(403, String(localized: "The server did not unlock this session.")) }
-            didUnlock = true
-            unlocked = true; page = 1
-            let expiry = status?.pinExpiresAt.flatMap(ImmichDate.parse) ?? Date().addingTimeInterval(15 * 60)
-            expiryTask?.cancel()
-            expiryTask = Task {
-                do {
-                    try await Task.sleep(for: .seconds(max(0, expiry.timeIntervalSinceNow)))
-                    guard !Task.isCancelled else { return }
-                    lock()
-                    error = String(localized: "Locked Folder access expired. Unlock again to continue.")
-                } catch {}
+            let setup = status?.pinCode == false
+            let status = try await Self.uncached(account) { [pin] client in
+                try await client.exploreUnlock(pin, setup: setup)
+                return try await client.exploreAuth()
             }
-            await load()
-        } catch {
-            if elevated { try? await client.exploreLock() }
-            self.error = error.localizedDescription
-        }
+            self.status = status
+            // Left the Locked Folder while unlocking.
+            guard attempt == generation else { try? await Self.uncached(account) { try await $0.exploreLock() }; return }
+            guard status.isElevated else { throw ImmichError.http(403, String(localized: "The server did not unlock this session.")) }
+            let media = LockedFolderMedia(account: account)
+            media.onRequestFailed = { Task { await verify() } }
+            unlocked = LibrarySession(services: services, lockedFolder: media)
+            scheduleCheck(status.pinExpiresAt)
+        } catch { self.error = error.localizedDescription }
     }
-    private func load() async {
-        guard let client, unlocked else { return }
-        let attempt = generation
-        busy = true
-        defer { busy = false }
-        do {
-            let result = try await client.exploreLocked(page: page)
-            guard unlocked, attempt == generation else { return }
-            assets.append(contentsOf: result.items.filter { $0.visibility == "locked" })
-            hasMore = result.nextPage != nil || result.nextCursor != nil
-            page += 1
-        } catch { self.error = error.localizedDescription; lock() }
-    }
-    private func lock(invalidate: Bool = false) {
-        generation = UUID()
-        guard unlocked else { return }
+
+    /// The server extends an unlock while it's used, so check again just after it would have expired.
+    private func scheduleCheck(_ expiry: String?) {
         expiryTask?.cancel()
-        expiryTask = nil
-        unlocked = false; assets = []; selected = nil; pin = ""; confirmation = ""
-        guard let client else { return }
-        Task {
-            do { try await client.exploreLock() }
-            catch { self.error = String(localized: "Media was cleared locally, but the server session could not be locked: \(error.localizedDescription)") }
-            if invalidate { client.session.invalidateAndCancel() }
+        let date = expiry.flatMap(ImmichDate.parse) ?? Date().addingTimeInterval(15 * 60)
+        expiryTask = Task {
+            do { try await Task.sleep(for: .seconds(max(0, date.timeIntervalSinceNow) + 2)) } catch { return }
+            await verify()
         }
     }
-    private func mediaFailed(_ failure: Error) {
-        switch failure {
-        case ImmichError.unauthorized, ImmichError.http(401, _), ImmichError.http(403, _):
+
+    /// Locks unless the server still has the session unlocked. Also runs when a Locked Folder request fails.
+    private func verify() async {
+        guard let media = unlocked?.lockedFolder, !verifying else { return }
+        verifying = true
+        defer { verifying = false }
+        let status = try? await media.client.exploreAuth()
+        guard unlocked?.lockedFolder === media else { return }
+        if let status, status.isElevated {
+            scheduleCheck(status.pinExpiresAt)
+        } else {
             lock()
             error = String(localized: "Locked Folder access expired. Unlock again to continue.")
-        default: error = failure.localizedDescription
         }
     }
-    private func restore(_ asset: AssetResponse) {
-        guard let client else { return }
-        Task {
-            do {
-                try await client.setVisibility([asset.id], "timeline")
-                assets.removeAll { $0.id == asset.id }; selected = nil
-                session.services.hiddenAssetIDs.remove(asset.id)
-                session.invalidateGrids()
-            } catch { self.error = error.localizedDescription }
-        }
-    }
-}
 
-private struct ExplorePrivateImage: View {
-    let client: ImmichClient
-    let id: String
-    var preview = false
-    let onFailure: (Error) -> Void
-    @State private var image: CGImage?
-    var body: some View {
-        Rectangle().fill(.quaternary).overlay {
-            if let image { Image(decorative: image, scale: 1).resizable().aspectRatio(contentMode: preview ? .fit : .fill) }
-        }.clipped()
-        .task(id: id) {
-            image = nil
-            do {
-                let data = try await client.data(for: client.thumbnailRequest(id, size: preview ? .preview : .thumbnail))
-                guard !Task.isCancelled else { return }
-                image = ImagePipeline.decode(data, maxPixelSize: preview ? 2400 : 400)
-            } catch { if !Task.isCancelled { onFailure(error) } }
+    /// Closes the viewer and Quick Look, then drops the session's grid, cached images, temporary files and any
+    /// copied item still on the pasteboard, and locks the server session.
+    private func lock() {
+        expiryTask?.cancel()
+        expiryTask = nil
+        guard let locked = unlocked else { return }
+        unlocked = nil
+        locked.endSession()
+        MacQuickLook.shared.dismiss()
+        locked.lockedFolder?.discard()
+        let account = locked.services.client
+        Task {
+            do { try await Self.uncached(account) { try await $0.exploreLock() } }
+            catch { self.error = String(localized: "Media was cleared locally, but the server session could not be locked: \(error.localizedDescription)") }
         }
-        .onDisappear { image = nil }
     }
 }

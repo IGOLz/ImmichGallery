@@ -27,7 +27,7 @@ struct AssetsGridUtilities: ViewModifier {
     @State private var trashDays: Int?
     private var supportsLocation: Bool {
         switch model.source {
-        case .library, .favorites, .videos, .archive, .largeFiles, .geolocation, .person: true
+        case .library, .favorites, .videos, .archive, .largeFiles, .geolocation, .person, .locked: true
         case .album, .search, .filteredSearch, .partner, .explore, .trash: false
         }
     }
