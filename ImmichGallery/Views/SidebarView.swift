@@ -43,6 +43,10 @@ struct SidebarView: View {
                                     .contentShape(Rectangle())
                                     .modifier(SidebarDropRegion(target: SidebarDropTarget(sectionID: section.id), frames: $frames))
                                     .contextMenu {
+                                        if section.listsAlbums {
+                                            albumOptions(in: section.id, layout: layout)
+                                            Divider()
+                                        }
                                         Button("Hide Section") { update { $0.setSectionHidden(true, id: section.id) } }
                                         Button("Customize Sidebar…") { customizing = true }
                                     }
@@ -69,7 +73,7 @@ struct SidebarView: View {
                                         .id(SidebarItem.partner(partner.id))
                                     }
                                 }
-                                if section.id == SidebarGroup.myAlbums.rawValue || section.id == SidebarGroup.sharedAlbums.rawValue {
+                                if section.listsAlbums {
                                     AlbumSidebarRows(shared: section.id == SidebarGroup.sharedAlbums.rawValue, storedLayout: $storedLayout, selection: focusedSelection)
                                 }
                             }
@@ -186,8 +190,8 @@ struct SidebarView: View {
             if section.id == SidebarGroup.sharing.rawValue, session.sharing.partnersAvailable {
                 items += session.sharing.receivedPartners.filter { !current.isDynamicItemHidden(session.sidebarItemKey("partner:" + $0.id)) }.map { .partner($0.id) }
             }
-            if section.id == SidebarGroup.myAlbums.rawValue || section.id == SidebarGroup.sharedAlbums.rawValue {
-                items += session.albums.filter { $0.shared == (section.id == SidebarGroup.sharedAlbums.rawValue) && !current.isDynamicItemHidden(session.sidebarItemKey("album:" + $0.id)) }.map { .album($0.id) }
+            if section.listsAlbums {
+                items += session.sidebarAlbums(in: section.id, layout: current).map { .album($0.id) }
             }
             return items
         }
@@ -197,6 +201,23 @@ struct SidebarView: View {
         selection = items[next]
         scroll.scrollTo(items[next])
         return .handled
+    }
+
+    /// Album sections offer the same counts as the system's recent items setting, plus any count chosen in Customize Sidebar.
+    @ViewBuilder
+    private func albumOptions(in sectionID: String, layout: SidebarLayout) -> some View {
+        let limit = layout.albumLimit(in: sectionID)
+        Picker("Show", selection: Binding(get: { limit }, set: { value in update { $0.setAlbumLimit(value, in: sectionID) } })) {
+            Text("All Albums").tag(Int?.none)
+            Divider()
+            ForEach(Set([5, 10, 15, 20, 30, 50] + (limit.map { [$0] } ?? [])).sorted(), id: \.self) { count in
+                Text("\(count) Albums").tag(Int?.some(count))
+            }
+        }
+        Picker("Sort By", selection: Binding(get: { layout.albumSortBy(in: sectionID) },
+                                             set: { value in update { $0.setAlbumSorting(value.rawValue, in: sectionID) } })) {
+            ForEach(AlbumsSortBy.allCases) { Text($0.title).tag($0) }
+        }
     }
 
     private func update(_ change: (inout SidebarLayout) -> Void) {
@@ -209,6 +230,14 @@ struct SidebarView: View {
 extension LibrarySession {
     func sidebarItemKey(_ item: String) -> String {
         client.serverURL.absoluteString + "|" + (user?.id ?? "") + "|" + item
+    }
+
+    /// Hidden albums are skipped before the limit applies, so the next album takes their place.
+    func sidebarAlbums(in sectionID: String, layout: SidebarLayout) -> [Album] {
+        let shown = albums.filter {
+            $0.shared == (sectionID == SidebarGroup.sharedAlbums.rawValue) && !layout.isDynamicItemHidden(sidebarItemKey("album:" + $0.id))
+        }
+        return AlbumsArrangement.sidebar(shown, sortBy: layout.albumSortBy(in: sectionID), limit: layout.albumLimit(in: sectionID))
     }
 
     func sidebarLinkAvailable(_ link: SidebarLink) -> Bool {
@@ -224,5 +253,12 @@ extension LibrarySession {
         case .trash: features.trash
         default: true
         }
+    }
+}
+
+extension SidebarLayout {
+    /// Album sections list recently changed albums first unless another sort is chosen.
+    func albumSortBy(in sectionID: String) -> AlbumsSortBy {
+        albumSorting(in: sectionID).flatMap(AlbumsSortBy.init(rawValue:)) ?? .dateModified
     }
 }

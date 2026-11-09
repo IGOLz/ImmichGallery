@@ -135,6 +135,22 @@ import Foundation
         precondition(partialLayout.sections == deletion.sections)
         precondition(partialLayout.links(in: keptID) == [.videos])
         precondition(!partialLayout.isHidden(.map))
-        print("Sidebar checks passed: migration, custom sections, visibility, account isolation, recovery and insertion ordering")
+        // Album sections keep their own count and sort; older saved layouts list every album.
+        var albums = SidebarLayout(stored: partialLayout.stored)
+        precondition(albums.albumLimit(in: SidebarGroup.myAlbums.rawValue) == nil)
+        albums.setAlbumLimit(6, in: SidebarGroup.myAlbums.rawValue)
+        albums.setAlbumLimit(0, in: SidebarGroup.sharedAlbums.rawValue)
+        albums.setAlbumSorting("MostRecentPhoto", in: SidebarGroup.myAlbums.rawValue)
+        albums = SidebarLayout(stored: albums.stored)
+        precondition(albums.albumLimit(in: SidebarGroup.myAlbums.rawValue) == 6)
+        precondition(albums.albumLimit(in: SidebarGroup.sharedAlbums.rawValue) == 1)
+        precondition(albums.albumSorting(in: SidebarGroup.myAlbums.rawValue) == "MostRecentPhoto")
+        precondition(albums.albumSorting(in: SidebarGroup.sharedAlbums.rawValue) == nil)
+        precondition(albums.links(in: keptID) == [.videos])
+        albums.setAlbumLimit(nil, in: SidebarGroup.myAlbums.rawValue)
+        precondition(SidebarLayout(stored: albums.stored).albumLimit(in: SidebarGroup.myAlbums.rawValue) == nil)
+        precondition(SidebarLayout(stored: #"{"albumLimits":{"myAlbums":-3}}"#).albumLimit(in: SidebarGroup.myAlbums.rawValue) == nil)
+        precondition(SidebarSection(id: SidebarGroup.sharedAlbums.rawValue).listsAlbums && !SidebarSection(id: customID).listsAlbums)
+        print("Sidebar checks passed: migration, custom sections, visibility, account isolation, recovery, album limits and insertion ordering")
     }
 }

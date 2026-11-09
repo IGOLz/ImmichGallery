@@ -64,6 +64,12 @@ import Foundation
         precondition(ids(filtered.groups(albums, userID: "me")[0].albums) == ["b", "c", "d"])
         precondition(filtered.groups([], userID: "me").isEmpty)
 
+        // Sidebar sections list the first albums in the chosen order, or all of them without a limit.
+        precondition(ids(AlbumsArrangement.sidebar(albums, sortBy: .dateModified, limit: 2)) == ["d", "a"])
+        precondition(ids(AlbumsArrangement.sidebar(albums, sortBy: .mostRecentPhoto, limit: 3)) == ["c", "a", "b"])
+        precondition(ids(AlbumsArrangement.sidebar(albums, sortBy: .title, limit: nil)) == ["b", "a", "c", "d"])
+        precondition(AlbumsArrangement.sidebar(albums, sortBy: .title, limit: 10).count == albums.count)
+
         // Settings saved by the app use Immich's names.
         precondition(AlbumsGroupBy(rawValue: "Year") == .year && AlbumsSortBy(rawValue: "MostRecentPhoto") == .mostRecentPhoto)
         precondition(AlbumsSortOrder(rawValue: "desc") == .descending && AlbumsFilter(rawValue: "Owned") == .owned)

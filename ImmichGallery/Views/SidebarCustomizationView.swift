@@ -67,6 +67,7 @@ struct SidebarCustomizationView: View {
                             .buttonStyle(.borderless)
                             .textCase(nil)
                             Divider()
+                            if section.listsAlbums { albumOptions(in: section.id, layout: layout) }
 
                             ForEach(layout.links(in: section.id), id: \.self) { link in
                                 HStack {
@@ -144,14 +145,41 @@ struct SidebarCustomizationView: View {
 
     @ViewBuilder
     private func dynamicItems(in section: SidebarSection, layout: SidebarLayout) -> some View {
-        if section.id == SidebarGroup.myAlbums.rawValue || section.id == SidebarGroup.sharedAlbums.rawValue {
-            ForEach(session.albums.filter { $0.shared == (section.id == SidebarGroup.sharedAlbums.rawValue) }) { album in
+        if section.listsAlbums {
+            let albums = session.albums.filter { $0.shared == (section.id == SidebarGroup.sharedAlbums.rawValue) }
+            ForEach(AlbumsArrangement.sidebar(albums, sortBy: layout.albumSortBy(in: section.id), limit: nil)) { album in
                 dynamicToggle(title: album.albumName, icon: "rectangle.stack", key: session.sidebarItemKey("album:" + album.id), layout: layout)
             }
         }
         if section.id == SidebarGroup.sharing.rawValue, session.sharing.partnersAvailable {
             ForEach(session.sharing.receivedPartners) { partner in
                 dynamicToggle(title: partner.name, icon: "person.2", key: session.sidebarItemKey("partner:" + partner.id), layout: layout)
+            }
+        }
+    }
+
+    private func albumOptions(in sectionID: String, layout: SidebarLayout) -> some View {
+        let limit = layout.albumLimit(in: sectionID)
+        return VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 12) {
+                Toggle("Show at most", isOn: Binding(get: { limit != nil }, set: { limited in
+                    update { $0.setAlbumLimit(limited ? 10 : nil, in: sectionID) }
+                }))
+                .toggleStyle(.checkbox)
+                Stepper(value: Binding(get: { limit ?? 10 }, set: { value in update { $0.setAlbumLimit(value, in: sectionID) } }), in: 1...99) {
+                    Text("\(limit ?? 10) albums").monospacedDigit()
+                }
+                .disabled(limit == nil)
+                Spacer()
+                Picker("Sort By", selection: Binding(get: { layout.albumSortBy(in: sectionID) },
+                                                     set: { value in update { $0.setAlbumSorting(value.rawValue, in: sectionID) } })) {
+                    ForEach(AlbumsSortBy.allCases) { Text($0.title).tag($0) }
+                }
+                .fixedSize()
+            }
+            if limit != nil {
+                Text("Hidden albums are skipped, so the next album takes their place.")
+                    .font(.caption).foregroundStyle(.secondary)
             }
         }
     }
