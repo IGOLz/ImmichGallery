@@ -1,6 +1,26 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Settings…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impostazioni…"
+          }
+        }
+      }
+    },
+    "Options": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opzioni"
+          }
+        }
+      }
+    },
     "Cities": {
       "localizations": {
         "it": {
@@ -9751,16 +9771,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mostra nella barra laterale"
-          }
-        }
-      }
-    },
-    "Sidebar Options": {
-      "localizations": {
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Opzioni barra laterale"
           }
         }
       }
