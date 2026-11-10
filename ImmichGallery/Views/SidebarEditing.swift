@@ -87,8 +87,9 @@ struct SidebarHiddenItem: Identifiable {
     let show: () -> Void
 }
 
-/// Next to the account: a menu with the sidebar's options, which becomes Done while editing.
+/// Next to the account: a menu with the sidebar's options and Settings, which becomes Done while editing.
 struct SidebarFooterControls: View {
+    @Environment(\.openSettings) private var openSettings
     @Binding var editing: Bool
     let hidden: [SidebarHiddenItem]
     let newSection: () -> Void
@@ -113,12 +114,15 @@ struct SidebarFooterControls: View {
                 }
                 Divider()
                 Button("Reset Sidebar…", action: reset)
+                Divider()
+                // The app's Settings, also in the app menu (⌘,), found where the account's own settings are.
+                Button("Settings…") { openSettings() }
             } label: {
                 Image(systemName: "ellipsis.circle")
             }
             .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
-            .help("Sidebar Options")
-            .accessibilityLabel("Sidebar Options")
+            .help("Options")
+            .accessibilityLabel("Options")
         }
     }
 }
