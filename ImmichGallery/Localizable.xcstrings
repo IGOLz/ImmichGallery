@@ -7715,6 +7715,66 @@
         }
       }
     },
+    "GPS": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GPS"
+          }
+        }
+      }
+    },
+    "No GPS": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Senza GPS"
+          }
+        }
+      }
+    },
+    "Without Location": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Senza posizione"
+          }
+        }
+      }
+    },
+    "All Items Have a Location": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tutti gli elementi hanno una posizione"
+          }
+        }
+      }
+    },
+    "Every photo and video you own has GPS coordinates, so it shows on the map.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ogni foto e video di tua proprietà ha coordinate GPS e quindi appare sulla mappa."
+          }
+        }
+      }
+    },
+    "Looking for items without a location…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ricerca degli elementi senza posizione…"
+          }
+        }
+      }
+    },
     "Selected items stay in your library. The other items are moved to Recently Deleted.": {
       "localizations": {
         "it": {

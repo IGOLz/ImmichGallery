@@ -28,7 +28,7 @@ enum GridSource: Hashable {
     var timelineQuery: TimelineQuery? {
         switch self {
         case .library: TimelineQuery(withPartners: true)
-        case .geolocation: TimelineQuery(withPartners: false)
+        case .geolocation: TimelineQuery(withPartners: false, withCoordinates: true)
         case .favorites: TimelineQuery(visibility: nil, isFavorite: true)
         case .archive: TimelineQuery(visibility: "archive")
         case .trash: TimelineQuery(visibility: nil, isTrashed: true)
@@ -53,6 +53,7 @@ extension GridSource {
         case .videos: .videos
         case .archive: .archive
         case .largeFiles: .largeFiles // Assets
+        case .geolocation: .geolocation
         case .partner: .partner // Sharing
         case .person: .person
         case .explore(.tag): .tag // Explore
@@ -76,6 +77,11 @@ struct AssetItem: Identifiable, Hashable, Sendable {
     let livePhotoVideoID: String?
     let stackCount: Int?
     var fileSizeInBytes: Int64? = nil
+    // Assign Location: only filled for timelines loaded with coordinates.
+    var latitude: Double? = nil
+    var longitude: Double? = nil
+    var city: String? = nil
+    var hasLocation: Bool { latitude != nil && longitude != nil }
 
     init(_ r: AssetResponse) {
         id = r.id
@@ -90,15 +96,22 @@ struct AssetItem: Identifiable, Hashable, Sendable {
         livePhotoVideoID = r.livePhotoVideoId
         stackCount = r.stack?.assetCount
         fileSizeInBytes = r.exifInfo?.fileSizeInByte
+        latitude = r.exifInfo?.latitude
+        longitude = r.exifInfo?.longitude
+        city = r.exifInfo?.city
     }
 
     static func from(_ c: TimeBucketAssets, includingLocked: Bool = false) -> [AssetItem] {
         c.id.indices.filter { includingLocked || c.visibility?.indices.contains($0) != true || c.visibility?[$0] != "locked" }.map { i in
-            AssetItem(
+            var item = AssetItem(
                 id: c.id[i], ownerId: c.ownerId.flatMap { $0.indices.contains(i) ? $0[i] : nil }, isVideo: !c.isImage[i], isFavorite: c.isFavorite[i], isTrashed: c.isTrashed[i],
                 thumbhash: c.thumbhash[i], ratio: c.ratio[i] ?? 1, durationMS: c.duration[i]?.milliseconds,
                 date: ImmichDate.parse(c.fileCreatedAt[i]), livePhotoVideoID: c.livePhotoVideoId[i],
                 stackCount: c.stack?[i].flatMap { $0.count > 1 ? Int($0[1]) : nil })
+            item.latitude = c.latitude.flatMap { $0.indices.contains(i) ? $0[i] : nil }
+            item.longitude = c.longitude.flatMap { $0.indices.contains(i) ? $0[i] : nil }
+            item.city = c.city.flatMap { $0.indices.contains(i) ? $0[i] : nil }
+            return item
         }
     }
 
@@ -181,6 +194,7 @@ final class AssetGridModel {
     @ObservationIgnored private var pageTask: Task<Void, Never>?
     /// The first load, shared so a second caller waits for it instead of returning early (Widget).
     @ObservationIgnored private var loadTask: Task<Void, Never>?
+    @ObservationIgnored private var loadAllTask: Task<Void, Never>? // Assign Location
 
     init(source: GridSource, session: LibrarySession, reusing previous: AssetGridModel? = nil) {
         self.source = source
@@ -198,7 +212,13 @@ final class AssetGridModel {
         }
     }
 
-    var totalCount: Int { sections.reduce(0) { $0 + $1.count } }
+    var totalCount: Int { sections.reduce(0) { $0 + shownCount($1) } }
+
+    /// Assign Location: a month shows once it has been checked for items without a location, instead of
+    /// placeholders for items that are mostly located.
+    func shownCount(_ section: GridSection) -> Int { arrangement?.hidesLocated == true && section.assets == nil ? 0 : section.count }
+    /// Assign Location: still loading months to find the items without a location.
+    private(set) var checkingLocations = false
 
     private var dateAdded: Bool { GridArrangement.supportsDateAdded(session?.version) }
 
@@ -272,6 +292,7 @@ final class AssetGridModel {
         loadGeneration = UUID()
         loadTask?.cancel()
         pageTask?.cancel()
+        loadAllTask?.cancel()
         sectionTasks.values.forEach { $0.cancel() }
     }
 
@@ -297,6 +318,9 @@ final class AssetGridModel {
         sectionTasks = [:]
         pageTask?.cancel()
         pageTask = nil
+        loadAllTask?.cancel()
+        loadAllTask = nil
+        checkingLocations = false
         if sections.isEmpty { state = .loading }
         arrangement = source.gridPage.map { GridArrangement(page: $0) }
         do {
@@ -314,6 +338,7 @@ final class AssetGridModel {
                 state = .loaded
                 // Load the first screenful right away.
                 for i in sections.indices.prefix(2) { ensureLoaded(i) }
+                if arrangement?.hidesLocated == true { loadAllSections() }
             } else {
                 sections = []
                 nextPage = .init(page: 1)
@@ -361,6 +386,7 @@ final class AssetGridModel {
                       let i = sections.firstIndex(where: { $0.id == id }) else { return }
                 var assets = AssetItem.from(columns, includingLocked: source == .locked).filter { self.source != .geolocation || (session.user?.id != nil && $0.ownerId == session.user?.id) }
                 if case .explore(.map(let query)) = source { assets.removeAll { !query.includes($0.date) } }
+                if arrangement?.hidesLocated == true { assets.removeAll(where: \.hasLocation) }
                 sections[i].assets = assets
                 sections[i].count = assets.count
                 rebuildIndex()
@@ -372,6 +398,22 @@ final class AssetGridModel {
         }
         sectionTasks[id] = task
         return task
+    }
+
+    /// Assign Location: without located items most months are empty or nearly so. Loading every month,
+    /// one at a time, finds the items that are left and makes the item count true.
+    private func loadAllSections() {
+        let generation = loadGeneration
+        let ids = sections.map(\.id)
+        checkingLocations = true
+        loadAllTask = Task { [weak self] in
+            for id in ids {
+                guard let self, generation == loadGeneration, !Task.isCancelled else { return }
+                await loadSection(id: id).value
+            }
+            guard let self, generation == loadGeneration else { return }
+            checkingLocations = false
+        }
     }
 
     private func loadNextPage() {
@@ -626,6 +668,12 @@ final class AssetGridModel {
     private func report(_ error: Error) {
         session?.handle(error)
         lastError = error.localizedDescription
+    }
+
+    /// Assign Location: located items leave a Without Location list; elsewhere the GPS badges follow.
+    func setLocation(_ ids: [String], latitude: Double, longitude: Double) {
+        if arrangement?.hidesLocated == true { remove(ids) }
+        else { update(ids) { $0.latitude = latitude; $0.longitude = longitude; $0.city = nil } }
     }
 
     private func update(_ ids: [String], _ change: (inout AssetItem) -> Void) {

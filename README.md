@@ -98,7 +98,7 @@ The demo is shared with everyone and doesn't accept uploads.
 | Global map with clusters, places by city or country, memories    | ✅ |
 | Tags and folder view                                             | ✅ |
 | Locked Folder (PIN)                                              | ✅ |
-| Stacks, duplicates, large files                                  | ✅ |
+| Stacks, duplicates, large files, photos without a location      | ✅ |
 | Public shared links, filtered by type, and partner sharing       | ✅ |
 | Several accounts and servers                                     | ✅ |
 | API keys, sessions, notifications, preferences                   | ✅ |

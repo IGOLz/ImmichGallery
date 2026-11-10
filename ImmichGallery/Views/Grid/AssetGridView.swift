@@ -127,6 +127,7 @@ struct AssetGridHost<Header: View>: View {
         if let item = viewerItem { return item.date.map(ImmichDate.time) ?? "" }
         let count = model.totalCount
         guard model.state == .loaded, count > 0 else { return "" }
+        if model.checkingLocations, model.selection.isEmpty { return String(localized: "Looking for items without a location…") }
         if !model.selection.isEmpty { return String(localized: "\(model.selection.count) of \(count) selected") }
         return String(localized: "\(count) items")
     }
@@ -244,7 +245,8 @@ struct AssetGridView: View {
 
     var body: some View {
         Group {
-            if model.sections.isEmpty {
+            // Months a filter emptied still count as empty (Assign Location).
+            if model.sections.allSatisfy({ model.shownCount($0) == 0 }) {
                 switch model.state {
                 case .idle, .loading:
                     VStack(spacing: 12) {
@@ -262,8 +264,21 @@ struct AssetGridView: View {
                     } actions: {
                         Button("Try Again") { Task { await model.reload() } }
                     }
+                case .loaded where model.checkingLocations:
+                    VStack(spacing: 12) {
+                        ProgressView().controlSize(.large)
+                        Text("Looking for items without a location…").font(.caption).foregroundStyle(.secondary)
+                    }.frame(maxWidth: .infinity, maxHeight: .infinity)
                 case .loaded:
-                    if let page = model.source.gridPage, model.arrangement?.isFiltered == true {
+                    if let page = model.source.gridPage, model.arrangement?.hidesLocated == true {
+                        ContentUnavailableView {
+                            Label("All Items Have a Location", systemImage: "mappin.circle")
+                        } description: {
+                            Text("Every photo and video you own has GPS coordinates, so it shows on the map.")
+                        } actions: {
+                            Button("Show All Items") { page.showAllItems() }
+                        }
+                    } else if let page = model.source.gridPage, model.arrangement?.isFiltered == true {
                         ContentUnavailableView {
                             Label("No Matching Photos", systemImage: "line.3.horizontal.decrease.circle")
                         } description: {
@@ -313,11 +328,11 @@ struct AssetGridView: View {
                 ForEach(Array(model.sections.enumerated()), id: \.element.id) { s, section in
                     Section {
                         // IDs must be unique across sections: they all live in one lazy container.
-                        ForEach((0..<section.count).map { CellKey(section: section.id, index: $0) }, id: \.self) { key in
+                        ForEach((0..<model.shownCount(section)).map { CellKey(section: section.id, index: $0) }, id: \.self) { key in
                             cell(s, key.index)
                         }
                     } header: {
-                        if model.showsSectionHeaders, let title = section.title {
+                        if model.showsSectionHeaders, model.shownCount(section) > 0, let title = section.title {
                             SectionHeader(title: title)
                         }
                     }
@@ -379,7 +394,10 @@ struct AssetGridView: View {
                 thumbnail
             }
         }
-        .overlay(alignment: .topLeading) { AssetsLargeFileBadge(asset: asset, source: model.source) }
+        .overlay(alignment: .topLeading) {
+            AssetsLargeFileBadge(asset: asset, source: model.source)
+            AssetsLocationBadge(asset: asset, source: model.source, arrangement: model.arrangement)
+        }
         .macOriginalContainerItem(asset.map { OriginalTransfer(id: $0.id, isVideo: $0.isVideo, client: session.client) })
         .onAppear { model.cellAppeared(section: s, item: i) }
         .onTapGesture(count: 2) { if let asset { model.open(asset.id) } }
