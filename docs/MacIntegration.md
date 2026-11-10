@@ -44,6 +44,41 @@ Build succeeded with no warnings. Local logs and binaries remain ignored under b
 
 No live server was contacted, no Keychain item was read, and no app was launched during this review-fix pass. Finder drops, Quick Look rendering, native tab attachment, no-window Shortcuts routing and notifications remain manual checks for the parent's single merged app. Do not launch individual worktree builds: they share the app bundle ID and saved account.
 
+## Immich Crosslink
+
+[Immich Crosslink](https://jakob.hviid.phd/immich-crosslink/) (draft 0.2) is an open protocol for links between Immich
+apps on the same computer: each announces itself in its Info.plist, registers the `immich-crosslink` scheme, and names
+an item by Immich's own web path and the server's address.
+
+- **Announcing:** `Config/Info.plist` has `ImmichCrosslink` (`Version` `0.2`, `Shows` asset, album, person, place and
+  page) and the `immich-crosslink` URL type, in both builds.
+- **The links:** `App/Crosslink.swift`, Foundation only: an item's Immich path, its crosslink and web address, and
+  reading a link into the protocol's three results (show, cannot show, invalid), with the server compared as the
+  protocol says. `Tests/CrosslinkChecks.swift` runs the protocol's test links (`Tests/Fixtures/crosslink-links.json`,
+  `tests/links.json` of the draft at 8a3c16e): every link made byte for byte, every link read to the given result.
+- **Sending:** photos (grid and viewer), albums (Albums page and sidebar), people and the Places page's cities get
+  **Open in Immich** and **Copy Immich Link**, the
+  item's web address (both off with Settings ▸ Other Apps ▸ Immich Web App, `crosslink.webLinks`), and **Show in *app*** for each other app announcing the item's kind, by the name and icon macOS
+  gives it, sent to that app alone (`NSWorkspace.open(_:withApplicationAt:configuration:)`). A photo's link carries the
+  album, person, Favorites or Archive it is seen in. The list of apps (`CrosslinkDirectory`) is read again when the
+  app becomes active and when another app launches; both builds of this app are left out.
+- **Receiving:** `MacIntegrationLifecycle` queues `immich-crosslink:` URLs for the scene, which opens them once the
+  account is known. A link only navigates, for the signed-in account and its user: a photo opens in the grid it was
+  seen in (or All Photos), an album, person or page as in Immich's web app, a place as Immich's metadata search. A link
+  for another server or user, one this app cannot show, or an invalid one gets an alert and nothing else; no link
+  switches accounts or asks to sign in.
+- **Settings ▸ Other Apps:** the protocol's **Immich Crosslink** switch (`crosslink.enabled`, on by default) with a
+  **Read more** link to the protocol, and a switch for each app that takes part (`crosslink.hidden`). Apps seen before
+  are remembered (`crosslink.seen`: name and last-seen date per bundle id): one away is listed as Not installed with
+  its switch and a Forget button, and is forgotten, switch and all, after 30 days unseen. With the main switch off, a
+  received link only says so, with Turn On. **Immich Web App** has the switch for Open in Immich and Copy Immich Link
+  (`crosslink.webLinks`).
+- **Other apps are found in `/Applications` only:** the sandboxed app reads another app's Info.plist through
+  `Bundle(url:)`, which on macOS 27 works for copies in `/Applications` and gives nothing for `~/Applications` or a
+  build folder (found with Immich Mount Dev and two test apps).
+- **Manual checks:** Show in Immich Mount and the test apps in the menus, and opening each kind of link with
+  `open 'immich-crosslink:…'`.
+
 ## Deliberate omissions
 
 Widgets are covered in `Widget.md`. A menu bar extra and unattended export intent remain outside this change. No project settings were changed by the review fixes.
