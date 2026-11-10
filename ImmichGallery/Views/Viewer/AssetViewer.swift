@@ -216,7 +216,7 @@ private struct ZoomableImage: View {
         GeometryReader { geo in
             let swapsAxes = abs(rotation % 180) == 90
             ZStack {
-                if let image {
+                if let image = image ?? session.pipeline.cachedThumbnail(item.id, size: .preview) ?? session.pipeline.cachedThumbnail(item.id, size: .thumbnail) {
                     Image(decorative: image, scale: 1)
                         .resizable()
                         .interpolation(.high)
