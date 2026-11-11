@@ -439,6 +439,12 @@ final class LibrarySession {
         for window in services.windows.allObjects where window !== self { window.invalidateMacWindowGrids() }
     }
 
+    func setLocationInGrids(_ ids: [String], latitude: Double, longitude: Double) {
+        for window in services.windows.allObjects {
+            for model in window.gridModels.values { model.setLocation(ids, latitude: latitude, longitude: longitude) }
+        }
+    }
+
     // Explore
     func exploreRemoveFromGrids(_ ids: Set<String>) {
         services.removeFromGrids(ids)

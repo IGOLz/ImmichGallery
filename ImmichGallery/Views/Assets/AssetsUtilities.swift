@@ -99,3 +99,24 @@ struct AssetsLargeFileBadge: View {
         }
     }
 }
+
+/// Assign Location: which items have GPS, as in Immich's geolocation utility. Not needed while the page
+/// shows only items without a location.
+struct AssetsLocationBadge: View {
+    let asset: AssetItem?
+    let source: GridSource
+    let arrangement: GridArrangement?
+    var body: some View {
+        if source == .geolocation, arrangement?.hidesLocated != true, let asset {
+            Group {
+                if !asset.hasLocation { Text("No GPS") }
+                else if let city = asset.city, !city.isEmpty { Text(verbatim: city) }
+                else { Text("GPS") }
+            }
+            .font(.caption.weight(.medium)).lineLimit(1)
+            .foregroundStyle(asset.hasLocation ? Color.black : Color.white)
+            .padding(.horizontal, 7).padding(.vertical, 3)
+            .background(asset.hasLocation ? Color.green : Color.red, in: .capsule).padding(5)
+        }
+    }
+}
