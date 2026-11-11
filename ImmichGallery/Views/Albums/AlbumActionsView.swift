@@ -125,7 +125,7 @@ struct AlbumSidebarRows: View {
                     Button("Hide from Sidebar") {
                         var layout = SidebarLayout(stored: storedLayout)
                         layout.setDynamicItemHidden(true, key: session.sidebarItemKey("album:" + album.id))
-                        storedLayout = layout.stored
+                        withAnimation(.easeInOut(duration: 0.2)) { storedLayout = layout.stored }
                     }
                 }
                 .modifier(AlbumRowAssetDrop { add($0, to: album) })

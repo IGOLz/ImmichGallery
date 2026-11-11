@@ -66,7 +66,7 @@ struct SidebarNavigationRow: View {
                 Button("Hide from Sidebar") {
                     var updated = SidebarLayout(stored: layout)
                     updated.setHidden(true, link: link)
-                    layout = updated.stored
+                    withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) { layout = updated.stored }
                 }
                 Button("Edit Sidebar", action: edit)
             }

@@ -14,16 +14,19 @@ enum SidebarItem: Hashable {
 struct MainView: View {
     @Environment(LibrarySession.self) private var session
     @State private var selection: SidebarItem? = .library
-    @State private var searchText = ""
+    @State private var search = SearchFieldModel()
+    @State private var toolbarCompact = false
+    @State private var navigation = PageNavigation()
     @State private var submittedSearch = ""
     @State private var showSearchFilters = false
     @State private var editingSidebar = false
     @State private var columnVisibility = NavigationSplitViewVisibility.automatic
-    @FocusState private var searchFocused: Bool
 
     init(initialAlbumID: String? = nil, initialSearch: String? = nil) {
         _selection = State(initialValue: initialAlbumID.map(SidebarItem.album) ?? (initialSearch == nil ? .library : .search))
-        _searchText = State(initialValue: initialSearch ?? "")
+        let search = SearchFieldModel()
+        search.text = initialSearch ?? ""
+        _search = State(initialValue: search)
         _submittedSearch = State(initialValue: initialSearch ?? "")
     }
 
@@ -32,13 +35,18 @@ struct MainView: View {
             SidebarView(selection: $selection, editing: $editingSidebar)
                 .navigationSplitViewColumnWidth(min: 180, ideal: 220, max: 320)
         } detail: {
-            NavigationStack {
-                detail
-            }
-            .id(selection)
-            .modifier(AccountPasswordBanner())
-            .modifier(GlobalToolbar(session: session, level: .detailStack))
+            detail
+                .pageNavigation(navigation, item: selection ?? .library)
+                .id(selection)
+                .modifier(AccountPasswordBanner())
+                .modifier(GlobalToolbar(session: session, level: .detailStack))
+                .onGeometryChange(for: Bool.self) { $0.size.width < 980 } action: { toolbarCompact = $0 }
         }
+        // On the split view, not the detail column: toolbar items of pages opened from a page only see the
+        // environment from here up.
+        .environment(search)
+        .environment(\.toolbarCompact, toolbarCompact)
+        .environment(navigation)
         .modifier(UploadDropModifier(queue: session.upload)) // Upload
         .modifier(GlobalToolbar(session: session, level: .splitView))
         .modifier(AlbumPresentation()) // Albums
@@ -48,29 +56,31 @@ struct MainView: View {
                 session.albumActions.navigationAlbumID = nil
             }
         }
-        .searchable(text: $searchText, placement: .toolbar, prompt: session.features.smartSearch ? "Search photos" : "Search file names")
-        .searchSuggestions { SearchFieldSuggestions(text: searchText) }
-        .searchFocused($searchFocused)
         .focusedSceneValue(\.sidebarActions, SidebarActions(editing: $editingSidebar))
         .onChange(of: editingSidebar) { _, editing in if editing { columnVisibility = .all } }
         .focusedSceneValue(\.librarySession, session)
         .focusedSceneValue(\.searchActions, SearchActions(
-            find: { selection = .search; searchFocused = true },
+            find: { selection = .search; search.focus() },
             filters: { selection = .search; showSearchFilters = true }))
         .onReceive(NotificationCenter.default.publisher(for: .viewerShowLibrary, object: session)) { _ in selection = .library }
-        .onSubmit(of: .search) {
-            let query = searchText.trimmingCharacters(in: .whitespaces)
-            guard !query.isEmpty else { return }
+        .onChange(of: search.submissions) {
+            let query = search.text.trimmingCharacters(in: .whitespaces)
+            if query.isEmpty {
+                if selection == .search { submittedSearch = "" }
+                return
+            }
             submittedSearch = query
             selection = .search
         }
-        .onChange(of: selection) { _, newValue in
-            if newValue != .search { searchText = ""; submittedSearch = ""; showSearchFilters = false }
+        .onChange(of: selection, initial: true) { _, newValue in
+            navigation.item = newValue ?? .library
+            navigation.reset()
+            if newValue != .search { search.text = ""; submittedSearch = ""; showSearchFilters = false }
         }
         .onChange(of: session.sharing.receivedPartners.map(\.id)) { _, ids in
             if case .partner(let id) = selection, !ids.contains(id) { selection = .partners }
         }
-        .onChange(of: searchText) { _, text in
+        .onChange(of: search.text) { _, text in
             if text.isEmpty, selection == .search { submittedSearch = "" }
         }
     }
@@ -102,7 +112,7 @@ struct MainView: View {
         case .geolocation: AssetGridContainer(source: .geolocation, title: Text("Assign Location"))
         case .explore(let page): ExploreView(page: page) // Explore
         case .search:
-            SearchView(text: submittedSearch, chooseText: { searchText = $0; submittedSearch = $0 }, showFilters: $showSearchFilters)
+            SearchView(text: submittedSearch, chooseText: { search.text = $0; submittedSearch = $0 }, showFilters: $showSearchFilters)
         }
     }
 }
@@ -120,7 +130,8 @@ private struct GlobalToolbar: ViewModifier {
     func body(content: Content) -> some View {
         if attached {
             content
-                .toolbar { UploadToolbar(queue: session.upload) } // Upload
+                // The window's customizable toolbar: every page adds its items to it.
+                .toolbar(id: "library") { UploadToolbar(queue: session.upload) } // Upload
         } else {
             content
         }

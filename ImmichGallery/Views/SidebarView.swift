@@ -42,6 +42,8 @@ struct SidebarView: View {
                     }
                 }
                 .listStyle(.sidebar)
+                // Hidden sections and items slide in and out as editing starts and ends.
+                .animation(reorderAnimation, value: editing)
                 .onExitCommand { if editing && renaming == nil { editing = false } }
                 Divider()
                 AccountSidebarFooter(services: session.services) { // Account

@@ -556,6 +556,18 @@ final class AssetGridModel {
     @ObservationIgnored var columns = 1
     /// The item the arrow keys reached, for the grid to scroll to.
     var keyboardScrollTarget: String?
+    /// Whether a page header above the photos (an album's, a person's) is in view: while it is, it names the page
+    /// and the toolbar doesn't repeat it.
+    var headerInView = true
+    /// Counts removals, so the grid animates the photos into their new places.
+    private(set) var removals = 0
+    /// The months of the photos in view, for the window's subtitle as in Photos.
+    private(set) var visibleMonths: String?
+
+    func showing(sections ids: some Sequence<String>) {
+        let months = showsSectionHeaders ? ImmichDate.monthRange(ids) : nil
+        if months != visibleMonths { visibleMonths = months }
+    }
 
     enum Move { case left, right, up, down }
 
@@ -768,6 +780,7 @@ final class AssetGridModel {
         sections.removeAll { $0.count == 0 && $0.assets != nil }
         selection.subtract(removed)
         rebuildIndex()
+        removals += 1
     }
 }
 
