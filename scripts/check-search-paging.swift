@@ -46,6 +46,7 @@ final class PagingProtocol: URLProtocol, @unchecked Sendable {
     static let monthRequests = Mutex<[String]>([])
     static let holdMonth = Mutex<String?>(nil)
     static let cancelledMonths = Mutex<Set<String>>([])
+    static let keyboardFixture = Mutex(false)
 
     func finishDelayed() {
         let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
@@ -74,7 +75,7 @@ final class PagingProtocol: URLProtocol, @unchecked Sendable {
                     return
                 }
                 // March is fully located; the others each hold one owned and one partner item without a location.
-                let located = month.hasPrefix("2026-03")
+                let located = !Self.keyboardFixture.withLock { $0 } && month.hasPrefix("2026-03")
                 let object: [String: Any] = [
                     "id": ["\(month)-located", "\(month)-missing", "\(month)-partner"], "ownerId": ["owner", "owner", "other"],
                     "isImage": [true, true, true], "isFavorite": [false, false, false], "isTrashed": [false, false, false],
@@ -89,7 +90,9 @@ final class PagingProtocol: URLProtocol, @unchecked Sendable {
                     return
                 }
             } else {
-                data = Data(#"[{"timeBucket":"2026-03-01","count":3},{"timeBucket":"2026-02-01","count":3},{"timeBucket":"2026-01-01","count":3}]"#.utf8)
+                data = Data((Self.keyboardFixture.withLock { $0 }
+                    ? #"[{"timeBucket":"2026-03-01","count":3},{"timeBucket":"2026-02-01","count":3}]"#
+                    : #"[{"timeBucket":"2026-03-01","count":3},{"timeBucket":"2026-02-01","count":3},{"timeBucket":"2026-01-01","count":3}]"#).utf8)
             }
             client!.urlProtocol(self, didReceive: HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!, cacheStoragePolicy: .notAllowed)
             client!.urlProtocol(self, didLoad: data)
@@ -392,6 +395,7 @@ final class PagingProtocol: URLProtocol, @unchecked Sendable {
             assertionFailure("A late download must not recreate private files after lock")
         } catch is CancellationError {}
         assert(!FileManager.default.fileExists(atPath: lockedRoot.path))
+        try await checkKeyboardNavigation(session)
         print("Offline paging, concurrent restore, shared services, local presentation, ownership, locked visibility and location scan checks passed")
     }
 
@@ -482,6 +486,51 @@ final class PagingProtocol: URLProtocol, @unchecked Sendable {
                 assert(model.item("2026-01-01-missing")?.latitude == 1 && model.item("2026-01-01-missing")?.longitude == 2,
                        "A stale month must not restore the old GPS badge")
             }
+        }
+    }
+
+    @MainActor static func checkKeyboardNavigation(_ session: LibrarySession) async throws {
+        let key = GridPage.geolocation.key("location")
+        let saved = UserDefaults.standard.object(forKey: key)
+        UserDefaults.standard.set(GridLocation.missing.rawValue, forKey: key)
+        PagingProtocol.keyboardFixture.withLock { $0 = true }
+        defer {
+            UserDefaults.standard.set(saved, forKey: key)
+            PagingProtocol.keyboardFixture.withLock { $0 = false }
+            PagingProtocol.holdMonth.withLock { $0 = nil }
+        }
+        let model = session.gridModel(for: .geolocation)
+        for direction in [AssetGridModel.Move.down, .right, .up, .left] {
+            let forward = direction == .down || direction == .right
+            let start = forward ? "2026-03-01-missing" : "2026-02-01-missing"
+            PagingProtocol.holdMonth.withLock { $0 = forward ? "2026-02-01" : "2026-03-01" }
+            await model.reload()
+            while model.item(start) == nil || PagingProtocol.delayed.withLock({ $0 == nil }) { await Task.yield() }
+            model.selection = [start]
+            let move = Task { await model.move(direction, extending: false) }
+            for _ in 0..<30 { await Task.yield() }
+            model.setLocation([start], latitude: 1, longitude: 2)
+            let held = PagingProtocol.delayed.withLock { value in let old = value; value = nil; return old }!
+            PagingProtocol.holdMonth.withLock { $0 = nil }
+            held.finishDelayed()
+            await move.value
+            assert(model.selection.isEmpty, "An arrow must not select a different month after its anchor was removed")
+        }
+        for reload in [false, true] {
+            PagingProtocol.holdMonth.withLock { $0 = "2026-02-01" }
+            await model.reload()
+            while model.item("2026-03-01-missing") == nil || PagingProtocol.delayed.withLock({ $0 == nil }) { await Task.yield() }
+            model.selection = ["2026-03-01-missing"]
+            let move = Task { await model.move(.down, extending: true) }
+            for _ in 0..<30 { await Task.yield() }
+            let held = PagingProtocol.delayed.withLock { value in let old = value; value = nil; return old }!
+            PagingProtocol.holdMonth.withLock { $0 = nil }
+            if reload { await model.reload() }
+            else { model.selection = [] }
+            let expected = model.selection
+            held.finishDelayed()
+            await move.value
+            assert(model.selection == expected, "A late arrow must not overwrite a newer selection or reload")
         }
     }
 }
