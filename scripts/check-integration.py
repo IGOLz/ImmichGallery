@@ -33,6 +33,7 @@ cases = {
     'search-landing': api + [support('ImagePipeline'), 'ImmichGallery/Views/Albums/RemoteThumbnail.swift', 'ImmichGallery/Views/Search/SearchLandingView.swift', 'Tests/SearchLandingChecks.swift'],
     'metadata': models + ['ImmichGallery/API/Models+Metadata.swift', 'scripts/verify-metadata.swift'],
     'transfer-cache': api + ['scripts/check-mac-transfer-cache.swift'],
+    'original-drag': api + ['ImmichGallery/Views/Albums/AlbumAssetTransfer.swift', 'ImmichGallery/Views/Upload/UploadDropPolicy.swift', 'ImmichGallery/Views/MacIntegration/OriginalTransfer.swift', 'Tests/OriginalDragChecks.swift'],
     'album-review': api + [app('AlbumsActions'), 'ImmichGallery/Views/Albums/AlbumAssetTransfer.swift', 'scripts/verify-album-review.swift'],
     'albums-arrangement': models + ['ImmichGallery/API/Models+Metadata.swift', app('AlbumsArrangement'), app('CollapsedGroups'), support('Formatters'), 'Tests/AlbumsArrangementChecks.swift'],
     'grid-arrangement': api + [app('GridArrangement'), support('Formatters'), 'Tests/GridArrangementChecks.swift'],
