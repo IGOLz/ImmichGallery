@@ -269,6 +269,15 @@ struct AssetGridView: View {
                         ProgressView().controlSize(.large)
                         Text("Looking for items without a location…").font(.caption).foregroundStyle(.secondary)
                     }.frame(maxWidth: .infinity, maxHeight: .infinity)
+                case .loaded where model.uncheckedLocationMonths > 0:
+                    // Months that failed weren't checked, so this can't say every item has a location.
+                    ContentUnavailableView {
+                        Label("Couldn't Check Every Month", systemImage: "exclamationmark.triangle")
+                    } description: {
+                        Text("\(model.uncheckedLocationMonths) months couldn't be loaded, so items without a location may be missing.")
+                    } actions: {
+                        Button("Try Again") { model.retryLocationCheck() }
+                    }
                 case .loaded:
                     if let page = model.source.gridPage, model.arrangement?.hidesLocated == true {
                         ContentUnavailableView {
@@ -339,6 +348,21 @@ struct AssetGridView: View {
                 }
             }
             .padding(.bottom, 20)
+        }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            // Assign Location: the list leaves out months whose check failed.
+            if model.uncheckedLocationMonths > 0 {
+                HStack {
+                    Label("\(model.uncheckedLocationMonths) months couldn't be loaded, so items without a location may be missing.",
+                          systemImage: "exclamationmark.triangle")
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Button("Try Again") { model.retryLocationCheck() }
+                }
+                .font(.callout)
+                .padding(.horizontal, 12).padding(.vertical, 6)
+                .background(.bar)
+            }
         }
         .onAppear { scrollToViewerTarget(proxy) }
         .onChange(of: model.viewerScrollTarget) { scrollToViewerTarget(proxy) }

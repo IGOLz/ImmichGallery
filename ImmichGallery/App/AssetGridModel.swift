@@ -219,6 +219,12 @@ final class AssetGridModel {
     func shownCount(_ section: GridSection) -> Int { arrangement?.hidesLocated == true && section.assets == nil ? 0 : section.count }
     /// Assign Location: still loading months to find the items without a location.
     private(set) var checkingLocations = false
+    /// Assign Location: months whose check failed once the scan ended. Their items without a location are
+    /// unknown, so the list is incomplete; `retryLocationCheck()` loads them again.
+    var uncheckedLocationMonths: Int {
+        guard arrangement?.hidesLocated == true, state == .loaded, !checkingLocations else { return 0 }
+        return sections.filter { $0.assets == nil }.count
+    }
 
     private var dateAdded: Bool { GridArrangement.supportsDateAdded(session?.version) }
 
@@ -293,7 +299,9 @@ final class AssetGridModel {
         loadTask?.cancel()
         pageTask?.cancel()
         loadAllTask?.cancel()
+        checkingLocations = false // an interrupted check is incomplete, not done
         sectionTasks.values.forEach { $0.cancel() }
+        sectionTasks = [:]
     }
 
     func reload() async {
@@ -391,9 +399,9 @@ final class AssetGridModel {
                 sections[i].count = assets.count
                 rebuildIndex()
             } catch {
-                guard generation == loadGeneration, !error.isCancellation else { return }
-                session.handle(error)
-                sectionTasks[id] = nil // allow retry on next appearance
+                guard generation == loadGeneration else { return }
+                sectionTasks[id] = nil // allow retry on next appearance or location check
+                if !error.isCancellation { session.handle(error) }
             }
         }
         sectionTasks[id] = task
@@ -401,7 +409,8 @@ final class AssetGridModel {
     }
 
     /// Assign Location: without located items most months are empty or nearly so. Loading every month,
-    /// one at a time, finds the items that are left and makes the item count true.
+    /// one at a time, finds the items that are left and makes the item count true. A month that fails
+    /// stays unloaded and is counted by `uncheckedLocationMonths` instead of passing as checked.
     private func loadAllSections() {
         let generation = loadGeneration
         let ids = sections.map(\.id)
@@ -414,6 +423,12 @@ final class AssetGridModel {
             guard let self, generation == loadGeneration else { return }
             checkingLocations = false
         }
+    }
+
+    /// Assign Location: checks the months that failed again, keeping the ones already checked.
+    func retryLocationCheck() {
+        guard arrangement?.hidesLocated == true, state == .loaded, !checkingLocations, !isPaged else { return }
+        loadAllSections()
     }
 
     private func loadNextPage() {

@@ -5,7 +5,7 @@ Implemented in the Assets API extension, DTOs, downloader, and views.
 - Grid context menu: stack multiple selected assets and download selected assets as ZIP. Stack badges use the existing columnar timeline data and the new optional asset stack summary for search responses.
 - Viewer: Browse Stack opens a member browser with image/video previews, member thumbnails, Set Primary, Remove from Stack, and confirmed Unstack. Unstacking preserves library assets.
 - Toolbar Asset Utilities menu: selected-assets ZIP export, whole-album ZIP export, bulk coordinate entry, or Recently Deleted actions. Restore All and Empty Trash confirm their full-library scope. Trash retention days are loaded from server/config.
-- Utilities sidebar: Duplicates appears only with duplicateDetection enabled; Large Files shows the official web client's largest-files results with byte-size badges; Assign Location opens the timeline with the bulk location action. Coordinate entry checks finite values and geographic ranges before sending PUT /assets.
+- Utilities sidebar: Duplicates appears only with duplicateDetection enabled; Large Files shows the official web client's largest-files results with byte-size badges; Assign Location opens the timeline with the bulk location action (see below). Coordinate entry checks finite values and geographic ranges before sending PUT /assets.
 - Duplicate groups show side-by-side previews, sizes, Keep toggles, suggested defaults, confirmed keep/trash resolution, and confirmed dismiss. Resolution checks bulk response success. When trash is disabled, resolution requires an explicit permanent-deletion confirmation. Video previews use posters until Play Video is pressed. Resolved groups are removed locally, preserving scroll and other Keep choices.
 - ZIP archives use the account's download.archiveSize preference. POST /download/info determines parts and motion assets. The server includes Live Photo videos and respects includeEmbeddedVideos for embedded Android motion parts. Each returned part streams through URLSession's download API into a temporary file, reports overall progress against the planned total, and uses the server-suggested filename, adding a suffix only on collision. Cancel cancels the stored task and removes this export's downloaded parts. HTTP errors never become saved ZIP files; completed parts survive later-part failure.
 
@@ -30,7 +30,18 @@ The public documentation URLs failed to load through the web tool, so the matchi
 
 New stack summaries and suggestedKeepAssetIds are optional for older responses. Duplicates is hidden when the feature flag is missing/false. Unsupported duplicate or stack reads handle 404 without crashing. Other unsupported endpoints show a recoverable error. search/large-assets is deprecated in 3.2 but is the endpoint used by the v3.3.5 web utility and was stable in v2. Duplicate resolution and member removal target v3.3.5; older servers may reject those actions. No substitute deletion is attempted.
 
-There is no "without location" filter in the v3.3.5 web utility: its geolocation page shows the timeline and assigns locations. This implementation follows that scope with coordinate entry, leaving richer map UX to the Metadata feature. No duplicate auto-resolve-all, automatic stacking of kept duplicates, or metadata synchronization is implemented locally; the dedicated resolve endpoint supplies the server's merge semantics.
+There is no "without location" filter in the v3.3.5 web utility: its geolocation page shows the timeline and assigns locations. This app adds one (issue #42). No duplicate auto-resolve-all, automatic stacking of kept duplicates, or metadata synchronization is implemented locally; the dedicated resolve endpoint supplies the server's merge semantics.
+
+## Assign Location view options
+
+View Options has its own saved settings for Assign Location:
+
+- Show: Without Location, the default, lists only your own items missing a latitude or longitude, the same test as Immich's map. All Items shows every owned item with Immich's green city or GPS badge, or a red No GPS badge. Media type and Favorites filters aren't offered: the page stays on the timeline API, whose `withCoordinates` columns (Immich v2.0+) the filter needs.
+- Sort By (Date Taken, or Date Added on Immich v3.0+) and Order work as on the other timeline pages.
+
+The timeline API can't filter by location, so Without Location loads every month in the background, one at a time; a month appears once checked. The subtitle reads "Looking for items without a location…" meanwhile. A month that fails to load isn't treated as checked: when the scan ends with failed months, the page says how many couldn't be loaded and offers Try Again, which reloads only those months. It never says "All Items Have a Location" unless every month was checked. Changing an option or reloading starts a new scan and discards responses from the old one. Assigning a location removes the item from a Without Location list in every window, or updates its badge in All Items, without reloading. The location dialog is sized for the map, with zoom, compass and scale controls, and shows coordinates with decimal points.
+
+`scripts/check-search-paging.swift` (paging-and-services in `scripts/check-integration.py`) drives the grid against offline fixtures: every month failing, a partial failure, a retry that requests only the failed month, an interrupted scan whose late response is ignored, a request cancelled outside the app, and removal after assigning a location. `Tests/GridArrangementChecks.swift` checks the saved options.
 
 ## Verification
 
