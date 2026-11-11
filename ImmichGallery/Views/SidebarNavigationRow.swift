@@ -83,23 +83,5 @@ struct SidebarNavigationLabel: View {
     let link: SidebarLink
     var body: some View {
         Label(link.presentation.title, systemImage: link.presentation.icon)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .contentShape(Rectangle())
     }
 }
-
-struct SidebarSelectionRow<Content: View>: View {
-    let item: SidebarItem
-    @Binding var selection: SidebarItem?
-    @ViewBuilder let content: Content
-    @Environment(\.controlActiveState) private var activeState
-
-    var body: some View {
-        Button { selection = item } label: {
-            SidebarRowContent(selected: selection == item, active: activeState == .key) { content }
-        }
-        .buttonStyle(.plain)
-        .accessibilityAddTraits(selection == item ? .isSelected : [])
-    }
-}
-
