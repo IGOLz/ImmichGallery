@@ -148,6 +148,8 @@ struct ExploreLockedView: View {
             await unlock(code, viaTouchID: true)
             if isCurrent(attempt, services), unlocked == nil { touchFailed = true }
         case .cancelled:
+            pin = ""
+            confirmation = ""
             touchFailed = true
         case .unavailable:
             // The fingerprints changed, or Touch ID isn't available now: the PIN, once.
@@ -160,6 +162,8 @@ struct ExploreLockedView: View {
 
     /// A fresh context for the next fingerprint.
     private func retryTouchID() {
+        pin = ""
+        confirmation = ""
         touchContext.invalidate()
         touchContext = LAContext()
         touchFailed = false

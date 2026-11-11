@@ -101,8 +101,8 @@ enum LockedFolderTouchID {
     private static func validPIN(_ key: String, context: any LockedFolderBiometry) throws -> String? {
         guard let data = try keychain.read(key), let current = context.lockedFolderEnrollment else { return nil }
         guard let stored = try? JSONDecoder().decode(Stored.self, from: data), stored.fingerprints == current else {
-            // Should forgetting fail, the item still never matches, so it's never used.
-            try? forget(key)
+            // A failed deletion must be reported as well as refusing the invalid PIN.
+            try forget(key)
             return nil
         }
         return stored.pin

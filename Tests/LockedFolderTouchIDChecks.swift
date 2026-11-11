@@ -154,11 +154,15 @@ struct LockedFolderTouchIDChecks {
         expect(isUnavailable(await pin(FakeBiometry(enrolled))) && fake.items[key] == nil)
         fake.items[key] = Data("not json".utf8)
         expect(isUnavailable(await pin(FakeBiometry(enrolled))) && fake.items[key] == nil)
-        // Should forgetting it fail, it still isn't given.
-        fake.items[key] = try JSONSerialization.data(withJSONObject: ["pin": "555555"])
+        // Invalid secrets remain unusable, but a failed deletion is reported for every invalid record kind.
         fake.failDelete = errSecInteractionNotAllowed
-        expect(isUnavailable(await pin(FakeBiometry(enrolled))) && fake.items[key] != nil)
-        expect(isUnavailable(await pin(FakeBiometry(enrolled))))
+        for data in [try JSONSerialization.data(withJSONObject: ["pin": "555555"]), Data("not json".utf8),
+                     try JSONSerialization.data(withJSONObject: ["pin": "555555", "fingerprints": other.base64EncodedString()])] {
+            fake.items[key] = data
+            let context = FakeBiometry(enrolled)
+            if case .failed(let message) = await pin(context) { expect(!message.isEmpty) } else { preconditionFailure() }
+            expect(fake.items[key] == data && context.evaluations == 0)
+        }
         fake.failDelete = nil
         fake.items[key] = nil
 
