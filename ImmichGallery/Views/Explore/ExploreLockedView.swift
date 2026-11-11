@@ -198,7 +198,11 @@ struct ExploreLockedView: View {
                 throw error
             }
             // Left the Locked Folder, locked, or signed out while unlocking.
-            guard isCurrent(attempt, services) else { try? await Self.uncached(account) { try await $0.exploreLock() }; return }
+            guard isCurrent(attempt, services) else {
+                // The SwiftUI task may already be cancelled; its cleanup request must still reach the server.
+                Task { try? await Self.uncached(account) { try await $0.exploreLock() } }
+                return
+            }
             self.status = status
             guard status.isElevated else { throw ImmichError.http(403, String(localized: "The server did not unlock this session.")) }
             // Touch ID unlocks with this PIN from now on, unless Touch ID was turned off or PINs forgotten meanwhile.
