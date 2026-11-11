@@ -25,6 +25,7 @@ struct AssetsGridUtilities: ViewModifier {
     @State private var trashAction: String?
     @State private var busy = false
     @State private var trashDays: Int?
+    @State private var similarPhotos = false
     private var supportsLocation: Bool {
         switch model.source {
         case .library, .favorites, .videos, .archive, .largeFiles, .geolocation, .person, .locked: true
@@ -47,11 +48,13 @@ struct AssetsGridUtilities: ViewModifier {
                             if supportsLocation {
                                 Button("Assign Location…") { session.metadata.present(.location, ids: model.selection.sorted()) }.disabled(!model.canMutate(model.selection.sorted()))
                             }
+                            if SimilarPhotosMenuButton.isAvailable(model.source) { SimilarPhotosMenuButton(isPresented: $similarPhotos) }
                         }
                     } label: { Label("Asset Utilities", systemImage: "ellipsis.circle") }
                     .disabled(busy)
                 }
             }
+            .similarPhotosSheet(isPresented: $similarPhotos, model: model)
             .task {
                 if model.source == .trash {
                     let config: AssetsServerConfig? = try? await session.client.get("server/config")
