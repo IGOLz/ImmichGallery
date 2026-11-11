@@ -9894,6 +9894,1076 @@
           }
         }
       }
+    },
+    "A stack needs at least two photos.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un gruppo richiede almeno due foto."
+          }
+        }
+      }
+    },
+    "Cover": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copertina"
+          }
+        }
+      }
+    },
+    "Each group becomes a stack in Immich with its cover on top. You can change the cover or unstack later. No photo is deleted.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ogni serie diventa un gruppo in Immich con la sua copertina in cima. Potrai cambiare la copertina o separare il gruppo in seguito. Nessuna foto viene eliminata."
+          }
+        }
+      }
+    },
+    "Every photo of yours taken in this period is checked, including ones not loaded in this view. Videos, archived photos and photos already in a stack aren't.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vengono controllate tutte le tue foto scattate in questo periodo, anche quelle non caricate in questa vista. Video, foto archiviate e foto già in un gruppo sono escluse."
+          }
+        }
+      }
+    },
+    "Find Similar Photos": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trova foto simili"
+          }
+        }
+      }
+    },
+    "Find Similar Photos…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trova foto simili…"
+          }
+        }
+      }
+    },
+    "Include this group when stacking": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Includi questa serie quando crei i gruppi"
+          }
+        }
+      }
+    },
+    "Last 12 Months": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ultimi 12 mesi"
+          }
+        }
+      }
+    },
+    "Last 3 Months": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ultimi 3 mesi"
+          }
+        }
+      }
+    },
+    "Last 30 Days": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ultimi 30 giorni"
+          }
+        }
+      }
+    },
+    "Look In": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cerca in"
+          }
+        }
+      }
+    },
+    "Loose": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ampia"
+          }
+        }
+      }
+    },
+    "Make Cover": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usa come copertina"
+          }
+        }
+      }
+    },
+    "Makes this photo the cover": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usa questa foto come copertina"
+          }
+        }
+      }
+    },
+    "Move Others to Recently Deleted…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sposta le altre in Eliminati di recente…"
+          }
+        }
+      }
+    },
+    "Move to Recently Deleted": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sposta in Eliminati di recente"
+          }
+        }
+      }
+    },
+    "No Similar Photos": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nessuna foto simile"
+          }
+        }
+      }
+    },
+    "No photos taken close together look alike enough. Try a longer period or a looser sensitivity.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nessuna foto scattata a breve distanza è abbastanza simile. Prova un periodo più lungo o una sensibilità più ampia."
+          }
+        }
+      }
+    },
+    "Normal": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Normale"
+          }
+        }
+      }
+    },
+    "Only the cover stays in the stack. You can restore the others from Recently Deleted.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nel gruppo resta solo la copertina. Puoi ripristinare le altre da Eliminati di recente."
+          }
+        }
+      }
+    },
+    "Only the selected photos are checked. Photos that aren't selected, including ones not loaded in this view, aren't.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vengono controllate solo le foto selezionate. Le foto non selezionate, comprese quelle non caricate in questa vista, sono escluse."
+          }
+        }
+      }
+    },
+    "Open Stack…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apri gruppo…"
+          }
+        }
+      }
+    },
+    "Period": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Periodo"
+          }
+        }
+      }
+    },
+    "Photos taken within a few seconds of each other are compared on this Mac. Nothing changes until you stack the groups you choose.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le foto scattate a pochi secondi l’una dall’altra vengono confrontate su questo Mac. Non cambia nulla finché non raggruppi le serie che scegli."
+          }
+        }
+      }
+    },
+    "Remove from Group": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rimuovi dalla serie"
+          }
+        }
+      }
+    },
+    "Restore Removed Photos": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ripristina foto rimosse"
+          }
+        }
+      }
+    },
+    "Sensitivity": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sensibilità"
+          }
+        }
+      }
+    },
+    "Skipped: photos changed since the scan": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saltata: alcune foto sono cambiate dopo la ricerca"
+          }
+        }
+      }
+    },
+    "Stack Groups": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crea gruppi"
+          }
+        }
+      }
+    },
+    "Stacked": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raggruppata"
+          }
+        }
+      }
+    },
+    "Stacked; the cover couldn't be set": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raggruppata, ma non è stato possibile impostare la copertina"
+          }
+        }
+      }
+    },
+    "Stop": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Interrompi"
+          }
+        }
+      }
+    },
+    "Strict": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rigorosa"
+          }
+        }
+      }
+    },
+    "Strict groups only near-identical shots; Loose also groups shots with more movement.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rigorosa raggruppa solo scatti quasi identici; Ampia raggruppa anche scatti con più movimento."
+          }
+        }
+      }
+    },
+    "Suggested Cover": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copertina suggerita"
+          }
+        }
+      }
+    },
+    "Suggestions can be wrong. Click a photo to make it the cover. Nothing is deleted.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I suggerimenti possono essere sbagliati. Fai clic su una foto per usarla come copertina. Non viene eliminato nulla."
+          }
+        }
+      }
+    },
+    "The server returned the same page twice. Try again.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il server ha restituito due volte la stessa pagina. Riprova."
+          }
+        }
+      }
+    },
+    "The stack changed. Check it again before moving photos.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il gruppo è cambiato. Controllalo di nuovo prima di spostare le foto."
+          }
+        }
+      }
+    },
+    "Time Between Shots": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Intervallo tra gli scatti"
+          }
+        }
+      }
+    },
+    "To": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A"
+          }
+        }
+      }
+    },
+    "Your account isn't loaded yet. Try again in a moment.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il tuo account non è ancora caricato. Riprova tra un momento."
+          }
+        }
+      }
+    },
+    "%lld photos couldn't be analyzed and aren't in any group.": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld photo couldn't be analyzed and isn't in any group."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld photos couldn't be analyzed and aren't in any group."
+                }
+              }
+            }
+          }
+        },
+        "it": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld foto non è stata analizzata e non è in nessuna serie."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld foto non sono state analizzate e non sono in nessuna serie."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld selected items couldn't be loaded and weren't checked.": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld selected item couldn't be loaded and wasn't checked."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld selected items couldn't be loaded and weren't checked."
+                }
+              }
+            }
+          }
+        },
+        "it": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld elemento selezionato non è stato caricato e non è stato controllato."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld elementi selezionati non sono stati caricati e non sono stati controllati."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Looking for photos… %lld found": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Looking for photos… %lld found"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Looking for photos… %lld found"
+                }
+              }
+            }
+          }
+        },
+        "it": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Ricerca delle foto… %lld trovata"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Ricerca delle foto… %lld trovate"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Move %lld photos to Recently Deleted?": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Move %lld photo to Recently Deleted?"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Move %lld photos to Recently Deleted?"
+                }
+              }
+            }
+          }
+        },
+        "it": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Spostare %lld foto in Eliminati di recente?"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Spostare %lld foto in Eliminati di recente?"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Selected Photos (%lld)": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Selected Photos (%lld)"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Selected Photos (%lld)"
+                }
+              }
+            }
+          }
+        },
+        "it": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Foto selezionate (%lld)"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Foto selezionate (%lld)"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Skipped %lld items: videos, other people's photos, and items in a stack, Recently Deleted or the Locked Folder.": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Skipped %lld item: videos, other people's photos, and items in a stack, Recently Deleted or the Locked Folder."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Skipped %lld items: videos, other people's photos, and items in a stack, Recently Deleted or the Locked Folder."
+                }
+              }
+            }
+          }
+        },
+        "it": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld elemento escluso: video, foto di altre persone ed elementi in un gruppo, in Eliminati di recente o nella Cartella bloccata."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld elementi esclusi: video, foto di altre persone ed elementi in un gruppo, in Eliminati di recente o nella Cartella bloccata."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Stack %lld Groups…": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Stack %lld Group…"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Stack %lld Groups…"
+                }
+              }
+            }
+          }
+        },
+        "it": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Raggruppa %lld serie…"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Raggruppa %lld serie…"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Stack %lld groups?": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Stack %lld group?"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Stack %lld groups?"
+                }
+              }
+            }
+          }
+        },
+        "it": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Raggruppare %lld serie?"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Raggruppare %lld serie?"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "There are more than %lld photos to check. Choose a shorter period or fewer photos so every one can be compared.": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "There are more than %lld photo to check. Choose a shorter period or fewer photos so every one can be compared."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "There are more than %lld photos to check. Choose a shorter period or fewer photos so every one can be compared."
+                }
+              }
+            }
+          }
+        },
+        "it": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Ci sono più di %lld foto da controllare. Scegli un periodo più breve o meno foto per poterle confrontare tutte."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Ci sono più di %lld foto da controllare. Scegli un periodo più breve o meno foto per poterle confrontare tutte."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Analyzing %lld of %lld photos…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analyzing %#@c1@ of %#@c2@…"
+          },
+          "substitutions": {
+            "c1": {
+              "argNum": 1,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg"
+                    }
+                  }
+                }
+              }
+            },
+            "c2": {
+              "argNum": 2,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg photo"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg photos"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analisi di %#@c1@ di %#@c2@…"
+          },
+          "substitutions": {
+            "c1": {
+              "argNum": 1,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg"
+                    }
+                  }
+                }
+              }
+            },
+            "c2": {
+              "argNum": 2,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg foto"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg foto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Checked %lld photos and found %lld groups.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checked %#@c1@ and found %#@c2@."
+          },
+          "substitutions": {
+            "c1": {
+              "argNum": 1,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg photo"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg photos"
+                    }
+                  }
+                }
+              }
+            },
+            "c2": {
+              "argNum": 2,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg group"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg groups"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Foto controllate: %#@c1@. Serie trovate: %#@c2@."
+          },
+          "substitutions": {
+            "c1": {
+              "argNum": 1,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg"
+                    }
+                  }
+                }
+              }
+            },
+            "c2": {
+              "argNum": 2,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Stacking %lld of %lld groups…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stacking %#@c1@ of %#@c2@…"
+          },
+          "substitutions": {
+            "c1": {
+              "argNum": 1,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg"
+                    }
+                  }
+                }
+              }
+            },
+            "c2": {
+              "argNum": 2,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg group"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg groups"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raggruppamento di %#@c1@ di %#@c2@…"
+          },
+          "substitutions": {
+            "c1": {
+              "argNum": 1,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg"
+                    }
+                  }
+                }
+              }
+            },
+            "c2": {
+              "argNum": 2,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg serie"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg serie"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "version": "1.0"

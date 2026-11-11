@@ -38,6 +38,7 @@ struct AssetsStackBrowser: View {
     @State private var error: String?
     @State private var busy = false
     @State private var unstack = false
+    @State private var trashOthers = false
     var body: some View {
         VStack(spacing: 16) {
             HStack {
@@ -65,6 +66,10 @@ struct AssetsStackBrowser: View {
                     Button("Remove from Stack") { perform { try await session.client.assetsRemoveFromStack(stackID, asset: asset.id) } }
                         .disabled(asset.id == stack.primaryAssetId)
                     Button("Unstack…") { unstack = true }
+                    // Find Similar Photos (#41): keep the cover, move the rest to Recently Deleted. Never permanent.
+                    if session.features.trash && model.source != .locked && model.source != .trash {
+                        Button("Move Others to Recently Deleted…") { trashOthers = true }.disabled(stack.assets.count < 2)
+                    }
                 }.disabled(busy || model.source == .trash || stack.assets.contains { $0.ownerId != session.user?.id })
             } else if error == nil { ProgressView() }
             if let error { Text(error).foregroundStyle(.red) }
@@ -75,6 +80,9 @@ struct AssetsStackBrowser: View {
         .confirmationDialog("Unstack all members?", isPresented: $unstack, titleVisibility: .visible) {
             Button("Unstack") { perform { try await session.client.assetsUnstack(stackID); dismiss() } }
         } message: { Text("All photos remain in your library.") }
+        .confirmationDialog("Move \(max((stack?.assets.count ?? 1) - 1, 0)) photos to Recently Deleted?", isPresented: $trashOthers, titleVisibility: .visible) {
+            Button("Move to Recently Deleted", role: .destructive) { perform { try await self.trashOthersThanCover() } }
+        } message: { Text("Only the cover stays in the stack. You can restore the others from Recently Deleted.") }
     }
     private func load() async {
         do {
@@ -84,6 +92,23 @@ struct AssetsStackBrowser: View {
         } catch ImmichError.http(404, _) { dismiss() }
         catch { session.handle(error); self.error = error.localizedDescription }
     }
+    /// Reads the stack again and moves only members that are still in it, still yours and still not the cover.
+    private func trashOthersThanCover() async throws {
+        guard let shown = stack, let userID = session.user?.id, !userID.isEmpty else { return }
+        let current = try await session.client.assetsStack(stackID)
+        guard current.primaryAssetId == shown.primaryAssetId else {
+            throw ImmichError.http(409, String(localized: "The stack changed. Check it again before moving photos."))
+        }
+        let visible = Set(shown.assets.map(\.id))
+        let ids = current.assets
+            .filter { $0.id != current.primaryAssetId && visible.contains($0.id) && $0.ownerId == userID && !$0.isTrashed && $0.visibility != "locked" }
+            .map(\.id)
+        guard !ids.isEmpty else { return }
+        try await session.client.delete(ids, force: false)
+        await session.reloadAlbums()
+        dismiss()
+    }
+
     private func perform(_ action: @escaping @MainActor () async throws -> Void) {
         busy = true
         Task {

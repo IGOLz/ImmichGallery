@@ -40,6 +40,7 @@ cases = {
     'places-arrangement': models + ['ImmichGallery/API/Models+Metadata.swift', app('PlacesArrangement'), 'Tests/PlacesArrangementChecks.swift'],
     'people-arrangement': models + [app('PeopleArrangement'), 'Tests/PeopleArrangementChecks.swift'],
     'duplicates-arrangement': models + [app('DuplicatesArrangement'), 'Tests/DuplicatesArrangementChecks.swift'],
+    'similar-photos': api + [app('SimilarPhotos'), app('SimilarPhotosAnalyzer'), app('SimilarPhotosModel'), support('ImagePipeline'), support('Formatters'), 'Tests/SimilarPhotosChecks.swift'],
 }
 
 def check(item):
