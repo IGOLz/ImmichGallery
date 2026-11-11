@@ -106,6 +106,8 @@ struct TimeBucketAssets: Decodable, Sendable {
     var stack: [[String]?]?
     var city: [String?]?
     var country: [String?]?
+    var latitude: [Double?]? // Only with `withCoordinates`.
+    var longitude: [Double?]?
 }
 
 enum AssetType: String, Decodable, Sendable {

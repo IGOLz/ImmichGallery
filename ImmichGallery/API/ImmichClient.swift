@@ -199,6 +199,7 @@ struct TimelineQuery: Hashable, Sendable {
     var bbox: String? // Explore
     var order: String? // Timeline view options: "asc" for oldest first.
     var orderBy: String? // Timeline view options: "createdAt" for date added (Immich v3.0).
+    var withCoordinates: Bool? // Assign Location: GPS badges.
 
     var parameters: [String: String?] {
         [
@@ -214,6 +215,7 @@ struct TimelineQuery: Hashable, Sendable {
             "withStacked": withStacked.map(String.init),
             "order": order,
             "orderBy": orderBy,
+            "withCoordinates": withCoordinates.map(String.init),
         ]
     }
 }

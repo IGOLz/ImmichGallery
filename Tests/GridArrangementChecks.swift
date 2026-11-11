@@ -77,6 +77,20 @@ import Foundation
         precondition(!GridArrangement(page: .partner, defaults: defaults).searchesTimeline)
         precondition([GridPage.library, .favorites, .archive, .person, .tag, .locked, .largeFiles].allSatisfy(\.offersMediaTypeFilter))
         precondition(!GridPage.videos.offersMediaTypeFilter && !GridPage.partner.offersMediaTypeFilter)
+
+        // Assign Location: starts with only the items the map leaves out, stays on the timeline API.
+        let located = GridArrangement(page: .geolocation, defaults: defaults)
+        precondition(located == GridArrangement(location: .missing) && located.hidesLocated && located.isFiltered)
+        defaults.set("All", forKey: "grid.geolocation.location")
+        defaults.set("Favorites", forKey: "grid.geolocation.show")
+        defaults.set("VIDEO", forKey: "grid.geolocation.mediaType")
+        defaults.set("asc", forKey: "grid.geolocation.order")
+        let everything = GridArrangement(page: .geolocation, defaults: defaults)
+        precondition(everything == GridArrangement(order: .oldestFirst) && !everything.hidesLocated && !everything.searchesTimeline)
+        // Other pages ignore a saved location filter.
+        defaults.set("Missing", forKey: "grid.library.location")
+        precondition(!GridArrangement(page: .library, defaults: defaults).hidesLocated)
+        precondition(GridPage.geolocation.defaultLocation == .missing && GridPage.library.defaultLocation == .all)
         defaults.removePersistentDomain(forName: "GridArrangementChecks")
         print("Grid view options checks passed.")
     }
