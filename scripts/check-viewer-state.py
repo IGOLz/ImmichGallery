@@ -70,7 +70,7 @@ struct KeyPress {
     var settingsPresented = true
     var controlsVisible = false
 '''
-harness += '\n'.join(method(name) for name in ['neighbor', 'step', 'windowWillClose'])
+harness += '\n'.join(method(name) for name in ['neighbor', 'stepWithoutWrapping', 'step', 'windowWillClose'])
 harness += r'''
 }
 @MainActor final class ViewerKeyHarness {
@@ -117,6 +117,18 @@ harness += r'''
         assert(state.model.viewerID == "c" && state.model.selection == ["c"])
         assert(state.elapsed == 0 && state.videoStalledElapsed == 0 && state.rotation == 0)
 
+        state.stepWithoutWrapping(1)
+        try? await Task.sleep(for: .milliseconds(50))
+        assert(state.model.viewerID == "b", "Swipes move forward through the sequence")
+        state.stepWithoutWrapping(1)
+        try? await Task.sleep(for: .milliseconds(50))
+        assert(state.model.viewerID == "b", "Swipes stop at the end of a repeating sequence")
+        state.model.viewerID = "a"
+        state.stepWithoutWrapping(-1)
+        try? await Task.sleep(for: .milliseconds(50))
+        assert(state.model.viewerID == "a", "Swipes stop at the start of a repeating sequence")
+        state.model.viewerID = "c"
+
         state.sequence = ["c"]
         state.sequenceIndex = ["c": 0]
         let generation = state.playbackGeneration
@@ -150,7 +162,7 @@ harness += r'''
         closing.windowWillClose(Notification(name: Notification.Name("close")))
         try? await Task.sleep(for: .milliseconds(50))
         assert(closing.model.viewerID == nil, "An in-flight navigation must not reopen the inline viewer")
-        print("Viewer state checks passed: keyboard, sequence, wraparound, coalescing, restart, boundary and close")
+        print("Viewer state checks passed: keyboard, sequence, wraparound, swipe boundaries, coalescing, restart, boundary and close")
     }
 }
 '''
