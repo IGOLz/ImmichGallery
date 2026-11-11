@@ -28,7 +28,7 @@ enum GridSource: Hashable {
     var timelineQuery: TimelineQuery? {
         switch self {
         case .library: TimelineQuery(withPartners: true)
-        case .geolocation: TimelineQuery(withPartners: false)
+        case .geolocation: TimelineQuery(withPartners: false, withCoordinates: true)
         case .favorites: TimelineQuery(visibility: nil, isFavorite: true)
         case .archive: TimelineQuery(visibility: "archive")
         case .trash: TimelineQuery(visibility: nil, isTrashed: true)
@@ -53,6 +53,7 @@ extension GridSource {
         case .videos: .videos
         case .archive: .archive
         case .largeFiles: .largeFiles // Assets
+        case .geolocation: .geolocation
         case .partner: .partner // Sharing
         case .person: .person
         case .explore(.tag): .tag // Explore
@@ -76,6 +77,11 @@ struct AssetItem: Identifiable, Hashable, Sendable {
     let livePhotoVideoID: String?
     let stackCount: Int?
     var fileSizeInBytes: Int64? = nil
+    // Assign Location: only filled for timelines loaded with coordinates.
+    var latitude: Double? = nil
+    var longitude: Double? = nil
+    var city: String? = nil
+    var hasLocation: Bool { latitude != nil && longitude != nil }
 
     init(_ r: AssetResponse) {
         id = r.id
@@ -90,15 +96,22 @@ struct AssetItem: Identifiable, Hashable, Sendable {
         livePhotoVideoID = r.livePhotoVideoId
         stackCount = r.stack?.assetCount
         fileSizeInBytes = r.exifInfo?.fileSizeInByte
+        latitude = r.exifInfo?.latitude
+        longitude = r.exifInfo?.longitude
+        city = r.exifInfo?.city
     }
 
     static func from(_ c: TimeBucketAssets, includingLocked: Bool = false) -> [AssetItem] {
         c.id.indices.filter { includingLocked || c.visibility?.indices.contains($0) != true || c.visibility?[$0] != "locked" }.map { i in
-            AssetItem(
+            var item = AssetItem(
                 id: c.id[i], ownerId: c.ownerId.flatMap { $0.indices.contains(i) ? $0[i] : nil }, isVideo: !c.isImage[i], isFavorite: c.isFavorite[i], isTrashed: c.isTrashed[i],
                 thumbhash: c.thumbhash[i], ratio: c.ratio[i] ?? 1, durationMS: c.duration[i]?.milliseconds,
                 date: ImmichDate.parse(c.fileCreatedAt[i]), livePhotoVideoID: c.livePhotoVideoId[i],
                 stackCount: c.stack?[i].flatMap { $0.count > 1 ? Int($0[1]) : nil })
+            item.latitude = c.latitude.flatMap { $0.indices.contains(i) ? $0[i] : nil }
+            item.longitude = c.longitude.flatMap { $0.indices.contains(i) ? $0[i] : nil }
+            item.city = c.city.flatMap { $0.indices.contains(i) ? $0[i] : nil }
+            return item
         }
     }
 
@@ -181,6 +194,8 @@ final class AssetGridModel {
     @ObservationIgnored private var pageTask: Task<Void, Never>?
     /// The first load, shared so a second caller waits for it instead of returning early (Widget).
     @ObservationIgnored private var loadTask: Task<Void, Never>?
+    @ObservationIgnored private var loadAllTask: Task<Void, Never>? // Assign Location
+    @ObservationIgnored private var assignedLocations: [String: (latitude: Double, longitude: Double)] = [:]
 
     init(source: GridSource, session: LibrarySession, reusing previous: AssetGridModel? = nil) {
         self.source = source
@@ -198,7 +213,19 @@ final class AssetGridModel {
         }
     }
 
-    var totalCount: Int { sections.reduce(0) { $0 + $1.count } }
+    var totalCount: Int { sections.reduce(0) { $0 + shownCount($1) } }
+
+    /// Assign Location: a month shows once it has been checked for items without a location, instead of
+    /// placeholders for items that are mostly located.
+    func shownCount(_ section: GridSection) -> Int { arrangement?.hidesLocated == true && section.assets == nil ? 0 : section.count }
+    /// Assign Location: still loading months to find the items without a location.
+    private(set) var checkingLocations = false
+    /// Assign Location: months whose check failed once the scan ended. Their items without a location are
+    /// unknown, so the list is incomplete; `retryLocationCheck()` loads them again.
+    var uncheckedLocationMonths: Int {
+        guard arrangement?.hidesLocated == true, state == .loaded, !checkingLocations else { return 0 }
+        return sections.filter { $0.assets == nil }.count
+    }
 
     private var dateAdded: Bool { GridArrangement.supportsDateAdded(session?.version) }
 
@@ -272,7 +299,10 @@ final class AssetGridModel {
         loadGeneration = UUID()
         loadTask?.cancel()
         pageTask?.cancel()
+        loadAllTask?.cancel()
+        checkingLocations = false // an interrupted check is incomplete, not done
         sectionTasks.values.forEach { $0.cancel() }
+        sectionTasks = [:]
     }
 
     func reload() async {
@@ -292,11 +322,15 @@ final class AssetGridModel {
         isStale = false
         sortedSmartResults = nil
         searchResultsLoaded = 0
+        assignedLocations = [:] // A new generation fetches locations confirmed before its requests.
         pageFailed = false
         sectionTasks.values.forEach { $0.cancel() }
         sectionTasks = [:]
         pageTask?.cancel()
         pageTask = nil
+        loadAllTask?.cancel()
+        loadAllTask = nil
+        checkingLocations = false
         if sections.isEmpty { state = .loading }
         arrangement = source.gridPage.map { GridArrangement(page: $0) }
         do {
@@ -314,6 +348,7 @@ final class AssetGridModel {
                 state = .loaded
                 // Load the first screenful right away.
                 for i in sections.indices.prefix(2) { ensureLoaded(i) }
+                if arrangement?.hidesLocated == true { loadAllSections() }
             } else {
                 sections = []
                 nextPage = .init(page: 1)
@@ -360,18 +395,50 @@ final class AssetGridModel {
                 guard generation == loadGeneration,
                       let i = sections.firstIndex(where: { $0.id == id }) else { return }
                 var assets = AssetItem.from(columns, includingLocked: source == .locked).filter { self.source != .geolocation || (session.user?.id != nil && $0.ownerId == session.user?.id) }
+                // Another window may have assigned a location after this request began.
+                for i in assets.indices {
+                    if let location = assignedLocations[assets[i].id] {
+                        assets[i].latitude = location.latitude
+                        assets[i].longitude = location.longitude
+                        assets[i].city = nil
+                    }
+                }
                 if case .explore(.map(let query)) = source { assets.removeAll { !query.includes($0.date) } }
+                if arrangement?.hidesLocated == true { assets.removeAll(where: \.hasLocation) }
                 sections[i].assets = assets
                 sections[i].count = assets.count
                 rebuildIndex()
             } catch {
-                guard generation == loadGeneration, !error.isCancellation else { return }
-                session.handle(error)
-                sectionTasks[id] = nil // allow retry on next appearance
+                guard generation == loadGeneration else { return }
+                sectionTasks[id] = nil // allow retry on next appearance or location check
+                if !error.isCancellation { session.handle(error) }
             }
         }
         sectionTasks[id] = task
         return task
+    }
+
+    /// Assign Location: without located items most months are empty or nearly so. Loading every month,
+    /// one at a time, finds the items that are left and makes the item count true. A month that fails
+    /// stays unloaded and is counted by `uncheckedLocationMonths` instead of passing as checked.
+    private func loadAllSections() {
+        let generation = loadGeneration
+        let ids = sections.map(\.id)
+        checkingLocations = true
+        loadAllTask = Task { [weak self] in
+            for id in ids {
+                guard let self, generation == loadGeneration, !Task.isCancelled else { return }
+                await loadSection(id: id).value
+            }
+            guard let self, generation == loadGeneration else { return }
+            checkingLocations = false
+        }
+    }
+
+    /// Assign Location: checks the months that failed again, keeping the ones already checked.
+    func retryLocationCheck() {
+        guard arrangement?.hidesLocated == true, state == .loaded, !checkingLocations, !isPaged else { return }
+        loadAllSections()
     }
 
     private func loadNextPage() {
@@ -519,24 +586,158 @@ final class AssetGridModel {
         if flags.contains(.command) {
             if selection.contains(id) { selection.remove(id) } else { selection.insert(id) }
             anchorID = id
-        } else if flags.contains(.shift), let anchor = anchorID, let a = index[anchor], let b = index[id] {
-            let (from, to) = (a.section, a.item) < (b.section, b.item) ? (a, b) : (b, a)
-            var ids: Set<String> = []
-            for s in from.section...to.section {
-                guard let assets = sections[s].assets else { continue }
-                let start = s == from.section ? from.item : 0
-                let end = s == to.section ? to.item : assets.count - 1
-                if start <= end { ids.formUnion(assets[start...end].map(\.id)) }
-            }
-            selection = ids
+        } else if flags.contains(.shift), let anchor = anchorID ?? cursorID ?? orderedSelection.first, index[anchor] != nil {
+            selection = range(from: anchor, to: id)
+            anchorID = anchor
         } else {
             selection = [id]
             anchorID = id
         }
+        cursorID = id
     }
 
+    /// Every item from one to the other, in the grid's order, both included.
+    private func range(from first: String, to last: String) -> Set<String> {
+        guard let a = index[first], let b = index[last] else { return [last] }
+        let (from, to) = (a.section, a.item) < (b.section, b.item) ? (a, b) : (b, a)
+        var ids: Set<String> = []
+        for s in from.section...to.section {
+            guard let assets = sections[s].assets else { continue }
+            let start = s == from.section ? from.item : 0
+            let end = s == to.section ? to.item : assets.count - 1
+            if start <= end { ids.formUnion(assets[start...end].map(\.id)) }
+        }
+        return ids
+    }
+
+    private var orderedSelection: [String] {
+        selection.compactMap { id in index[id].map { (id, $0) } }
+            .sorted { ($0.1.section, $0.1.item) < ($1.1.section, $1.1.item) }.map(\.0)
+    }
+
+    // MARK: Keyboard
+
+    /// The item the arrow keys move from: the last one clicked or reached, as in Photos and Finder.
+    @ObservationIgnored private var cursorID: String?
+    /// How many items a row of the grid holds, set by the grid from its width.
+    @ObservationIgnored var columns = 1
+    /// The item the arrow keys reached, for the grid to scroll to.
+    var keyboardScrollTarget: String?
+    /// Whether a page header above the photos (an album's, a person's) is in view: while it is, it names the page
+    /// and the toolbar doesn't repeat it.
+    var headerInView = true
+    /// Counts removals, so the grid animates the photos into their new places.
+    private(set) var removals = 0
+    /// The months of the photos in view, for the window's subtitle as in Photos.
+    private(set) var visibleMonths: String?
+
+    func showing(sections ids: some Sequence<String>) {
+        let months = showsSectionHeaders ? ImmichDate.monthRange(ids) : nil
+        if months != visibleMonths { visibleMonths = months }
+    }
+
+    enum Move { case left, right, up, down }
+
+    /// Moves the cursor one item, or one row, and selects it; extending selects everything from where the
+    /// selection started (the anchor) to it, as Shift does in Photos and Finder.
+    func move(_ direction: Move, extending: Bool) async {
+        let start = cursorID.flatMap { selection.contains($0) && index[$0] != nil ? $0 : nil }
+            ?? (direction == .left || direction == .up ? orderedSelection.first : orderedSelection.last)
+        guard let start else {
+            // Nothing selected: the first item, as Photos does.
+            guard let first = sections.lazy.compactMap({ $0.assets?.first }).first else { return }
+            select(first.id)
+            return
+        }
+        guard let target = await self.target(from: start, direction) else { return }
+        cursorID = target
+        if extending {
+            let anchor = anchorID.flatMap { index[$0] != nil ? $0 : nil } ?? start
+            anchorID = anchor
+            selection = range(from: anchor, to: target)
+        } else {
+            selection = [target]
+            anchorID = target
+        }
+        keyboardScrollTarget = target
+    }
+
+    private func select(_ id: String) {
+        selection = [id]
+        anchorID = id
+        cursorID = id
+        keyboardScrollTarget = id
+    }
+
+    /// The item one step away: across months for left and right, by row for up and down. Each month starts a new
+    /// row, so moving down from its last row goes to the same column of the next month's first row.
+    private func target(from id: String, _ direction: Move) async -> String? {
+        switch direction {
+        case .left: return await neighbor(of: id, delta: -1)?.id
+        case .right: return await neighbor(of: id, delta: 1)?.id
+        case .up, .down:
+            guard let pos = index[id] else { return nil }
+            let width = max(1, columns), column = pos.item % width
+            let count = sections[pos.section].assets?.count ?? 0
+            if direction == .down {
+                if pos.item + width < count { return sections[pos.section].assets?[pos.item + width].id }
+                // A shorter last row: its last item, as Finder does.
+                if pos.item / width < (count - 1) / width { return sections[pos.section].assets?.last?.id }
+                var s = pos.section + 1
+                while sections.indices.contains(s) {
+                    if sections[s].assets == nil { await loadSection(id: sections[s].id).value }
+                    if let assets = sections[s].assets, !assets.isEmpty { return assets[min(column, assets.count - 1)].id }
+                    s += 1
+                }
+            } else {
+                if pos.item - width >= 0 { return sections[pos.section].assets?[pos.item - width].id }
+                var s = pos.section - 1
+                while sections.indices.contains(s) {
+                    if sections[s].assets == nil { await loadSection(id: sections[s].id).value }
+                    if let assets = sections[s].assets, !assets.isEmpty {
+                        let lastRow = (assets.count - 1) / width * width
+                        return assets[min(lastRow + column, assets.count - 1)].id
+                    }
+                    s -= 1
+                }
+            }
+            return nil
+        }
+    }
+
+    /// The items next to one, already loaded, for Quick Look to fetch ahead.
+    func loadedNeighbours(of id: String) -> [String] {
+        guard let pos = index[id], let assets = sections[pos.section].assets else { return [] }
+        var ids: [String] = []
+        if pos.item > 0 { ids.append(assets[pos.item - 1].id) }
+        if pos.item + 1 < assets.count { ids.append(assets[pos.item + 1].id) }
+        let width = max(1, columns)
+        if pos.item + width < assets.count { ids.append(assets[pos.item + width].id) }
+        if pos.item - width >= 0 { ids.append(assets[pos.item - width].id) }
+        return ids
+    }
+
+    /// The selection's neighbours when one item is selected, else none.
+    var quickLookAhead: [String] {
+        selection.count == 1 ? selection.first.map(loadedNeighbours(of:)) ?? [] : []
+    }
+
+    /// Where an item sits, for scrolling to it.
+    func position(of id: String) -> (section: String, item: Int)? {
+        index[id].map { (sections[$0.section].id, $0.item) }
+    }
+
+    /// Every photo, as in Photos: the loaded ones now, and the months not loaded yet as they load, unless the selection
+    /// changes meanwhile.
     func selectAll() {
-        selection = Set(sections.flatMap { $0.assets ?? [] }.map(\.id))
+        let loaded = Set(sections.flatMap { $0.assets ?? [] }.map(\.id))
+        selection = loaded
+        guard sections.contains(where: { $0.assets == nil }) || (isPaged && nextPage != nil) else { return }
+        let generation = loadGeneration
+        Task { [weak self] in
+            guard let self, let all = try? await viewerAllItems(), generation == loadGeneration, selection == loaded else { return }
+            selection = Set(all.map(\.id))
+        }
     }
 
     func open(_ id: String) {
@@ -612,6 +813,13 @@ final class AssetGridModel {
         } catch { report(error) }
     }
 
+    /// Takes photos out of the album the grid shows; they stay in the library.
+    func removeFromAlbum(_ ids: [String]) async throws {
+        guard let albumID = source.albumID, let session else { return }
+        try await session.client.changeAlbumAssets(albumID, ids: ids, removing: true)
+        remove(ids)
+    }
+
     func restore(_ ids: [String]) async {
         guard canDelete(ids), let session else { return }
         do {
@@ -626,6 +834,13 @@ final class AssetGridModel {
     private func report(_ error: Error) {
         session?.handle(error)
         lastError = error.localizedDescription
+    }
+
+    /// Assign Location: located items leave a Without Location list; elsewhere the GPS badges follow.
+    func setLocation(_ ids: [String], latitude: Double, longitude: Double) {
+        for id in ids { assignedLocations[id] = (latitude, longitude) }
+        if arrangement?.hidesLocated == true { remove(ids) }
+        else { update(ids) { $0.latitude = latitude; $0.longitude = longitude; $0.city = nil } }
     }
 
     private func update(_ ids: [String], _ change: (inout AssetItem) -> Void) {
@@ -655,6 +870,7 @@ final class AssetGridModel {
         sections.removeAll { $0.count == 0 && $0.assets != nil }
         selection.subtract(removed)
         rebuildIndex()
+        removals += 1
     }
 }
 

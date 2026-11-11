@@ -19,6 +19,18 @@ Implemented for macOS 26 without new dependencies or targets. Since 0.2.0 the de
 - Export completion always reveals saved files in Finder, including while the app is inactive. SystemNotifier is also available for opt-in background notifications. Denied notification permission shows a System Settings hint.
 - Italian strings include explicit singular/plural forms in English and Italian, including separate substitutions for exported and failed counts. Archive's sidebar noun remains "Archivio"; its action uses "Archivia". Tabs use "scheda". Reviewed library, favorites, info, export, archive and recently deleted terminology.
 
+## Toolbar, navigation and grid shape
+
+- Every toolbar in the main window is customizable (`toolbar(id:)`): the window's own (`library`, Import) plus one per page (`assetGrid`, `album`, `person`, `locked`, `viewer`, …), each ending with the search item (`pageToolbar`). Mixing customizable and plain toolbars in one window isn't supported, so the only plain toolbars left are in other windows or sheets (Administration, the person sheet's Done). Item IDs are unique within each page.
+- The search field is an `NSSearchField` in a plain toolbar item rather than `.searchable`, which made AppKit throw in a customizable toolbar; see `Search.md`.
+- Below 980 points of detail width (`toolbarCompact`), segmented pickers such as Years / Months / All Photos become pop-up menus and the search field a button, before items move to the overflow menu.
+- Library shows Years, Months or All Photos (⌘1–⌘3). The grid shows square thumbnails or each photo in its own shape (`gridAspectRatio`). Years and Months keep the grid's toolbar items, disabled, so the layout stays put.
+- Pages open in place (`PageNavigation`): one `NavigationStack(path:)` per detail column, with a path per sidebar item, reset when the sidebar selection changes, and without the push animation. Crosslink navigates through it too (see Immich Crosslink below), not a path of its own. There is still exactly one detail stack, so the macOS 15 split-view/pushed-toolbar loop above is not reintroduced; `GlobalToolbar` still attaches to the split view on 26 and to the detail stack on 15.
+- An open photo replaces the system Back with its own toolbar Back to the grid (`navigationBarBackButtonHidden(model.viewerID != nil)` on `AssetGridHost`); the page's Back reappears once the photo is closed. Only one Back is shown at a time.
+- The Info inspector keeps the previous photo's details while the next one loads, dimmed, read-only and without its editing controls, so nothing can be written to a photo no longer selected. A failed load shows its own error with Try Again instead of the previous photo. A description being typed is saved to the photo it was started for when focus leaves or the controls go away. `Tests/InspectorEditingChecks.swift` drives the real load routine with late, cancelled and failed answers.
+- Album names, album descriptions and person names (`InlineEditableText`) are plain buttons until edited, so they can be focused and activated from the keyboard (with Keyboard Navigation on) and VoiceOver, which reads the field name and its value. Return saves once, clicking away saves, Escape cancels without saving. Line breaks already in a description are kept. Which key, if any, types a new line in the multi-line field is the system's text-field behavior and has not been verified, so the app documents no shortcut for it. Owner checks are unchanged: non-owners see plain text.
+- Static review for macOS 15 (no VM run): availability guards remain around `ToolbarSpacer`; the toolbar's changing parts (search field, upload, notifications) are child views with local state; no `ControlGroup` or popover bound to observable state was added. macOS 15 behavior of this toolbar has not been run.
+
 ## Transfer type and viewer gestures
 
 The installed CoreTransferable SDK requires a static exportedContentType in FileRepresentation. Grid timeline DTOs provide no original filename or MIME type, so a truthful per-item UTType cannot be derived before the drag without additional metadata requests. Promises now advertise generic file data, preserving the actual filename/extension from Content-Disposition, instead of advertising all RAW/HEIC files as image or all videos as movie. Receivers requiring an exact pre-advertised UTType still need a future metadata-backed NSFilePromiseProvider implementation. No speculative type is assigned.
@@ -79,11 +91,16 @@ an item by Immich's own web path and the server's address.
 - **Only the latest link navigates:** `App/CrosslinkNavigation.swift` gives each link a ticket. A new link, the user
   choosing a page or pushing/popping one, the window closing, signing out or switching accounts make earlier tickets
   stale and cancel their tasks; after every wait (window lookup, person, asset, grid) a stale link stops with no
-  navigation, window or alert. `CrosslinkReceiver.navigation` covers links looking for a window, each `MainView` its
-  own. A page pushed onto a newly selected page waits for its stack to appear (`pendingPush`), not a fixed delay.
-  `Tests/CrosslinkNavigationChecks.swift` runs it with a fake server and window. When `MainView`'s navigation moves to
-  per-page stacks (PR 52's `PageNavigation`), the same rule moves with it: the user's navigation drops the link, the
-  link's own pushes do not.
+  navigation, window or alert. `CrosslinkReceiver.navigation` covers links looking for a window; in each window the
+  detail column's `PageNavigation` owns the link (`links`) and its dispatch (`Views/PageNavigation+Crosslink.swift`),
+  so there is no second navigation path in `MainView`. The user choosing another page (`selectionChanged`, `reset`),
+  opening one from a page (`open`) or pushing/going back in the stack (`setPath` on the page shown) makes the link
+  stale; the link's own page (`linkShow`) and push (`linkOpen`) do not, and a stack echoing back the same path or the
+  old page's stack going away does not either. Choosing the page already shown is not a move. A link sets its page
+  and pushes in the same turn (the person once fetched), so the page's new stack starts with the pushed page: no
+  fixed delay. `Tests/CrosslinkNavigationChecks.swift` runs the steps with a fake server and window,
+  `Tests/CrosslinkPageNavigationChecks.swift` the real `PageNavigation` and dispatch with a fake window: own pushes
+  keep the link current, user moves, closing and a newer (even invalid) link make a late person answer do nothing.
 - **Settings ▸ Other Apps:** the protocol's **Immich Crosslink** switch (`crosslink.enabled`, on by default), whose
   description ends in a **Learn more…** link to the protocol, then each app that takes part by its bundle's display
   name and icon, with its switch (`crosslink.hidden`), and a description of what they do. Apps seen are remembered

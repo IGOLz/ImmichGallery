@@ -1,6 +1,116 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Face Names": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nomi dei volti"
+          }
+        }
+      }
+    },
+    "Hide Face Names": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nascondi nomi dei volti"
+          }
+        }
+      }
+    },
+    "Show Face Names": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostra nomi dei volti"
+          }
+        }
+      }
+    },
+    "Deselect All": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deseleziona tutto"
+          }
+        }
+      }
+    },
+    "Remove %lld items from the album?": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Remove %lld item from the album?"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Remove %lld items from the album?"
+                }
+              }
+            }
+          }
+        },
+        "it": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Rimuovere %lld elemento dall'album?"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Rimuovere %lld elementi dall'album?"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "The photos remain in your library.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le foto rimarranno nella libreria."
+          }
+        }
+      }
+    },
+    "Settings…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impostazioni…"
+          }
+        }
+      }
+    },
+    "Options": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opzioni"
+          }
+        }
+      }
+    },
     "Cities": {
       "localizations": {
         "it": {
@@ -7419,6 +7529,26 @@
         }
       }
     },
+    "Rotate": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ruota"
+          }
+        }
+      }
+    },
+    "Rotate left, or right with Option": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ruota a sinistra, o a destra con Opzione"
+          }
+        }
+      }
+    },
     "Rotate View Temporarily Left": {
       "localizations": {
         "it": {
@@ -7705,242 +7835,132 @@
         }
       }
     },
-    "Copy Immich Link": {
+    "Show Aspect Ratio": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Copia link Immich"
+            "value": "Mostra proporzioni"
           }
         }
       }
     },
-    "Show in %@": {
+    "Show Square Photos": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Mostra in %@"
+            "value": "Mostra foto quadrate"
           }
         }
       }
     },
-    "This link from another app is not valid.": {
+    "All Photos": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Questo link da un'altra app non è valido."
+            "value": "Tutte le foto"
           }
         }
       }
     },
-    "Immich Gallery cannot show what this link from another app names.": {
+    "Months": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Immich Gallery non può mostrare ciò che indica questo link da un'altra app."
+            "value": "Mesi"
           }
         }
       }
     },
-    "Immich Gallery is not signed in to %@ with this account.": {
+    "Years": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Immich Gallery non ha effettuato l'accesso a %@ con questo account."
+            "value": "Anni"
           }
         }
       }
     },
-    "Immich Crosslink": {
+    "More": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Immich Crosslink"
+            "value": "Altro"
           }
         }
       }
     },
-    "Another app asked Immich Gallery to show an item, but Immich Crosslink is turned off.": {
+    "%@ (owner)": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Un'altra app ha chiesto a Immich Gallery di mostrare un elemento, ma Immich Crosslink è disattivato."
+            "value": "%@ (proprietario)"
           }
         }
       }
     },
-    "Turn On": {
+    "Album": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Attiva"
+            "value": "Album"
           }
         }
       }
     },
-    "Other Apps": {
+    "Person": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Altre app"
+            "value": "Persona"
           }
         }
       }
     },
-    "Show photos, albums, people and places in other apps that take part, and open the items they send to Immich Gallery.": {
+    "Use as Face Photo": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Mostra foto, album, persone e luoghi nelle altre app che partecipano e apri gli elementi che inviano a Immich Gallery."
+            "value": "Usa come foto del volto"
           }
         }
       }
     },
-    "Apps That Take Part": {
+    "Add a Name": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "App che partecipano"
+            "value": "Aggiungi un nome"
           }
         }
       }
     },
-    "The signed-in account cannot see what this link from another app names.": {
+    "Add Birthday": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "L'account connesso non può vedere ciò che indica questo link da un'altra app."
+            "value": "Aggiungi compleanno"
           }
         }
       }
     },
-    "Open in Immich": {
+    "Click to edit": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Apri in Immich"
-          }
-        }
-      }
-    },
-    "Immich Web App": {
-      "localizations": {
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "App web di Immich"
-          }
-        }
-      }
-    },
-    "Open in Immich and Copy Immich Link": {
-      "localizations": {
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Apri in Immich e Copia link Immich"
-          }
-        }
-      }
-    },
-    "Open photos, albums, people and places in Immich's web app in your browser, or copy their address.": {
-      "localizations": {
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Apri foto, album, persone e luoghi nell'app web di Immich nel browser, o copiane l'indirizzo."
-          }
-        }
-      }
-    },
-    "%@ is no longer installed.": {
-      "localizations": {
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ non è più installata."
-          }
-        }
-      }
-    },
-    "Immich Gallery could not open %@: %@": {
-      "localizations": {
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Immich Gallery non ha potuto aprire %1$@: %2$@"
-          }
-        }
-      }
-    },
-    "Forget": {
-      "localizations": {
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dimentica"
-          }
-        }
-      }
-    },
-    "Learn more…": {
-      "localizations": {
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ulteriori informazioni…"
-          }
-        }
-      }
-    },
-    "Not found": {
-      "localizations": {
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Non trovata"
-          }
-        }
-      }
-    },
-    "No other app that takes part has been found.": {
-      "localizations": {
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nessun'altra app partecipante è stata trovata."
-          }
-        }
-      }
-    },
-    "See the apps that take part…": {
-      "localizations": {
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vedi le app che partecipano…"
-          }
-        }
-      }
-    },
-    "Apps that take part are found by themselves. Turn one off to leave it out of Show in. One not found stays listed for 30 days, so it stays off if it comes back; Forget removes it now.": {
-      "localizations": {
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Le app che partecipano vengono trovate da sole. Disattivane una per escluderla da Mostra in. Un'app non trovata resta in elenco per 30 giorni, così resta disattivata se torna; Dimentica la rimuove subito."
+            "value": "Fai clic per modificare"
           }
         }
       }
@@ -7951,6 +7971,66 @@
           "stringUnit": {
             "state": "translated",
             "value": "Posizione selezionata"
+          }
+        }
+      }
+    },
+    "GPS": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GPS"
+          }
+        }
+      }
+    },
+    "No GPS": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Senza GPS"
+          }
+        }
+      }
+    },
+    "Without Location": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Senza posizione"
+          }
+        }
+      }
+    },
+    "All Items Have a Location": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tutti gli elementi hanno una posizione"
+          }
+        }
+      }
+    },
+    "Every photo and video you own has GPS coordinates, so it shows on the map.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ogni foto e video di tua proprietà ha coordinate GPS e quindi appare sulla mappa."
+          }
+        }
+      }
+    },
+    "Looking for items without a location…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ricerca degli elementi senza posizione…"
           }
         }
       }
@@ -8255,16 +8335,6 @@
         }
       }
     },
-    "Show Faces": {
-      "localizations": {
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mostra volti"
-          }
-        }
-      }
-    },
     "Show Hidden People": {
       "localizations": {
         "it": {
@@ -8321,16 +8391,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mostra barra delle schede"
-          }
-        }
-      }
-    },
-    "Show faces and manage people": {
-      "localizations": {
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mostra volti e gestisci persone"
           }
         }
       }
@@ -9975,16 +10035,6 @@
         }
       }
     },
-    "Sidebar Options": {
-      "localizations": {
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Opzioni barra laterale"
-          }
-        }
-      }
-    },
     "Expand": {
       "localizations": {
         "it": {
@@ -10021,6 +10071,296 @@
           "stringUnit": {
             "state": "translated",
             "value": "Scarica"
+          }
+        }
+      }
+    },
+    "Couldn't Check Every Month": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossibile controllare tutti i mesi"
+          }
+        }
+      }
+    },
+    "%lld months couldn't be loaded, so items without a location may be missing.": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld month couldn't be loaded, so items without a location may be missing."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld months couldn't be loaded, so items without a location may be missing."
+                }
+              }
+            }
+          }
+        },
+        "it": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Impossibile caricare %lld mese: potrebbero mancare elementi senza posizione."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Impossibile caricare %lld mesi: potrebbero mancare elementi senza posizione."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Copy Immich Link": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copia link Immich"
+          }
+        }
+      }
+    },
+    "Show in %@": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostra in %@"
+          }
+        }
+      }
+    },
+    "This link from another app is not valid.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Questo link da un'altra app non è valido."
+          }
+        }
+      }
+    },
+    "Immich Gallery cannot show what this link from another app names.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Immich Gallery non può mostrare ciò che indica questo link da un'altra app."
+          }
+        }
+      }
+    },
+    "Immich Gallery is not signed in to %@ with this account.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Immich Gallery non ha effettuato l'accesso a %@ con questo account."
+          }
+        }
+      }
+    },
+    "Immich Crosslink": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Immich Crosslink"
+          }
+        }
+      }
+    },
+    "Another app asked Immich Gallery to show an item, but Immich Crosslink is turned off.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un'altra app ha chiesto a Immich Gallery di mostrare un elemento, ma Immich Crosslink è disattivato."
+          }
+        }
+      }
+    },
+    "Turn On": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Attiva"
+          }
+        }
+      }
+    },
+    "Other Apps": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Altre app"
+          }
+        }
+      }
+    },
+    "Show photos, albums, people and places in other apps that take part, and open the items they send to Immich Gallery.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostra foto, album, persone e luoghi nelle altre app che partecipano e apri gli elementi che inviano a Immich Gallery."
+          }
+        }
+      }
+    },
+    "Apps That Take Part": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App che partecipano"
+          }
+        }
+      }
+    },
+    "The signed-in account cannot see what this link from another app names.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L'account connesso non può vedere ciò che indica questo link da un'altra app."
+          }
+        }
+      }
+    },
+    "Open in Immich": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apri in Immich"
+          }
+        }
+      }
+    },
+    "Immich Web App": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App web di Immich"
+          }
+        }
+      }
+    },
+    "Open in Immich and Copy Immich Link": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apri in Immich e Copia link Immich"
+          }
+        }
+      }
+    },
+    "Open photos, albums, people and places in Immich's web app in your browser, or copy their address.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apri foto, album, persone e luoghi nell'app web di Immich nel browser, o copiane l'indirizzo."
+          }
+        }
+      }
+    },
+    "%@ is no longer installed.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ non è più installata."
+          }
+        }
+      }
+    },
+    "Immich Gallery could not open %@: %@": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Immich Gallery non ha potuto aprire %1$@: %2$@"
+          }
+        }
+      }
+    },
+    "Forget": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dimentica"
+          }
+        }
+      }
+    },
+    "Learn more…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ulteriori informazioni…"
+          }
+        }
+      }
+    },
+    "Not found": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Non trovata"
+          }
+        }
+      }
+    },
+    "No other app that takes part has been found.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nessun'altra app partecipante è stata trovata."
+          }
+        }
+      }
+    },
+    "See the apps that take part…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vedi le app che partecipano…"
+          }
+        }
+      }
+    },
+    "Apps that take part are found by themselves. Turn one off to leave it out of Show in. One not found stays listed for 30 days, so it stays off if it comes back; Forget removes it now.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le app che partecipano vengono trovate da sole. Disattivane una per escluderla da Mostra in. Un'app non trovata resta in elenco per 30 giorni, così resta disattivata se torna; Dimentica la rimuove subito."
           }
         }
       }
