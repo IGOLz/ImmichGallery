@@ -7705,6 +7705,26 @@
         }
       }
     },
+    "Show Aspect Ratio": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostra proporzioni"
+          }
+        }
+      }
+    },
+    "Show Square Photos": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostra foto quadrate"
+          }
+        }
+      }
+    },
     "Selected Location": {
       "localizations": {
         "it": {

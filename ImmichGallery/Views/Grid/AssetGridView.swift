@@ -2,6 +2,8 @@ import SwiftUI
 
 enum GridMetrics {
     static let defaultSize = 150.0
+    /// Square photos (false) or the Aspect Ratio grid (true), as Photos' toggle.
+    static let aspectRatioKey = "gridAspectRatio"
     static let steps: [Double] = [56, 72, 96, 120, 150, 190, 240, 320, 420]
 
     static func zoomIn(_ size: Double) -> Double { steps.first { $0 > size + 1 } ?? steps.last! }
@@ -41,6 +43,7 @@ struct AssetGridHost<Header: View>: View {
 
     @AppStorage("showInspector") private var showInspector = false
     @AppStorage("gridThumbnailSize") private var thumbnailSize = GridMetrics.defaultSize
+    @AppStorage(GridMetrics.aspectRatioKey) private var aspectRatio = false
     @State private var pendingDelete: [String]?
     @State private var tagRequest: ExploreTagRequest?
     @State private var playLive = false
@@ -148,6 +151,14 @@ struct AssetGridHost<Header: View>: View {
         pendingDelete = ids
     }
 
+    /// Photos' toggle between square photos and whole photos in their own shape.
+    private var aspectRatioButton: some View {
+        Button { aspectRatio.toggle() } label: {
+            Label(aspectRatio ? "Show Square Photos" : "Show Aspect Ratio", systemImage: "rectangle.arrowtriangle.2.inward")
+        }
+        .help(aspectRatio ? "Show Square Photos" : "Show Aspect Ratio")
+    }
+
     private var zoomOutButton: some View {
         Button { thumbnailSize = GridMetrics.zoomOut(thumbnailSize) } label: { Label("Zoom Out", systemImage: "minus.magnifyingglass") }
     }
@@ -183,6 +194,7 @@ struct AssetGridHost<Header: View>: View {
                 ToolbarItem { zoomOutButton }
                 ToolbarItem { zoomInButton }
             }
+            ToolbarItem { aspectRatioButton }
             if let page = model.source.gridPage {
                 ToolbarItem { GridViewOptions(page: page, dateAddedAvailable: GridArrangement.supportsDateAdded(session.version)) }
             }
@@ -242,6 +254,8 @@ struct AssetGridView: View {
     @AppStorage("gridThumbnailSize") private var thumbnailSize = GridMetrics.defaultSize
     @State private var zoomBase: Double?
     @State private var gridWidth: CGFloat = 0
+    /// Whole photos in their own shape, rather than cropped to squares, as Photos' Aspect Ratio grid.
+    @AppStorage(GridMetrics.aspectRatioKey) private var aspectRatio = false
 
     var body: some View {
         Group {
@@ -380,7 +394,8 @@ struct AssetGridView: View {
         let thumbnail = ThumbnailCell(
             asset: asset,
             isSelected: asset.map { model.selection.contains($0.id) } ?? false,
-            size: thumbnailRequestSize
+            size: thumbnailRequestSize,
+            fit: aspectRatio
         )
         return Group {
             if let asset {
@@ -516,6 +531,8 @@ struct ThumbnailCell: View {
     let asset: AssetItem?
     let isSelected: Bool
     let size: ImmichClient.ThumbnailSize
+    /// The whole photo in its own shape, inside its square, instead of the square filled.
+    var fit = false
 
     @State private var image: CGImage?
     @State private var placeholder: CGImage?
@@ -524,9 +541,31 @@ struct ThumbnailCell: View {
     @State private var isVisible = false
 
     var body: some View {
+        if fit {
+            // As Photos' Aspect Ratio grid: the photo fitted inside its square, with room around it.
+            Color.clear
+                .aspectRatio(1, contentMode: .fit)
+                .overlay {
+                    picture(corner: 6)
+                        .aspectRatio(max(0.2, min(5, asset?.ratio ?? 1)), contentMode: .fit)
+                        .padding(5)
+                }
+                .contentShape(Rectangle())
+                .onScrollVisibilityChange(threshold: 0.01) { isVisible = $0 }
+                .task(id: TaskKey(id: asset?.id, size: size, revision: session.metadata.imageRevision, visible: isVisible)) { await load() }
+        } else {
+            picture(corner: 0)
+                .aspectRatio(1, contentMode: .fit)
+                .contentShape(Rectangle())
+                .onScrollVisibilityChange(threshold: 0.01) { isVisible = $0 }
+                .task(id: TaskKey(id: asset?.id, size: size, revision: session.metadata.imageRevision, visible: isVisible)) { await load() }
+        }
+    }
+
+    /// The photo with its badges and selection, cropped to the shape it is given.
+    private func picture(corner: CGFloat) -> some View {
         Rectangle()
             .fill(.quaternary.opacity(0.5))
-            .aspectRatio(1, contentMode: .fit)
             .overlay {
                 if let image {
                     Image(decorative: image, scale: 1).resizable().scaledToFill()
@@ -538,17 +577,19 @@ struct ThumbnailCell: View {
                         .foregroundStyle(.tertiary)
                 }
             }
-            .clipped()
             .overlay(alignment: .bottom) { badges }
+            .clipShape(.rect(cornerRadius: corner))
             .overlay {
                 if isSelected {
-                    Rectangle().strokeBorder(Color.accentColor, lineWidth: 3)
-                    Color.accentColor.opacity(0.12)
+                    if corner > 0 {
+                        // Around the photo, just outside it, as Photos draws it.
+                        RoundedRectangle(cornerRadius: corner + 3).strokeBorder(Color.accentColor, lineWidth: 3).padding(-4)
+                    } else {
+                        Rectangle().strokeBorder(Color.accentColor, lineWidth: 3)
+                        Color.accentColor.opacity(0.12)
+                    }
                 }
             }
-            .contentShape(Rectangle())
-            .onScrollVisibilityChange(threshold: 0.01) { isVisible = $0 }
-            .task(id: TaskKey(id: asset?.id, size: size, revision: session.metadata.imageRevision, visible: isVisible)) { await load() }
     }
 
     private struct TaskKey: Equatable { let id: String?; let size: ImmichClient.ThumbnailSize; let revision: Int; let visible: Bool }
