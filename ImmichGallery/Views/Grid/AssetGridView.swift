@@ -74,6 +74,7 @@ struct AssetGridHost<Header: View>: View {
         .modifier(MetadataHost(model: model)) // Metadata
         .navigationTitle(viewerItem?.date.map { Text(ImmichDate.day($0)) } ?? title)
         .navigationSubtitle(subtitle)
+        .navigationBarBackButtonHidden(model.viewerID != nil)
         .toolbar { toolbar }
         .sheet(item: $tagRequest) { request in
             ExploreTagPicker(tags: session.exploreTags, removing: request.removing) { tag in
