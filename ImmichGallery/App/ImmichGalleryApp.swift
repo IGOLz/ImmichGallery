@@ -25,7 +25,10 @@ struct ImmichGalleryApp: App {
         .onChange(of: MacIntegrationRouter.shared.pending, initial: true) { openPendingIntents() }
         .onChange(of: MacIntegrationRouter.shared.widgetLinks, initial: true) { openWidgetLinks() } // Widget
         .onChange(of: MacIntegrationRouter.shared.crosslinks, initial: true) { openCrosslinks() } // Crosslink
-        .onChange(of: app.services.map(ObjectIdentifier.init)) { openPendingIntents(); openWidgetLinks(); openCrosslinks() }
+        .onChange(of: app.services.map(ObjectIdentifier.init)) {
+            CrosslinkReceiver.accountChanged() // Crosslink: links of the account before are dropped
+            openPendingIntents(); openWidgetLinks(); openCrosslinks()
+        }
         .commands { AppCommands(app: app); AdminCommands(app: app); UploadCommands(app: app); ViewerCommands(); MacIntegrationCommands(); UpdateCommands(updater: .shared) }
 
         AdminScene(app: app) // Admin

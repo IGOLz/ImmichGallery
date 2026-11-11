@@ -20,6 +20,9 @@ struct MainView: View {
     @State private var editingSidebar = false
     @State private var columnVisibility = NavigationSplitViewVisibility.automatic
     @State private var path = NavigationPath() // Crosslink: a person or a place a link names, and pushed pages
+    @State private var crosslink = CrosslinkNavigation() // Crosslink: the link this window is still showing
+    @State private var linkPath = NavigationPath() // Crosslink: the path as the link last set it
+    @State private var pendingPush: PendingPush? // Crosslink: pushed once the page's new stack appears
     @Environment(\.openWindow) private var openWindow
     @FocusState private var searchFocused: Bool
 
@@ -36,6 +39,7 @@ struct MainView: View {
         } detail: {
             NavigationStack(path: $path) {
                 detail
+                    .onAppear { pushPending() } // Crosslink: this page's stack exists now
                     .navigationDestination(for: CrosslinkDestination.self) { destination in // Crosslink
                         AssetGridContainer(source: destination.source, title: Text(verbatim: destination.title))
                     }
@@ -66,6 +70,11 @@ struct MainView: View {
         .onReceive(NotificationCenter.default.publisher(for: .crosslinkShow, object: session)) { note in // Crosslink
             if let item = note.userInfo?["item"] as? Crosslink.Item { showCrosslink(item) }
         }
+        // Crosslink: another link came, the user pushed or popped a page, or the window closed (also on signing out
+        // or switching accounts): what this window was still doing for a link is stale.
+        .onReceive(NotificationCenter.default.publisher(for: .crosslinkArrived)) { _ in dropLink() }
+        .onChange(of: path) { _, path in if path != linkPath { dropLink() } }
+        .onDisappear { dropLink() }
         .onSubmit(of: .search) {
             let query = searchText.trimmingCharacters(in: .whitespaces)
             guard !query.isEmpty else { return }
@@ -83,14 +92,49 @@ struct MainView: View {
         }
     }
 
-    /// Changes the page, clearing pages pushed on the old one first, so the new page's stack never sees them.
+    /// Changes the page, clearing pages pushed on the old one first, so the new page's stack never sees them. Not a
+    /// link's doing, so it leaves any link this window was still showing.
     private func select(_ item: SidebarItem?) {
+        dropLink()
         path = NavigationPath()
         selection = item
     }
 
+    // MARK: Crosslink
+
+    /// A page a link pushes once its page's new stack exists.
+    private struct PendingPush {
+        let page: SidebarItem
+        let ticket: CrosslinkNavigation.Ticket
+        let push: (inout NavigationPath) -> Void
+    }
+
+    private func dropLink() {
+        crosslink.invalidate()
+        pendingPush = nil
+    }
+
+    /// A link changes the page.
+    private func linkSelect(_ item: SidebarItem) {
+        linkPath = NavigationPath()
+        path = linkPath
+        selection = item
+    }
+
+    private func pushPending() {
+        guard let pending = pendingPush, pending.page == selection else { return }
+        pendingPush = nil
+        guard crosslink.isCurrent(pending.ticket) else { return }
+        var pushed = NavigationPath()
+        pending.push(&pushed)
+        linkPath = pushed
+        path = pushed
+    }
+
     // Crosslink: shows what a link from another app names, in the page Immich's web app would show it on.
     private func showCrosslink(_ item: Crosslink.Item) {
+        pendingPush = nil
+        let ticket = crosslink.begin()
         switch item {
         case .page(let page):
             let target: SidebarItem = switch page {
@@ -101,53 +145,60 @@ struct MainView: View {
             case .favorites: .favorites
             case .archive: .archive
             }
-            select(target)
-        case .album(let id): select(.album(id))
-        case .person(let id): openPerson(id)
-        case .place(let place): open(.explore(.places), pushing: CrosslinkDestination.place(place))
+            linkSelect(target)
+        case .album(let id): linkSelect(.album(id))
+        case .person(let id): openPerson(id, ticket: ticket)
+        case .place(let place): open(.explore(.places), ticket: ticket) { $0.append(CrosslinkDestination.place(place)) }
         case .asset(let id, let context):
             let alone = { openWindow(id: "widget-photo", value: id) } // as the desktop widget shows a photo
+            let reveal = { (source: GridSource) in
+                session.crosslinkReveal(id, in: source, ticket: ticket, navigation: crosslink, alone: alone)
+            }
             switch context {
             case .album(let album)?:
-                select(.album(album))
-                session.crosslinkReveal(id, in: .album(album), alone: alone)
+                linkSelect(.album(album))
+                reveal(.album(album))
             case .person(let person)?:
-                openPerson(person) { session.crosslinkReveal(id, in: .person(person), alone: alone) }
+                openPerson(person, ticket: ticket) { reveal(.person(person)) }
             case .favorites?:
-                select(.favorites)
-                session.crosslinkReveal(id, in: .favorites, alone: alone)
+                linkSelect(.favorites)
+                reveal(.favorites)
             case .archive?:
-                select(.archive)
-                session.crosslinkReveal(id, in: .archive, alone: alone)
+                linkSelect(.archive)
+                reveal(.archive)
             case .search(let place)?:
                 let destination = CrosslinkDestination.place(place)
-                open(.explore(.places), pushing: destination)
-                session.crosslinkReveal(id, in: destination.source, alone: alone)
+                open(.explore(.places), ticket: ticket) { $0.append(destination) }
+                reveal(destination.source)
             case nil:
-                select(.library)
-                session.crosslinkReveal(id, in: .library, alone: alone)
+                linkSelect(.library)
+                reveal(.library)
             }
         }
     }
 
-    /// Selects a page, then pushes onto it once its stack exists (a new selection makes a new stack).
-    private func open(_ page: SidebarItem, pushing value: some Hashable) {
-        select(page)
-        Task {
-            try? await Task.sleep(for: .milliseconds(80))
-            guard selection == page else { return } // the user, or the link, moved on meanwhile
-            path = NavigationPath()
-            path.append(value)
+    /// Selects a page, then pushes onto it: now if it is the page shown, or once its new stack appears (a new
+    /// selection makes a new stack), if the link is still current then.
+    private func open(_ page: SidebarItem, ticket: CrosslinkNavigation.Ticket,
+                      pushing push: @escaping (inout NavigationPath) -> Void) {
+        let shown = selection == page
+        linkSelect(page)
+        if shown {
+            push(&linkPath)
+            path = linkPath
+        } else {
+            pendingPush = PendingPush(page: page, ticket: ticket, push: push)
         }
     }
 
-    private func openPerson(_ id: String, then: @escaping () -> Void = {}) {
-        Task {
-            do {
-                let person = try await session.client.person(id)
-                open(.people, pushing: person)
+    private func openPerson(_ id: String, ticket: CrosslinkNavigation.Ticket, then: @escaping () -> Void = {}) {
+        let client = session.client
+        let navigation = crosslink
+        navigation.run(ticket) {
+            await navigation.fetchThenShow(ticket, fetch: { try await client.person(id) }, show: { person in
+                open(.people, ticket: ticket) { $0.append(person) }
                 then()
-            } catch { CrosslinkReceiver.cannotShow(error, session: session) }
+            }, failed: { CrosslinkReceiver.cannotShow($0, session: session) })
         }
     }
 

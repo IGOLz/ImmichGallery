@@ -41,6 +41,7 @@ cases = {
     'people-arrangement': models + [app('PeopleArrangement'), 'Tests/PeopleArrangementChecks.swift'],
     'duplicates-arrangement': models + [app('DuplicatesArrangement'), 'Tests/DuplicatesArrangementChecks.swift'],
     'crosslink': [app('Crosslink'), 'Tests/CrosslinkChecks.swift'],
+    'crosslink-navigation': [app('Crosslink'), app('CrosslinkNavigation'), 'Tests/CrosslinkNavigationChecks.swift'],
 }
 
 def check(item):

@@ -10024,6 +10024,36 @@
           }
         }
       }
+    },
+    "This item is in the Locked Folder. Open it from the Locked Folder in Immich Gallery.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Questo elemento è nella cartella bloccata. Aprilo dalla cartella bloccata in Immich Gallery."
+          }
+        }
+      }
+    },
+    "Photo in the Locked Folder": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Foto nella cartella bloccata"
+          }
+        }
+      }
+    },
+    "Open it from the Locked Folder in Immich Gallery.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aprila dalla cartella bloccata in Immich Gallery."
+          }
+        }
+      }
     }
   },
   "version": "1.0"
