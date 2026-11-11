@@ -9,6 +9,7 @@ struct GridViewOptions: View {
     @AppStorage private var mediaType: GridMediaType
     @AppStorage private var sortBy: GridSortBy
     @AppStorage private var order: GridOrder
+    @AppStorage private var location: GridLocation
 
     init(page: GridPage, dateAddedAvailable: Bool) {
         self.page = page
@@ -17,10 +18,17 @@ struct GridViewOptions: View {
         _mediaType = AppStorage(wrappedValue: .all, page.key("mediaType"))
         _sortBy = AppStorage(wrappedValue: .dateTaken, page.key("sortBy"))
         _order = AppStorage(wrappedValue: .newestFirst, page.key("order"))
+        _location = AppStorage(wrappedValue: page.defaultLocation, page.key("location"))
     }
 
     var body: some View {
         Menu {
+            if page.offersLocationFilter {
+                Picker("Show", selection: $location) {
+                    ForEach(GridLocation.allCases) { Text($0.title).tag($0) }
+                }
+                .pickerStyle(.inline)
+            }
             if page.offersFavoritesFilter {
                 Picker("Show", selection: $show) {
                     ForEach(GridShow.allCases) { Text($0.title).tag($0) }
@@ -51,6 +59,7 @@ struct GridViewOptions: View {
             }
         } label: {
             let filtered = (page.offersFavoritesFilter && show != .all) || (page.offersMediaTypeFilter && mediaType != .all)
+                || (page.offersLocationFilter && location != .all)
             Label("View Options", systemImage: filtered ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
         }
         .help(page.offersSortBy && !dateAddedAvailable ? "View Options. Sorting by Date Added needs Immich v3.0 or later." : "View Options")
@@ -64,6 +73,7 @@ struct GridViewOptionsReloader: ViewModifier {
     @AppStorage private var mediaType: GridMediaType
     @AppStorage private var sortBy: GridSortBy
     @AppStorage private var order: GridOrder
+    @AppStorage private var location: GridLocation
 
     init(page: GridPage, model: AssetGridModel) {
         self.model = model
@@ -71,10 +81,11 @@ struct GridViewOptionsReloader: ViewModifier {
         _mediaType = AppStorage(wrappedValue: .all, page.key("mediaType"))
         _sortBy = AppStorage(wrappedValue: .dateTaken, page.key("sortBy"))
         _order = AppStorage(wrappedValue: .newestFirst, page.key("order"))
+        _location = AppStorage(wrappedValue: page.defaultLocation, page.key("location"))
     }
 
     func body(content: Content) -> some View {
-        content.onChange(of: GridArrangement(show: show, mediaType: mediaType, sortBy: sortBy, order: order)) {
+        content.onChange(of: GridArrangement(show: show, mediaType: mediaType, sortBy: sortBy, order: order, location: location)) {
             Task { await model.reload() }
         }
     }
@@ -96,5 +107,6 @@ extension GridPage {
     func showAllItems(defaults: UserDefaults = .standard) {
         defaults.set(GridShow.all.rawValue, forKey: key("show"))
         defaults.set(GridMediaType.all.rawValue, forKey: key("mediaType"))
+        defaults.set(GridLocation.all.rawValue, forKey: key("location"))
     }
 }

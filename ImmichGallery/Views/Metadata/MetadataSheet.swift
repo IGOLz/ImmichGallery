@@ -10,7 +10,6 @@ struct MetadataSheet: View {
     @State private var loadError: String?
 
     private var minimumWidth: CGFloat {
-        if #available(macOS 26, *) { return 480 }
         switch request.kind {
         case .date: return 480
         case .location: return 580
@@ -33,8 +32,8 @@ struct MetadataSheet: View {
             } else { ProgressView().padding(40) }
         }
         .padding(20)
-        // On macOS 15, sized for the editor from the start: a sheet there keeps the width it
-        // had while loading, which clipped the 540 pt location map and the crop canvas.
+        // Sized for the editor from the start: a sheet keeps the width it had while loading
+        // (seen on macOS 15 and 27), which clipped the location map and the crop canvas.
         .frame(minWidth: minimumWidth)
         .interactiveDismissDisabled(session.metadata.busy)
         .task {
@@ -145,17 +144,28 @@ struct MetadataLocationEditor: View {
                 Map(position: $position) {
                     if let coordinate { Marker("Selected Location", coordinate: coordinate) }
                 }
+                .mapControls {
+                    MapZoomStepper()
+                    MapCompass()
+                    MapScaleView()
+                }
                 .onTapGesture { point in
                     if let value = proxy.convert(point, from: .local) {
                         let normalized = metadataCoordinate(latitude: value.latitude, longitude: value.longitude)
                         coordinate = .init(latitude: normalized.latitude, longitude: normalized.longitude)
                     }
                 }
-            }.frame(width: 540, height: 330).clipShape(.rect(cornerRadius: 10))
-            Text("Click the map to place a pin. Applies to \(ids.count) items.").font(.caption)
-            if let coordinate {
-                Text("\(coordinate.latitude.formatted()), \(coordinate.longitude.formatted())").font(.caption.monospacedDigit())
             }
+            .frame(minWidth: 540, maxWidth: .infinity).frame(height: 330).clipShape(.rect(cornerRadius: 10))
+            HStack(alignment: .firstTextBaseline) {
+                Text("Click the map to place a pin. Applies to \(ids.count) items.")
+                Spacer()
+                // Fixed decimal points, as in Immich: a comma decimal separator made "56,23, 9,68" ambiguous.
+                if let coordinate {
+                    Text(verbatim: String(format: "%.6f, %.6f", coordinate.latitude, coordinate.longitude))
+                        .monospacedDigit().textSelection(.enabled)
+                }
+            }.font(.caption).foregroundStyle(.secondary)
             HStack {
                 Spacer()
                 Button("Cancel") { dismiss() }.keyboardShortcut(.cancelAction)
