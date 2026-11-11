@@ -9,6 +9,7 @@ enum Crosslink {
     /// The draft this app follows, announced in Info.plist (`ImmichCrosslink`).
     static let draft = "0.2"
     static let site = URL(string: "https://jakob.hviid.phd/immich-crosslink/")!
+    static let participantsPage = URL(string: "https://jakob.hviid.phd/immich-crosslink/participants.html")!
 
     enum Kind: String, CaseIterable, Sendable {
         case asset, album, person, place, page

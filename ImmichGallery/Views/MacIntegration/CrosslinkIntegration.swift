@@ -93,8 +93,13 @@ final class CrosslinkDirectory {
                   // An app that cannot start (its program missing) is left out.
                   let program = bundle.executableURL, FileManager.default.isExecutableFile(atPath: program.path),
                   seen.insert(id).inserted, let kinds = Crosslink.announcedKinds(bundle.infoDictionary) else { return nil }
-            var name = FileManager.default.displayName(atPath: url.path)
-            if name.hasSuffix(".app") { name.removeLast(4) }
+            // Named by the bundle's display name, as the system shows the app, or its file name without one.
+            var name = (bundle.localizedInfoDictionary?["CFBundleDisplayName"] as? String)
+                ?? (bundle.infoDictionary?["CFBundleDisplayName"] as? String) ?? ""
+            if name.isEmpty {
+                name = FileManager.default.displayName(atPath: url.path)
+                if name.hasSuffix(".app") { name.removeLast(4) }
+            }
             let icon = NSWorkspace.shared.icon(forFile: url.path)
             icon.size = NSSize(width: 16, height: 16)
             return CrosslinkParticipant(bundleID: id, name: name, url: url, kinds: kinds, icon: icon)
@@ -115,7 +120,8 @@ final class CrosslinkDirectory {
         store(Array(byID.values), unhiding: Set(expired.map(\.id)), installed: installed)
     }
 
-    /// Forgets an app that is away: it leaves Settings, and its switch goes too.
+    /// Forgets an app that is not found: what is remembered of it, and its switch. A found app has no Forget: it
+    /// announces itself, so it would be found again at once; its switch is the control for it.
     func forget(_ id: String) {
         let installed = Set(participants.map(\.bundleID))
         guard !installed.contains(id) else { return }
@@ -320,37 +326,30 @@ struct CrosslinkSettingsView: View {
     var body: some View {
         Form {
             Section {
-                HStack {
-                    Toggle("Immich Crosslink", isOn: $enabled)
-                    Spacer()
-                    Link("Read more", destination: Crosslink.site)
-                }
-                Text("Show photos, albums, people and places in other apps that take part, and open the items they send to Immich Gallery.")
+                Toggle("Immich Crosslink", isOn: $enabled)
+                // As macOS settings do, the link ends the description.
+                Text(Self.described(String(localized: "Show photos, albums, people and places in other apps that take part, and open the items they send to Immich Gallery."),
+                                    link: String(localized: "Learn more…"), to: Crosslink.site))
                     .font(.caption).foregroundStyle(.secondary)
             }
-            Section("Apps That Take Part") {
+            Section {
                 if directory.participants.isEmpty && directory.absent.isEmpty {
-                    Text("No other app that takes part is installed.").foregroundStyle(.secondary)
+                    Text(Self.described(String(localized: "No other app that takes part has been found."),
+                                        link: String(localized: "See the apps that take part…"), to: Crosslink.participantsPage))
+                        .foregroundStyle(.secondary)
                 }
                 ForEach(directory.participants) { app in
-                    Toggle(isOn: shown(app.bundleID)) {
-                        Label { Text(verbatim: app.name) } icon: { Image(nsImage: app.icon) }
-                    }
+                    row(id: app.bundleID, name: app.name, icon: app.icon, notFound: false)
                 }
-                // Apps seen before that are away: their switch still holds for when they come back.
+                // Apps seen before that are not found now: their switch still holds for when they come back.
                 ForEach(directory.absent) { app in
-                    HStack {
-                        Toggle(isOn: shown(app.id)) {
-                            Label {
-                                VStack(alignment: .leading) {
-                                    Text(verbatim: app.name)
-                                    Text("Not installed").font(.caption).foregroundStyle(.secondary)
-                                }
-                            } icon: { Image(nsImage: Self.absentIcon) }
-                        }
-                        Button("Forget") { directory.forget(app.id) }
-                    }
+                    row(id: app.id, name: app.name, icon: Self.absentIcon, notFound: true)
                 }
+            } header: {
+                Text("Apps That Take Part")
+            } footer: {
+                Text("Apps that take part are found by themselves. Turn one off to leave it out of Show in. One not found stays listed for 30 days, so it stays off if it comes back; Forget removes it now.")
+                    .font(.caption).foregroundStyle(.secondary)
             }
             .disabled(!enabled)
             Section("Immich Web App") {
@@ -361,6 +360,30 @@ struct CrosslinkSettingsView: View {
         }
         .formStyle(.grouped)
         .onAppear { directory.refresh() }
+    }
+
+    /// One app: its icon and name, and its switch; one not found also says so and has Forget.
+    private func row(id: String, name: String, icon: NSImage, notFound: Bool) -> some View {
+        HStack {
+            Label {
+                VStack(alignment: .leading) {
+                    Text(verbatim: name)
+                    if notFound { Text("Not found").font(.caption).foregroundStyle(.secondary) }
+                }
+            } icon: { Image(nsImage: icon) }
+            Spacer()
+            if notFound { Button("Forget") { directory.forget(id) } }
+            Toggle(isOn: shown(id)) { Text(verbatim: name) }.labelsHidden()
+        }
+    }
+
+    /// A sentence ending in a link, as a settings description ends in Learn more….
+    private static func described(_ text: String, link title: String, to url: URL) -> AttributedString {
+        var result = AttributedString(text + " ")
+        var link = AttributedString(title)
+        link.link = url
+        result.append(link)
+        return result
     }
 
     private static let absentIcon: NSImage = {

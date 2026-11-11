@@ -58,8 +58,8 @@ an item by Immich's own web path and the server's address.
   `tests/links.json` of the draft at 8a3c16e): every link made byte for byte, every link read to the given result.
 - **Sending:** photos (grid and viewer), albums (Albums page and sidebar), people and the Places page's cities get
   **Open in Immich** and **Copy Immich Link**, the
-  item's web address (both off with Settings ▸ Other Apps ▸ Immich Web App, `crosslink.webLinks`), and **Show in *app*** for each other app announcing the item's kind, by the name and icon macOS
-  gives it, sent to that app alone (`NSWorkspace.open(_:withApplicationAt:configuration:)`). A photo's link carries the
+  item's web address (both off with Settings ▸ Other Apps ▸ Immich Web App, `crosslink.webLinks`), and **Show in *app*** for each other app announcing the item's kind, by the name (the bundle's display
+  name) and icon macOS gives it, sent to that app alone (`NSWorkspace.open(_:withApplicationAt:configuration:)`). A photo's link carries the
   album, person, Favorites or Archive it is seen in. The list of apps (`CrosslinkDirectory`) is read again when the
   app becomes active and when another app launches; both builds of this app are left out.
 - **Receiving:** `MacIntegrationLifecycle` queues `immich-crosslink:` URLs for the scene, which opens them once the
@@ -67,10 +67,11 @@ an item by Immich's own web path and the server's address.
   seen in (or All Photos), an album, person or page as in Immich's web app, a place as Immich's metadata search. A link
   for another server or user, one this app cannot show, or an invalid one gets an alert and nothing else; no link
   switches accounts or asks to sign in.
-- **Settings ▸ Other Apps:** the protocol's **Immich Crosslink** switch (`crosslink.enabled`, on by default) with a
-  **Read more** link to the protocol, and a switch for each app that takes part (`crosslink.hidden`). Apps seen before
-  are remembered (`crosslink.seen`: name and last-seen date per bundle id): one away is listed as Not installed with
-  its switch and a Forget button, and is forgotten, switch and all, after 30 days unseen. With the main switch off, a
+- **Settings ▸ Other Apps:** the protocol's **Immich Crosslink** switch (`crosslink.enabled`, on by default), whose
+  description ends in a **Learn more…** link to the protocol, then each app that takes part by its bundle's display
+  name and icon, with its switch (`crosslink.hidden`), and a description of what they do. Apps seen are remembered
+  (`crosslink.seen`: name and last-seen date per bundle id): one not found now is listed as Not found, keeps its
+  switch, and has **Forget**, which removes it and its switch now; one unseen for 30 days is forgotten. With none seen, the section links to the protocol's participants page. With the main switch off, a
   received link only says so, with Turn On. **Immich Web App** has the switch for Open in Immich and Copy Immich Link
   (`crosslink.webLinks`).
 - **Other apps are found in `/Applications` only:** the sandboxed app reads another app's Info.plist through
