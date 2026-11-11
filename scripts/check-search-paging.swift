@@ -458,5 +458,30 @@ final class PagingProtocol: URLProtocol, @unchecked Sendable {
         // Assigning a location removes the item from the list.
         model.setLocation(["2026-01-01-missing"], latitude: 1, longitude: 2)
         assert(model.totalCount == 1 && model.uncheckedLocationMonths == 0)
+
+        // Another window confirms a location while an older month response is still in flight.
+        for location in [GridLocation.missing, .all] {
+            UserDefaults.standard.set(location.rawValue, forKey: key)
+            PagingProtocol.holdMonth.withLock { $0 = "2026-01-01" }
+            await model.reload()
+            await model.viewerLoadSection(0)
+            for _ in 0..<100 where PagingProtocol.delayed.withLock({ $0 == nil }) { try await Task.sleep(for: .milliseconds(10)) }
+            if location == .all {
+                model.ensureLoaded(2)
+                for _ in 0..<100 where PagingProtocol.delayed.withLock({ $0 == nil }) { try await Task.sleep(for: .milliseconds(10)) }
+            }
+            let stale = PagingProtocol.delayed.withLock { value in let result = value; value = nil; return result }!
+            session.setLocationInGrids(["2026-01-01-missing"], latitude: 1, longitude: 2)
+            PagingProtocol.holdMonth.withLock { $0 = nil }
+            stale.finishDelayed()
+            await model.viewerLoadSection(2)
+            try await scanned()
+            if location == .missing {
+                assert(model.item("2026-01-01-missing") == nil, "A stale month must not reinsert an item located in another window")
+            } else {
+                assert(model.item("2026-01-01-missing")?.latitude == 1 && model.item("2026-01-01-missing")?.longitude == 2,
+                       "A stale month must not restore the old GPS badge")
+            }
+        }
     }
 }

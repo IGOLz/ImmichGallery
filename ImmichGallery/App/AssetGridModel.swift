@@ -195,6 +195,7 @@ final class AssetGridModel {
     /// The first load, shared so a second caller waits for it instead of returning early (Widget).
     @ObservationIgnored private var loadTask: Task<Void, Never>?
     @ObservationIgnored private var loadAllTask: Task<Void, Never>? // Assign Location
+    @ObservationIgnored private var assignedLocations: [String: (latitude: Double, longitude: Double)] = [:]
 
     init(source: GridSource, session: LibrarySession, reusing previous: AssetGridModel? = nil) {
         self.source = source
@@ -321,6 +322,7 @@ final class AssetGridModel {
         isStale = false
         sortedSmartResults = nil
         searchResultsLoaded = 0
+        assignedLocations = [:] // A new generation fetches locations confirmed before its requests.
         pageFailed = false
         sectionTasks.values.forEach { $0.cancel() }
         sectionTasks = [:]
@@ -393,6 +395,14 @@ final class AssetGridModel {
                 guard generation == loadGeneration,
                       let i = sections.firstIndex(where: { $0.id == id }) else { return }
                 var assets = AssetItem.from(columns, includingLocked: source == .locked).filter { self.source != .geolocation || (session.user?.id != nil && $0.ownerId == session.user?.id) }
+                // Another window may have assigned a location after this request began.
+                for i in assets.indices {
+                    if let location = assignedLocations[assets[i].id] {
+                        assets[i].latitude = location.latitude
+                        assets[i].longitude = location.longitude
+                        assets[i].city = nil
+                    }
+                }
                 if case .explore(.map(let query)) = source { assets.removeAll { !query.includes($0.date) } }
                 if arrangement?.hidesLocated == true { assets.removeAll(where: \.hasLocation) }
                 sections[i].assets = assets
@@ -687,6 +697,7 @@ final class AssetGridModel {
 
     /// Assign Location: located items leave a Without Location list; elsewhere the GPS badges follow.
     func setLocation(_ ids: [String], latitude: Double, longitude: Double) {
+        for id in ids { assignedLocations[id] = (latitude, longitude) }
         if arrangement?.hidesLocated == true { remove(ids) }
         else { update(ids) { $0.latitude = latitude; $0.longitude = longitude; $0.city = nil } }
     }
