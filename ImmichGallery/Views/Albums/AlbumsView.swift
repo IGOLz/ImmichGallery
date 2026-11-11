@@ -164,7 +164,7 @@ struct AlbumsView: View {
 
     private var viewOptions: some View {
         Menu {
-            Picker("View", selection: $viewMode.animation(.smooth(duration: 0.3))) {
+            Picker("View", selection: $viewMode) {
                 ForEach(AlbumsViewMode.allCases) { Text($0.title).tag($0) }
             }
             .pickerStyle(.inline)
