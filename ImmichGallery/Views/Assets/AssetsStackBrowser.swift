@@ -33,6 +33,9 @@ struct AssetsStackBrowser: View {
     @Environment(\.dismiss) private var dismiss
     let stackID: String
     let model: AssetGridModel
+    var didMutate: () -> Void = {}
+    @State private var mutationTask: Task<Void, Never>?
+    @State private var isPresented = true
     @State private var stack: AssetsStack?
     @State private var selected: String?
     @State private var error: String?
@@ -76,7 +79,12 @@ struct AssetsStackBrowser: View {
         }
         .padding(20).frame(minWidth: 700, idealWidth: 900, minHeight: 550, idealHeight: 700)
         .task { await load() }
-        .onDisappear { Task { await model.reload() } }
+        .onDisappear {
+            isPresented = false
+            mutationTask?.cancel()
+            mutationTask = nil
+            Task { await model.reload() }
+        }
         .confirmationDialog("Unstack all members?", isPresented: $unstack, titleVisibility: .visible) {
             Button("Unstack") { perform { try await session.client.assetsUnstack(stackID); dismiss() } }
         } message: { Text("All photos remain in your library.") }
@@ -87,37 +95,40 @@ struct AssetsStackBrowser: View {
     private func load() async {
         do {
             let loaded = try await session.client.assetsStack(stackID)
+            guard canMutate else { return }
             stack = AssetsStack(id: loaded.id, primaryAssetId: loaded.primaryAssetId, assets: loaded.assets.filter { ($0.visibility == "locked") == (model.source == .locked) })
             if stack?.assets.contains(where: { $0.id == selected }) != true { selected = stack?.primaryAssetId }
-        } catch ImmichError.http(404, _) { dismiss() }
-        catch { session.handle(error); self.error = error.localizedDescription }
+        } catch ImmichError.http(404, _) { if canMutate { dismiss() } }
+        catch { guard canMutate else { return }; session.handle(error); self.error = error.localizedDescription }
     }
     /// Reads the stack again and moves only members that are still in it, still yours and still not the cover.
     private func trashOthersThanCover() async throws {
         guard let shown = stack, let userID = session.user?.id, !userID.isEmpty else { return }
-        let current = try await session.client.assetsStack(stackID)
-        guard current.primaryAssetId == shown.primaryAssetId else {
-            throw ImmichError.http(409, String(localized: "The stack changed. Check it again before moving photos."))
-        }
-        let visible = Set(shown.assets.map(\.id))
-        let ids = current.assets
-            .filter { $0.id != current.primaryAssetId && visible.contains($0.id) && $0.ownerId == userID && !$0.isTrashed && $0.visibility != "locked" }
-            .map(\.id)
-        guard !ids.isEmpty else { return }
-        try await session.client.delete(ids, force: false)
+        try await AssetsStackMutation.trashOthers(client: session.client, stackID: stackID, shown: shown,
+                                                  userID: userID, isCurrent: { canMutate })
+        guard canMutate else { return }
         await session.reloadAlbums()
+        guard canMutate else { return }
         dismiss()
     }
 
+    private var canMutate: Bool {
+        isPresented && !Task.isCancelled && MacIntegrationRouter.shared.app?.services === session.services
+    }
+
     private func perform(_ action: @escaping @MainActor () async throws -> Void) {
+        guard canMutate, !busy else { return }
         busy = true
-        Task {
+        mutationTask = Task {
             defer { busy = false }
             do {
+                guard canMutate else { return }
                 try await action()
+                didMutate()
+                guard canMutate else { return }
                 session.invalidateGrids()
                 await load()
-            } catch { session.handle(error); self.error = error.localizedDescription }
+            } catch { guard canMutate else { return }; session.handle(error); self.error = error.localizedDescription }
         }
     }
 }

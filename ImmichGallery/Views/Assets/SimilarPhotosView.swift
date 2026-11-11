@@ -58,7 +58,9 @@ struct SimilarPhotosSheet: View {
         .onAppear(perform: makeModel)
         // Closing the sheet stops analysis and any stacking not yet sent.
         .onDisappear { model?.cancel() }
-        .sheet(item: $browsing) { AssetsStackBrowser(stackID: $0.id, model: grid) }
+        .sheet(item: $browsing) { ref in
+            AssetsStackBrowser(stackID: ref.id, model: grid, didMutate: { model?.invalidateStack(ref.id) })
+        }
     }
 
     private func makeModel() {
@@ -181,7 +183,11 @@ struct SimilarPhotosSheet: View {
         let coverage = model.coverage
         let excluded = coverage.excluded.values.reduce(0, +)
         VStack(alignment: .leading, spacing: 4) {
-            Text("Checked \(coverage.eligible) photos and found \(model.groups.count) groups.")
+            if model.needsRescan {
+                Text("A stack changed. Find similar photos again to refresh the suggestions.").foregroundStyle(.secondary)
+            } else {
+                Text("Checked \(coverage.eligible) photos and found \(model.groups.count) groups.")
+            }
             if excluded > 0 {
                 Text("Skipped \(excluded) items: videos, other people's photos, and items in a stack, Recently Deleted or the Locked Folder.")
                     .foregroundStyle(.secondary)
@@ -202,7 +208,7 @@ struct SimilarPhotosSheet: View {
 
     @ViewBuilder private func results(_ model: SimilarPhotosModel) -> some View {
         if model.groups.isEmpty {
-            if model.phase == .ready {
+            if model.phase == .ready && !model.needsRescan {
                 ContentUnavailableView("No Similar Photos", systemImage: "square.stack.3d.up.slash",
                                        description: Text("No photos taken close together look alike enough. Try a longer period or a looser sensitivity."))
             } else { Spacer(minLength: 0) }

@@ -21,7 +21,7 @@ final class SimilarPhotosModel {
         case failed(String)
     }
 
-    enum GroupStatus: Equatable {
+    enum GroupStatus: Equatable, Sendable {
         case pending
         case stacked(stackID: String)
         /// Stacked, but the server kept another cover.
@@ -31,7 +31,7 @@ final class SimilarPhotosModel {
         case failed(String)
     }
 
-    struct Group: Identifiable, Equatable {
+    struct Group: Identifiable, Equatable, Sendable {
         let id: String
         let members: [SimilarPhotos.Candidate]
         let suggestedCover: String
@@ -63,6 +63,7 @@ final class SimilarPhotosModel {
     private(set) var phase = Phase.idle
     private(set) var groups: [Group] = []
     private(set) var coverage = Coverage()
+    private(set) var needsRescan = false
     /// Responses for the photos in groups, for thumbnails and the stack browser.
     private(set) var assets: [String: AssetResponse] = [:]
 
@@ -106,6 +107,7 @@ final class SimilarPhotosModel {
         cancel()
         let generation = generation
         groups = []
+        needsRescan = false
         assets = [:]
         coverage = Coverage(scope: scope)
         guard !userID.isEmpty else { phase = .failed(String(localized: "Your account isn't loaded yet. Try again in a moment.")); return }
@@ -238,24 +240,46 @@ final class SimilarPhotosModel {
         }
         guard live(generation) else { return }
         let byID = Dictionary(found.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
-        var groups: [Group] = []
-        for run in runs {
-            let found = SimilarPhotos.groups(run, threshold: options.sensitivity.threshold) { i, j in
-                guard let a = features[run[i].id], let b = features[run[j].id] else { return nil }
-                return SimilarPhotosVisionAnalyzer.distance(a.featurePrint, b.featurePrint)
-            }
-            for indices in found {
-                let members = indices.map { run[$0] }
-                let cover = SimilarPhotos.topPick(members, scores: features.mapValues(\.score)) ?? members[0].id
-                groups.append(Group(id: members[0].id, members: members, suggestedCover: cover, cover: cover))
-            }
-        }
+        guard let groups = try? await Self.cluster(runs, features: features, options: options), live(generation) else { return }
         assets = byID.filter { id, _ in groups.contains { $0.members.contains { $0.id == id } } }
         self.groups = groups
         phase = .ready
     }
 
+    /// Distance computation and complete-link merging can be expensive even after the preview analysis.
+    @concurrent static func cluster(_ runs: [[SimilarPhotos.Candidate]], features: [String: SimilarPhotoFeatures],
+                                    options: SimilarPhotos.Options) async throws -> [Group] {
+        var groups: [Group] = []
+        let scores = features.mapValues(\.score)
+        for run in runs {
+            try Task.checkCancellation()
+            let found = SimilarPhotos.groups(run, threshold: options.sensitivity.threshold, isCancelled: { Task.isCancelled }) { i, j in
+                guard let a = features[run[i].id], let b = features[run[j].id] else { return nil }
+                return SimilarPhotosVisionAnalyzer.distance(a.featurePrint, b.featurePrint)
+            }
+            try Task.checkCancellation()
+            for indices in found {
+                let members = indices.map { run[$0] }
+                let cover = SimilarPhotos.topPick(members, scores: scores) ?? members[0].id
+                groups.append(Group(id: members[0].id, members: members, suggestedCover: cover, cover: cover))
+            }
+        }
+        return groups
+    }
+
     // MARK: Review
+
+    /// A browser mutation invalidates only that applied result; pending choices remain intact.
+    func invalidateStack(_ stackID: String) {
+        groups.removeAll {
+            switch $0.status {
+            case .stacked(let id), .coverNotSet(let id): id == stackID
+            default: false
+            }
+        }
+        needsRescan = true
+    }
+
 
     func setCover(_ id: String, in groupID: String) {
         guard let i = editableIndex(groupID), groups[i].activeMembers.contains(where: { $0.id == id }) else { return }

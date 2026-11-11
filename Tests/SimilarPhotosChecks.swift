@@ -27,10 +27,13 @@ final class Fixture: @unchecked Sendable {
     /// When set, a POST /stacks waits here after it's recorded, until the test signals it.
     var holdStack: DispatchSemaphore?
     var stackArrived = false
+    var holdStackRead: DispatchSemaphore?
+    var stackReadArrived = false
+    var trashEnabled: Bool? = true
 
     func reset() {
         lock.withLock {
-            assets = [:]; pages = []; requests = []; stackFailures = []; ignorePrimary = false; repeatPage = false; previews = [:]; holdStack = nil; stackArrived = false
+            assets = [:]; pages = []; requests = []; stackFailures = []; ignorePrimary = false; repeatPage = false; previews = [:]; holdStack = nil; stackArrived = false; holdStackRead = nil; stackReadArrived = false; trashEnabled = true
         }
     }
     var posts: [String] { lock.withLock { requests.filter { $0.method == "POST" && $0.path.hasSuffix("/stacks") }.map(\.path) } }
@@ -101,6 +104,16 @@ final class FixtureProtocol: URLProtocol, @unchecked Sendable {
             }
             return reply(201, ["id": "stack-\(ids[0])", "primaryAssetId": primary, "assets": []])
         }
+        if method == "GET", path.hasSuffix("server/features") {
+            let enabled = fixture.lock.withLock { fixture.trashEnabled }
+            return reply(200, enabled.map { ["trash": $0] } ?? [:])
+        }
+        if method == "GET", path.contains("/stacks/") {
+            let assets = fixture.lock.withLock { Array(fixture.assets.values) }
+            if let hold = fixture.lock.withLock({ fixture.stackReadArrived = true; return fixture.holdStackRead }) { hold.wait() }
+            return reply(200, ["id": "read-stack", "primaryAssetId": "cover", "assets": assets])
+        }
+        if method == "DELETE", path.hasSuffix("/assets") { return reply(200, [:]) }
         if method == "PUT", path.contains("/stacks/") {
             return reply(200, ["id": String(path.split(separator: "/").last!), "primaryAssetId": body["primaryAssetId"] as? String ?? "", "assets": []])
         }
@@ -202,7 +215,60 @@ func blurred(_ image: CGImage) -> CGImage {
         pureChecks()
         try visionChecks()
         await serverChecks()
+        try await mutationAndClusteringChecks()
         print("PASS similar photos")
+    }
+
+    @MainActor static func mutationAndClusteringChecks() async throws {
+        let fixture = Fixture.shared
+        let client = makeClient()
+        for mode in ["switch", "logout", "close", "cancel"] {
+            fixture.reset()
+            fixture.assets["cover"] = assetJSON("cover", seconds: 0)
+            fixture.assets["other"] = assetJSON("other", seconds: 1)
+            let json: [String: Any] = ["id": "read-stack", "primaryAssetId": "cover", "assets": Array(fixture.assets.values)]
+            let shown = try JSONDecoder().decode(AssetsStack.self, from: JSONSerialization.data(withJSONObject: json))
+            let hold = DispatchSemaphore(value: 0)
+            fixture.lock.withLock { fixture.holdStackRead = hold }
+            var current = true
+            let task = Task { try await AssetsStackMutation.trashOthers(client: client, stackID: shown.id, shown: shown, userID: "me", isCurrent: { current }) }
+            await waitFor({ fixture.lock.withLock { fixture.stackReadArrived } }, "stack read pending")
+            if mode == "cancel" { task.cancel() } else { current = false }
+            hold.signal()
+            do { try await task.value; check(false, "obsolete action must cancel: \(mode)") } catch {}
+            check(fixture.writes.isEmpty, "zero DELETE after \(mode)")
+        }
+        fixture.reset()
+        for (id, owner, visibility, trashed) in [("cover", "me", "timeline", false), ("other", "me", "timeline", false),
+                                                ("partner", "someone", "timeline", false), ("locked", "me", "locked", false), ("trash", "me", "timeline", true)] {
+            fixture.assets[id] = assetJSON(id, owner: owner, seconds: 0, visibility: visibility, trashed: trashed)
+        }
+        let json: [String: Any] = ["id": "read-stack", "primaryAssetId": "cover", "assets": Array(fixture.assets.values)]
+        let shown = try JSONDecoder().decode(AssetsStack.self, from: JSONSerialization.data(withJSONObject: json))
+        try await AssetsStackMutation.trashOthers(client: client, stackID: shown.id, shown: shown, userID: "me", isCurrent: { true })
+        let request = fixture.lock.withLock { fixture.requests.last! }
+        check(request.method == "DELETE" && request.body["ids"] as? [String] == ["other"] && request.body["force"] as? Bool == false,
+              "only owned non-cover, nonlocked and untrashed members, recoverable delete")
+
+        for enabled: Bool? in [false, nil] {
+            fixture.lock.withLock { fixture.requests = []; fixture.trashEnabled = enabled }
+            do {
+                try await AssetsStackMutation.trashOthers(client: client, stackID: shown.id, shown: shown, userID: "me", isCurrent: { true })
+                check(false, "disabled or unknown trash must fail closed")
+            } catch {}
+            check(fixture.writes.isEmpty, "no delete when recoverable trash is disabled or unknown")
+        }
+
+        let dense = (0..<2000).map { SimilarPhotos.Candidate(id: String($0), date: Date(timeIntervalSince1970: Double($0) / 1000), isFavorite: false, pixels: 1) }
+        let features = Dictionary(uniqueKeysWithValues: dense.map { ($0.id, SimilarPhotoFeatures(featurePrint: [Float](repeating: 0, count: 32), score: .init())) })
+        let start = ContinuousClock.now
+        let task = Task { try await SimilarPhotosModel.cluster([dense], features: features, options: .init()) }
+        try await Task.sleep(for: .milliseconds(25))
+        check(start.duration(to: .now) < .seconds(1), "main actor remains responsive while clustering 2000 candidates")
+        task.cancel()
+        do { _ = try await task.value; check(false, "dense clustering must cancel") } catch is CancellationError {}
+        check(start.duration(to: .now) < .seconds(2), "dense clustering cooperatively stops")
+        print("PASS browser account/close/cancel guards and off-main cancellable clustering")
     }
 
     // MARK: Pure logic
@@ -478,6 +544,8 @@ func blurred(_ image: CGImage) -> CGImage {
               "sent group recorded, others untouched: \(late.groups.map(\.status))")
         await late.apply()
         check(fixture.posts.count == 1, "apply refuses while the account isn't current")
+        late.invalidateStack("stack-w1")
+        check(late.needsRescan && late.groups.count == 2 && late.groups.allSatisfy { $0.status == .pending }, "browser mutation removes obsolete applied result and preserves pending choices")
         current = true
 
         // Cancel during apply (closing the sheet) stops before the next group.

@@ -10964,6 +10964,38 @@
           }
         }
       }
+    },
+    "A stack changed. Find similar photos again to refresh the suggestions.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A stack changed. Find similar photos again to refresh the suggestions."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un gruppo è cambiato. Cerca di nuovo foto simili per aggiornare i suggerimenti."
+          }
+        }
+      }
+    },
+    "Recently Deleted is unavailable. No photos were removed.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recently Deleted is unavailable. No photos were removed."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eliminati di recente non è disponibile. Nessuna foto è stata rimossa."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

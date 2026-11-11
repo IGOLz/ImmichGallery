@@ -99,12 +99,16 @@ enum SimilarPhotos {
     /// `threshold`, so A≈B and B≈C don't pull in a different C. Closest pairs merge first; ties go to the earlier
     /// photos, so the result doesn't depend on hashing order. `distance` returns nil when a photo couldn't be analyzed,
     /// which keeps it out of every group. Returns run indices.
-    static func groups(_ run: [Candidate], threshold: Float, distance: (Int, Int) -> Float?) -> [[Int]] {
+    static func groups(_ run: [Candidate], threshold: Float, isCancelled: () -> Bool = { false }, distance: (Int, Int) -> Float?) -> [[Int]] {
         var members: [Int: [Int]] = [:]
         for i in run.indices { members[i] = [i] }
         var links: [Pair: Float] = [:]
-        for (i, j) in pairs(in: run) {
-            if let d = distance(i, j), d.isFinite, d <= threshold { links[Pair(a: i, b: j)] = d }
+        for i in run.indices {
+            for j in (i + 1)..<run.count {
+                if isCancelled() { return [] }
+                if run[j].date.timeIntervalSince(run[i].date) > maxDuration { break }
+                if let d = distance(i, j), d.isFinite, d <= threshold { links[Pair(a: i, b: j)] = d }
+            }
         }
         func fits(_ a: [Int], _ b: [Int]) -> Bool {
             let all = a + b
@@ -114,6 +118,7 @@ enum SimilarPhotos {
         while true {
             var best: (pair: Pair, distance: Float)?
             for (pair, d) in links {
+                if isCancelled() { return [] }
                 guard fits(members[pair.a]!, members[pair.b]!) else { links[pair] = nil; continue } // groups only grow
                 if let current = best, (current.distance, current.pair.a, current.pair.b) <= (d, pair.a, pair.b) { continue }
                 best = (pair, d)
