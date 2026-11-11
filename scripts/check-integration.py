@@ -30,6 +30,7 @@ cases = {
     'viewer-scroll-pan': ['ImmichGallery/Views/Viewer/ViewerScrollPan.swift', 'Tests/ViewerScrollPanChecks.swift'],
     'sidebar-layout': [app('SidebarLayout'), 'Tests/SidebarLayoutChecks.swift'],
     'library-overview': [app('LibraryOverviewArrangement'), 'Tests/LibraryOverviewChecks.swift'],
+    'inspector-editing': models + [app('AssetInspectorState'), 'ImmichGallery/Views/InlineEditableText.swift', 'Tests/InspectorEditingChecks.swift'],
     'search-layout': ['ImmichGallery/Views/Grid/GridHeaderLayout.swift', 'Tests/SearchLayoutChecks.swift'],
     'search-landing': api + [support('ImagePipeline'), 'ImmichGallery/Views/Albums/RemoteThumbnail.swift', 'ImmichGallery/Views/Search/SearchLandingView.swift', 'Tests/SearchLandingChecks.swift'],
     'metadata': models + ['ImmichGallery/API/Models+Metadata.swift', 'scripts/verify-metadata.swift'],
