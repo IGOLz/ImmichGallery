@@ -241,6 +241,7 @@ struct AssetGridView: View {
 
     @AppStorage("gridThumbnailSize") private var thumbnailSize = GridMetrics.defaultSize
     @State private var zoomBase: Double?
+    @State private var gridWidth: CGFloat = 0
 
     var body: some View {
         Group {
@@ -325,8 +326,23 @@ struct AssetGridView: View {
             }
             .padding(.bottom, 20)
         }
+        // The grid's columns, for moving up and down a row: an adaptive grid fits as many minimum-width items
+        // as the width holds.
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { gridWidth = $0 }
+        .onChange(of: GridColumns(width: gridWidth, size: thumbnailSize), initial: true) { _, columns in
+            model.columns = columns.count
+        }
         .onAppear { scrollToViewerTarget(proxy) }
         .onChange(of: model.viewerScrollTarget) { scrollToViewerTarget(proxy) }
+        .onChange(of: model.keyboardScrollTarget) { _, id in
+            // Only as far as needed to show it, as Finder and Photos scroll with the arrow keys.
+            guard let id, let position = model.position(of: id) else { return }
+            proxy.scrollTo(CellKey(section: position.section, index: position.item))
+            model.keyboardScrollTarget = nil
+        }
+        .onChange(of: model.selection) {
+            MacQuickLook.shared.follow(model.macOrderedSelection, ahead: model.quickLookAhead)
+        }
         }
         .macOriginalDragContainer(model: model, client: session.client)
         .fastWheelScrolling()
@@ -401,20 +417,25 @@ struct AssetGridView: View {
         switch press.key {
         case .space:
             guard !ids.isEmpty else { return .ignored }
-            MacQuickLook.shared.toggle(model.macOrderedSelection, session: session) { model.lastError = $0 }
+            MacQuickLook.shared.toggle(model.macOrderedSelection, ahead: model.quickLookAhead, session: session,
+                                       onError: { model.lastError = $0 }, onArrow: quickLookArrow)
         case .return:
             guard let first = model.selectedItems.first else { return .ignored }
             model.open(first.id)
         case .delete, .deleteForward:
             guard press.modifiers.contains(.command), !ids.isEmpty else { return .ignored }
             onDelete(ids)
-        case .leftArrow, .rightArrow:
-            guard let current = model.selection.first, model.selection.count == 1 else { return .ignored }
-            Task {
-                if let next = await model.neighbor(of: current, delta: press.key == .leftArrow ? -1 : 1) {
-                    model.selection = [next.id]
-                }
+        case .leftArrow, .rightArrow, .upArrow, .downArrow:
+            // Command with an arrow is left to the menus and the system.
+            guard !press.modifiers.contains(.command) else { return .ignored }
+            let direction: AssetGridModel.Move = switch press.key {
+            case .leftArrow: .left
+            case .rightArrow: .right
+            case .upArrow: .up
+            default: .down
             }
+            let extending = press.modifiers.contains(.shift)
+            Task { await model.move(direction, extending: extending) }
         case .escape:
             model.selection = []
         default:
@@ -425,6 +446,31 @@ struct AssetGridView: View {
             }
         }
         return .handled
+    }
+}
+
+extension AssetGridView {
+    /// Quick Look: an arrow key pressed in the panel moves the grid, which the panel then follows.
+    private func quickLookArrow(_ event: NSEvent) -> Bool {
+        let direction: AssetGridModel.Move
+        switch event.keyCode {
+        case 123: direction = .left
+        case 124: direction = .right
+        case 125: direction = .down
+        case 126: direction = .up
+        default: return false
+        }
+        let extending = event.modifierFlags.contains(.shift)
+        Task { await model.move(direction, extending: extending) }
+        return true
+    }
+}
+
+/// An adaptive grid's column count: as many minimum-width items, with their spacing, as the width holds.
+struct GridColumns: Equatable {
+    let count: Int
+    init(width: CGFloat, size: Double, spacing: CGFloat = 2) {
+        count = max(1, Int((width + spacing) / (CGFloat(size) + spacing)))
     }
 }
 
