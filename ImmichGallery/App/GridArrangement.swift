@@ -7,12 +7,18 @@ import Foundation
 /// The grid pages with view options. Each saves its own settings.
 enum GridPage: String {
     case library, favorites, archive, partner, person, tag, locked
-    case videos, largeFiles
+    case videos, largeFiles, geolocation
 
     /// A Favorites filter adds nothing on Favorites, and partners' favorites are their own.
-    var offersFavoritesFilter: Bool { ![.favorites, .partner].contains(self) }
+    /// Assign Location filters by location instead.
+    var offersFavoritesFilter: Bool { ![.favorites, .partner, .geolocation].contains(self) }
     /// Photos or videos only. Timeline pages switch to the search API for it, which can't search a partner's library.
-    var offersMediaTypeFilter: Bool { ![.videos, .partner].contains(self) }
+    /// Assign Location stays on the timeline API, whose coordinates its location filter needs.
+    var offersMediaTypeFilter: Bool { ![.videos, .partner, .geolocation].contains(self) }
+    /// Assign Location: only the items the map leaves out, those without GPS coordinates.
+    var offersLocationFilter: Bool { self == .geolocation }
+    /// The page is for finding items without a location, so it starts with only those.
+    var defaultLocation: GridLocation { offersLocationFilter ? .missing : .all }
     /// Date Added orders the timeline only; search has no upload-date order.
     var offersSortBy: Bool { ![.videos, .largeFiles].contains(self) }
     /// Large Files is always largest first.
@@ -40,6 +46,12 @@ enum GridMediaType: String, CaseIterable, Identifiable {
     }
 }
 
+enum GridLocation: String, CaseIterable, Identifiable {
+    case missing = "Missing", all = "All"
+    var id: Self { self }
+    var title: LocalizedStringResource { self == .missing ? "Without Location" : "All Items" }
+}
+
 enum GridSortBy: String, CaseIterable, Identifiable {
     // Immich's AssetOrderBy values.
     case dateTaken = "takenAt", dateAdded = "createdAt"
@@ -58,12 +70,15 @@ struct GridArrangement: Equatable {
     var mediaType = GridMediaType.all
     var sortBy = GridSortBy.dateTaken
     var order = GridOrder.newestFirst
+    var location = GridLocation.all
 
-    init(show: GridShow = .all, mediaType: GridMediaType = .all, sortBy: GridSortBy = .dateTaken, order: GridOrder = .newestFirst) {
+    init(show: GridShow = .all, mediaType: GridMediaType = .all, sortBy: GridSortBy = .dateTaken, order: GridOrder = .newestFirst,
+         location: GridLocation = .all) {
         self.show = show
         self.mediaType = mediaType
         self.sortBy = sortBy
         self.order = order
+        self.location = location
     }
 
     /// The settings a page saved with `@AppStorage`, limited to the options it offers.
@@ -73,9 +88,14 @@ struct GridArrangement: Equatable {
         mediaType = page.offersMediaTypeFilter ? value("mediaType").flatMap(GridMediaType.init) ?? .all : .all
         sortBy = page.offersSortBy ? value("sortBy").flatMap(GridSortBy.init) ?? .dateTaken : .dateTaken
         order = page.offersOrder ? value("order").flatMap(GridOrder.init) ?? .newestFirst : .newestFirst
+        location = page.offersLocationFilter ? value("location").flatMap(GridLocation.init) ?? page.defaultLocation : .all
     }
 
-    var isFiltered: Bool { show != .all || mediaType != .all }
+    var isFiltered: Bool { show != .all || mediaType != .all || location != .all }
+
+    /// Assign Location: the timeline API can't filter by location, so the grid drops located items itself.
+    /// Like Immich's map, an item has a location when it has both a latitude and a longitude.
+    var hidesLocated: Bool { location == .missing }
 
     /// The favorites filter for the search API, which leaves it out when not filtering.
     var isFavorite: Bool? { show == .favorites ? true : nil }

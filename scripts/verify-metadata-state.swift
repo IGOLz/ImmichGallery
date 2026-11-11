@@ -42,6 +42,8 @@ enum ImmichError: Error { case http(Int, String) }
     let user: User? = User(id: "me", email: "", name: "")
     var invalidations = 0
     func invalidateGrids() { invalidations += 1 }
+    var locatedIDs: [String] = []
+    func setLocationInGrids(_ ids: [String], latitude: Double, longitude: Double) { locatedIDs += ids }
     func handle(_ error: Error) {}
 }
 
@@ -74,6 +76,11 @@ enum ImmichError: Error { case http(Int, String) }
         let queuedResult = await queued.value
         assert(queuedResult && session.client.saved.last?.rating == 4)
         assert(state.gridRevision == 0)
+        assert(session.locatedIDs.isEmpty)
+        // Assign Location: only owned items change in the grids, without reloading them.
+        state.error = nil
+        let located = await state.update(.init(ids: ["own", "shared"], latitude: 56.2, longitude: 10.1), session: session)
+        assert(located && session.locatedIDs == ["own"] && state.gridRevision == 0 && session.invalidations == 0)
         let dateUpdated = await state.update(.init(ids: ["own"], dateTimeRelative: 30), session: session)
         assert(dateUpdated && state.gridRevision == 1 && session.invalidations == 1)
         let unchanged = await state.saveEdits("own", edits: [], session: session)
@@ -95,6 +102,6 @@ enum ImmichError: Error { case http(Int, String) }
         session.client.editsError = CancellationError()
         let cancelled = await state.saveEdits("own", edits: [], session: session)
         assert(!cancelled && state.error == nil && !state.busy)
-        print("Metadata state checks passed: ownership, refresh scope, no-op, bounded wait, 404, cancellation")
+        print("Metadata state checks passed: ownership, refresh scope, locations, no-op, bounded wait, 404, cancellation")
     }
 }

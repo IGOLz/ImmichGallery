@@ -48,6 +48,9 @@ final class MetadataState {
             }
             try await session.client.updateMetadata(owned)
             refresh(session, reloadGrid: update.dateTimeOriginal != nil || update.dateTimeRelative != nil)
+            if let latitude = update.latitude, let longitude = update.longitude {
+                session.setLocationInGrids(owned.ids, latitude: latitude, longitude: longitude)
+            }
             if skipped > 0 { error = String(localized: "Updated \(owned.ids.count) items. Skipped \(skipped) items you do not own.") }
             return true
         } catch is CancellationError {
