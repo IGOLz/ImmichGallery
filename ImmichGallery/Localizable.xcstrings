@@ -6913,16 +6913,6 @@
         }
       }
     },
-    "Preferences saved.": {
-      "localizations": {
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Preferenze salvate."
-          }
-        }
-      }
-    },
     "Preparing": {
       "localizations": {
         "it": {
@@ -7475,16 +7465,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Salva nome"
-          }
-        }
-      }
-    },
-    "Save Preferences": {
-      "localizations": {
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Salva preferenze"
           }
         }
       }
@@ -8921,16 +8901,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "La data di inizio deve precedere la data di fine."
-          }
-        }
-      }
-    },
-    "These preferences are stored on your Immich server. Web sidebar options affect the web client.": {
-      "localizations": {
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Queste preferenze vengono salvate sul tuo server Immich. Le opzioni della barra laterale web si applicano al client web."
           }
         }
       }
@@ -11843,6 +11813,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "Questo server non ha accettato una chiave limitata a ciò che serve all'accesso dal Finder, quindi non è stata creata nessuna chiave. Aggiorna Immich, oppure accedi a questo account con una chiave API creata da te per farla usare al Finder."
+          }
+        }
+      }
+    },
+    "No photos directly in this folder": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nessuna foto direttamente in questa cartella"
+          }
+        }
+      }
+    },
+    "Changes are saved on your Immich server as you make them. Web sidebar options affect the web client.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le modifiche vengono salvate sul tuo server Immich man mano che le fai. Le opzioni della barra laterale web si applicano al client web."
+          }
+        }
+      }
+    },
+    "Couldn't Save Preferences": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossibile salvare le preferenze"
           }
         }
       }
