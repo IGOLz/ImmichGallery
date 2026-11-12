@@ -499,6 +499,7 @@ struct AssetGridView: View {
         case .partner: ("No Partner Photos", "person.2")
         case .largeFiles: ("No Large Files", "externaldrive")
         case .geolocation: ("No Photos to Locate", "mappin.and.ellipse")
+        case .explore(.folder): ("No Photos", "folder")
         case .explore: ("No Photos to Explore", "globe")
         default: ("No Photos", "photo.on.rectangle")
         }
