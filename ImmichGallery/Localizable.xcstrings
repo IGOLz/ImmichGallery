@@ -11496,6 +11496,116 @@
           }
         }
       }
+    },
+    "unlock the Locked Folder": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "sbloccare la cartella bloccata"
+          }
+        }
+      }
+    },
+    "Unlock with Touch ID": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sblocca con Touch ID"
+          }
+        }
+      }
+    },
+    "Unlock with the PIN once, and Touch ID unlocks it from then on.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sblocca una volta con il PIN, e da allora Touch ID la sblocca."
+          }
+        }
+      }
+    },
+    "This Mac doesn't have Touch ID set up.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Touch ID non è configurato su questo Mac."
+          }
+        }
+      }
+    },
+    "Touch ID didn't unlock the Locked Folder.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Touch ID non ha sbloccato la cartella bloccata."
+          }
+        }
+      }
+    },
+    "Touch ID to unlock": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usa Touch ID per sbloccare"
+          }
+        }
+      }
+    },
+    "Use PIN": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usa il PIN"
+          }
+        }
+      }
+    },
+    "Use Touch ID": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usa Touch ID"
+          }
+        }
+      }
+    },
+    "After you unlock the Locked Folder with your PIN once, Touch ID unlocks it. The PIN is kept in your login keychain on this Mac and given back by the app only after Touch ID. It's forgotten when you turn this off, sign out, or add or remove a fingerprint.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dopo che hai sbloccato la cartella bloccata una volta con il PIN, Touch ID la sblocca. Il PIN viene conservato nel portachiavi di login di questo Mac e l'app lo usa solo dopo Touch ID. Viene dimenticato quando disattivi questa opzione, esci dall'account o aggiungi o rimuovi un'impronta."
+          }
+        }
+      }
+    },
+    "The Locked Folder is unlocked, but Touch ID couldn't be set up: %@ Unlock with your PIN next time.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La cartella bloccata è sbloccata, ma non è stato possibile configurare Touch ID: %@ La prossima volta sblocca con il PIN."
+          }
+        }
+      }
+    },
+    "The keychain couldn't handle the Locked Folder PIN for Touch ID (%@).": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il portachiavi non ha accettato l'operazione sul PIN della cartella bloccata per Touch ID (%@)."
+          }
+        }
+      }
     }
   },
   "version": "1.0"
