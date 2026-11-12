@@ -182,14 +182,24 @@ struct ExploreLockedView: View {
         let attempt = generation, epoch = LockedFolderTouchID.epoch
         let account = session.client, services = session.services, key = touchIDKey
         defer { busy = false; pin = ""; confirmation = "" }
+        // The server may have unlocked: the unlock succeeded, or its answer never arrived (cancelled, offline).
+        var mayBeUnlocked = false
         do {
             let setup = status?.pinCode == false
             var rejected = false
             let status: ExploreAuthStatus
+            // A relock still being sent for a discarded attempt must reach the server before this unlock.
+            await Self.discardedRelocks[account.serverURL]?.value
+            guard isCurrent(attempt, services) else { return }
             do {
                 status = try await Self.uncached(account) { client in
                     do { try await client.exploreUnlock(code, setup: setup) }
-                    catch { rejected = LockedFolderTouchID.rejectsPIN(error); throw error }
+                    catch {
+                        rejected = LockedFolderTouchID.rejectsPIN(error)
+                        mayBeUnlocked = !(error is ImmichError)
+                        throw error
+                    }
+                    mayBeUnlocked = true
                     return try await client.exploreAuth()
                 }
             } catch {
@@ -202,11 +212,7 @@ struct ExploreLockedView: View {
                 throw error
             }
             // Left the Locked Folder, locked, or signed out while unlocking.
-            guard isCurrent(attempt, services) else {
-                // The SwiftUI task may already be cancelled; its cleanup request must still reach the server.
-                Task { try? await Self.uncached(account) { try await $0.exploreLock() } }
-                return
-            }
+            guard isCurrent(attempt, services) else { Self.relockDiscarded(account); return }
             self.status = status
             guard status.isElevated else { throw ImmichError.http(403, String(localized: "The server did not unlock this session.")) }
             // Touch ID unlocks with this PIN from now on, unless Touch ID was turned off or PINs forgotten meanwhile.
@@ -220,8 +226,29 @@ struct ExploreLockedView: View {
             scheduleCheck(status.pinExpiresAt)
             if !NSApp.isActive { startInactivityTimer() }
         } catch {
-            guard isCurrent(attempt, services) else { return }
+            // Discarded while the server may have unlocked, for example a request cancelled in flight by Lock or
+            // by leaving the page: relock it, without reporting the cancelled attempt's error.
+            guard isCurrent(attempt, services) else { if mayBeUnlocked { Self.relockDiscarded(account) }; return }
             self.error = error.localizedDescription
+        }
+    }
+
+    /// Relocks still being sent for discarded unlocks, per server. A new unlock waits for them, so a late relock
+    /// can't lock the session it unlocks.
+    @MainActor private static var discardedRelocks: [URL: Task<Void, Never>] = [:]
+
+    /// Locks the server session of a discarded unlock, with the attempt's own account. The attempt's SwiftUI task
+    /// may already be cancelled, so the request runs in a task of its own.
+    private static func relockDiscarded(_ account: ImmichClient) {
+        let server = account.serverURL, previous = discardedRelocks[server]
+        let relock = Task { @MainActor in
+            await previous?.value
+            try? await uncached(account) { try await $0.exploreLock() }
+        }
+        discardedRelocks[server] = relock
+        Task { @MainActor in
+            await relock.value
+            if discardedRelocks[server] == relock { discardedRelocks[server] = nil }
         }
     }
 
