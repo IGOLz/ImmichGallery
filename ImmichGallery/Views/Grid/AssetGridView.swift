@@ -433,14 +433,12 @@ struct AssetGridView: View {
                 if let scrollHeader {
                     // The header stays at the top and scrolls when it is taller than the window (a folder with many
                     // subfolders); the message fills the space left below it.
-                    GeometryReader { proxy in
-                        ScrollView {
-                            VStack(spacing: 0) {
-                                scrollHeader
-                                    .onScrollVisibilityChange(threshold: 0.25) { model.headerInView = $0 }
-                                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { emptyHeaderHeight = $0 }
-                                emptyContent.frame(height: max(160, proxy.size.height - emptyHeaderHeight))
-                            }
+                    ScrollView {
+                        VStack(spacing: 0) {
+                            scrollHeader
+                                .onScrollVisibilityChange(threshold: 0.25) { model.headerInView = $0 }
+                                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { emptyHeaderHeight = $0 }
+                            emptyContent.containerRelativeFrame(.vertical) { height, _ in max(160, height - emptyHeaderHeight) }
                         }
                     }
                 } else {

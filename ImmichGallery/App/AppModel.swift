@@ -311,6 +311,19 @@ final class AccountServices {
         await loadExploreTags()
     }
 
+    /// Preference reads and saves run one after another, so the server ends with the last change and reopening
+    /// Settings never reads it before an earlier save has landed.
+    @ObservationIgnored private var preferencesQueue: Task<Void, Never>?
+    /// Why the last preferences save failed, kept until Settings shows it (a save made as Settings closed).
+    var preferencesSaveError: String?
+
+    func queuePreferences<T: Sendable>(_ work: @escaping @MainActor () async throws -> T) async throws -> T {
+        let previous = preferencesQueue
+        let task = Task { await previous?.value; return try await work() }
+        preferencesQueue = Task { _ = await task.result }
+        return try await task.value
+    }
+
     var preferencesRevision = 0
     func setPreferences(_ value: AccountPreferences) {
         preferences = value

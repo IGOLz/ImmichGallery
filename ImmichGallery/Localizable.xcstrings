@@ -11836,6 +11836,16 @@
           }
         }
       }
+    },
+    "Couldn't Save Preferences": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossibile salvare le preferenze"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

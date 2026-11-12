@@ -196,6 +196,8 @@ private struct ExploreFolderView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(verbatim: node.name).font(.largeTitle.bold()).lineLimit(1)
+                .help(node.name)
+                .accessibilityAddTraits(.isHeader)
             Text(verbatim: node.id).font(.callout).foregroundStyle(.secondary).lineLimit(1).truncationMode(.head)
                 .textSelection(.enabled)
             if let children = node.children {
@@ -223,6 +225,7 @@ private struct ExploreSubfolderTile: View {
                     .font(.system(size: 40))
                     .foregroundStyle(.tint)
                     .frame(height: 44)
+                    .accessibilityHidden(true)
                 Text(verbatim: node.name).font(.callout).lineLimit(2).multilineTextAlignment(.center)
             }
             .frame(maxWidth: .infinity)
