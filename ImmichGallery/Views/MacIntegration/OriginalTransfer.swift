@@ -24,13 +24,30 @@ struct OriginalTransfer: Transferable, Identifiable, Sendable {
 
     static var transferRepresentation: some TransferRepresentation {
         // The original first: the Finder saves the first representation it can. Exactly one of these is exported,
-        // by the original's kind, with its real name: receivers name the file before it is downloaded.
+        // with its real name: receivers name the file before it is downloaded. It is the original's own format
+        // when known, else its kind: data-only receivers can decode public.jpeg and derive an extension,
+        // whereas public.image can leave them an unnamed temporary file with no usable extension.
+        formats
         original(.image)
         original(.movie)
         original(.data)
         ProxyRepresentation(exporting: { _ in OriginalDragMarker() })
         ProxyRepresentation(exporting: { item in AlbumAssetTransfer(ids: item.albumIDs ?? []) })
             .exportingCondition { $0.albumIDs != nil }
+    }
+
+    /// CoreTransferable takes one static type per representation: one for each of `OriginalFile.formats`.
+    @TransferRepresentationBuilder<OriginalTransfer>
+    private static var formats: some TransferRepresentation<OriginalTransfer> {
+        original(.jpeg)
+        original(.heic)
+        original(.heif)
+        original(.png)
+        original(.gif)
+        original(.webP)
+        original(.tiff)
+        original(.quickTimeMovie)
+        original(.mpeg4Movie)
     }
 
     private static func original(_ type: UTType) -> some TransferRepresentation<OriginalTransfer> {
@@ -49,9 +66,12 @@ struct OriginalTransfer: Transferable, Identifiable, Sendable {
 final class OriginalFile: Sendable {
     struct Resolved: Sendable, Equatable {
         let name: String
-        /// `.image`, `.movie` or `.data`: Immich's kind of asset. The name's extension gives the exact format.
+        /// One of `formats` when the name's extension is one, else `.image`, `.movie` or `.data`: Immich's kind of asset.
         let type: UTType
     }
+
+    /// The formats advertised under their own type. `OriginalTransfer` has a representation for each.
+    static let formats: [UTType] = [.jpeg, .heic, .heif, .png, .gif, .webP, .tiff, .quickTimeMovie, .mpeg4Movie]
 
     static let timeout: TimeInterval = 1
     private let id: String
@@ -94,11 +114,14 @@ final class OriginalFile: Sendable {
 
     static func resolve(_ asset: AssetResponse) -> Resolved {
         let name = (asset.originalFileName as NSString).lastPathComponent
-        let type: UTType = switch asset.type {
+        let kind: UTType = switch asset.type {
         case .image: .image
         case .video: .movie
         default: .data
         }
-        return Resolved(name: name.isEmpty || name == "." || name == ".." ? asset.id : name, type: type)
+        // From the extension, so the type always agrees with the suggested name. Never for other kinds of asset.
+        let format = kind == .data ? nil : UTType(filenameExtension: (name as NSString).pathExtension, conformingTo: kind)
+        return Resolved(name: name.isEmpty || name == "." || name == ".." ? asset.id : name,
+                        type: format.flatMap { formats.contains($0) ? $0 : nil } ?? kind)
     }
 }

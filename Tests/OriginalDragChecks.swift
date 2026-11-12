@@ -17,6 +17,9 @@ final class OriginalFixtureProtocol: URLProtocol, @unchecked Sendable {
         "v": ("VIDEO", "MOV_0002.MOV"), "raw": ("IMAGE", "DSC_0003.NEF"), "audio": ("AUDIO", "voice.m4a"),
         "path": ("IMAGE", "../../Escape.JPG"),
         "p1": ("IMAGE", "P1.JPG"), "p2": ("IMAGE", "P2.JPG"), "p3": ("IMAGE", "P3.JPG"), "p4": ("IMAGE", "P4.JPG"),
+        "jpg": ("IMAGE", "A.jpg"), "JPG": ("IMAGE", "A.JPG"), "jpeg": ("IMAGE", "A.jpeg"), "heic": ("IMAGE", "A.heic"), "heif": ("IMAGE", "A.heif"),
+        "png": ("IMAGE", "A.png"), "gif": ("IMAGE", "A.gif"), "webp": ("IMAGE", "A.webp"), "tif": ("IMAGE", "A.tif"), "TIFF": ("IMAGE", "A.TIFF"),
+        "mov": ("VIDEO", "A.mov"), "MP4": ("VIDEO", "A.MP4"), "mismatch": ("IMAGE", "Clip.mov"), "other": ("OTHER", "Sidecar.jpg"),
     ]
     override class func canInit(with request: URLRequest) -> Bool { true }
     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
@@ -73,6 +76,24 @@ final class OriginalFixtureProtocol: URLProtocol, @unchecked Sendable {
         }
     }
 
+    /// What a receiver in another app is handed: the drag pasteboard carries the advertised type's bytes but not the
+    /// suggested name, so its provider is unnamed data of that type (as built by UIKit for Mac Catalyst apps such
+    /// as WhatsApp), and the file it asks for is named by the type alone. Returns that file's extension and bytes.
+    static func received(_ provider: NSItemProvider) async -> (type: String, fileExtension: String, bytes: Data)? {
+        let type = provider.registeredTypeIdentifiers[0]
+        let data: Data? = await withCheckedContinuation { continuation in
+            _ = provider.loadDataRepresentation(forTypeIdentifier: type) { data, _ in continuation.resume(returning: data) }
+        }
+        guard let data else { return nil }
+        let receiver = NSItemProvider()
+        receiver.registerDataRepresentation(forTypeIdentifier: type, visibility: .all) { completion in completion(data, nil); return nil }
+        return await withCheckedContinuation { continuation in
+            _ = receiver.loadInPlaceFileRepresentation(forTypeIdentifier: UTType.data.identifier) { url, _, _ in
+                continuation.resume(returning: url.flatMap { url in (try? Data(contentsOf: url)).map { (type, url.pathExtension, $0) } })
+            }
+        }
+    }
+
     static func albumIDs(_ provider: NSItemProvider) async -> [String]? {
         await withCheckedContinuation { continuation in
             _ = provider.loadTransferable(type: AlbumAssetTransfer.self) { continuation.resume(returning: try? $0.get().ids) }
@@ -97,10 +118,11 @@ final class OriginalFixtureProtocol: URLProtocol, @unchecked Sendable {
         _ = (0..<100).map { _ in OriginalTransfer(id: "a", client: client, albumIDs: ["a"]) }
         precondition(OriginalFixtureProtocol.detailRequests.withLock { $0.isEmpty }, "Building drag items must not request details")
 
-        // Grid photo: the original first, advertised as an image under its real name (receivers such as the Finder
-        // name the file from it before the download), then the in-app marker and album IDs. Never JSON alone.
+        // Grid photo: the original first, advertised in its own format under its real name (receivers such as the
+        // Finder name the file from it before the download), then the in-app marker and album IDs. Never JSON alone.
+        let heic = UTType.heic.identifier
         let grid = provider(OriginalTransfer(id: "a", client: client, albumIDs: ["a"]))
-        precondition(grid.registeredTypeIdentifiers == [image, marker, ids], "\(grid.registeredTypeIdentifiers)")
+        precondition(grid.registeredTypeIdentifiers == [heic, marker, ids], "\(grid.registeredTypeIdentifiers)")
         precondition(grid.suggestedName == "IMG_0001.HEIC", "\(grid.suggestedName ?? "nil")")
         precondition(grid.hasItemConformingToTypeIdentifier(image) && grid.hasItemConformingToTypeIdentifier(data))
         precondition(!grid.hasItemConformingToTypeIdentifier(movie) && !grid.hasItemConformingToTypeIdentifier(UTType.jpeg.identifier),
@@ -114,14 +136,40 @@ final class OriginalFixtureProtocol: URLProtocol, @unchecked Sendable {
         let gridIDs = await albumIDs(grid)
         precondition(gridIDs == ["a"], "Album rows still read the asset IDs")
 
-        // Each kind under its own type and name, bytes unchanged: videos, RAW, and others as plain data.
-        for (id, type, expected) in [("v", movie, "MOV_0002.MOV"), ("raw", image, "DSC_0003.NEF"), ("audio", data, "voice.m4a"), ("path", image, "Escape.JPG")] {
+        // Each kind under its own type and name, bytes unchanged: videos, RAW (no exact type: its kind), and others
+        // as plain data.
+        for (id, type, expected) in [("v", UTType.quickTimeMovie.identifier, "MOV_0002.MOV"), ("raw", image, "DSC_0003.NEF"), ("audio", data, "voice.m4a"),
+                                     ("path", UTType.jpeg.identifier, "Escape.JPG")] {
             let item = provider(OriginalTransfer(id: id, client: client, albumIDs: [id]))
             precondition(item.registeredTypeIdentifiers == [type, marker, ids], "\(id): \(item.registeredTypeIdentifiers)")
             precondition(item.suggestedName == expected, "\(id): \(item.suggestedName ?? "nil")")
             guard case .success(let (_, bytes)) = await file(item) else { preconditionFailure("\(id) must export") }
             precondition(bytes == Data("original-\(id)".utf8))
         }
+
+        // Every exact format has its own representation, whatever the case of the extension, and keeps its name
+        // (no extension added or replaced). An extension of the other kind, or on another kind of asset, is not used.
+        let formats: [(String, UTType)] = [("jpg", .jpeg), ("JPG", .jpeg), ("jpeg", .jpeg), ("heic", .heic), ("heif", .heif), ("png", .png), ("gif", .gif),
+                                           ("webp", .webP), ("tif", .tiff), ("TIFF", .tiff), ("mov", .quickTimeMovie), ("MP4", .mpeg4Movie)]
+        precondition(Set(formats.map(\.1)) == Set(OriginalFile.formats), "Every advertised format is checked")
+        for (id, type) in formats {
+            let item = provider(OriginalTransfer(id: id, client: client, albumIDs: [id]))
+            precondition(item.registeredTypeIdentifiers == [type.identifier, marker, ids], "\(id): \(item.registeredTypeIdentifiers)")
+            guard case .success(let (name, bytes)) = await file(item) else { preconditionFailure("\(id) must export") }
+            precondition(name == "A.\(id)" && bytes == Data("original-\(id)".utf8), "\(id): \(name)")
+            // A receiver in another app (WhatsApp) gets the type's bytes without the name: the original, untouched,
+            // in a file whose extension is still that format's. Image receivers take it as an image.
+            guard let other = await received(item) else { preconditionFailure("\(id) must reach a data receiver") }
+            precondition(other.bytes == bytes && UTType(filenameExtension: other.fileExtension) == type, "\(id): .\(other.fileExtension)")
+            precondition(item.canLoadObject(ofClass: NSImage.self) == type.conforms(to: .image), "\(id): image receivers")
+        }
+        for (id, type) in [("mismatch", image), ("other", data)] {
+            let item = provider(OriginalTransfer(id: id, client: client))
+            precondition(item.registeredTypeIdentifiers == [type, marker], "\(id): \(item.registeredTypeIdentifiers)")
+        }
+        // Known limit: a kind has no extension, so a data receiver's file has none either (RAW, other video formats).
+        let rawReceived = await received(provider(OriginalTransfer(id: "raw", client: client)))
+        precondition(rawReceived?.bytes == Data("original-raw".utf8) && UTType(filenameExtension: rawReceived!.fileExtension)?.conforms(to: .image) != true)
 
         // Details unavailable: generic data named after the asset, never a guessed type; the file still arrives.
         let unknown = provider(OriginalTransfer(id: "nodetails", client: client, albumIDs: ["nodetails"]))
@@ -172,7 +220,7 @@ final class OriginalFixtureProtocol: URLProtocol, @unchecked Sendable {
 
         // Viewer and Locked Folder items: file and marker only, no album IDs.
         let locked = provider(OriginalTransfer(id: "a", client: lockedClient))
-        precondition(locked.registeredTypeIdentifiers == [image, marker], "\(locked.registeredTypeIdentifiers)")
+        precondition(locked.registeredTypeIdentifiers == [heic, marker], "\(locked.registeredTypeIdentifiers)")
         let lockedIDs = await albumIDs(locked)
         precondition(lockedIDs == nil)
         precondition(UploadDropPolicy.isInternal([locked], pasteboard: .withUniqueName()))
@@ -191,6 +239,6 @@ final class OriginalFixtureProtocol: URLProtocol, @unchecked Sendable {
         guard case .failure = await pending.value else { preconditionFailure("Locked drag must fail after locking") }
         precondition(!fm.fileExists(atPath: lockedRoot.path), "Locked transfer root must stay deleted")
 
-        print("Original drag checks passed: real kind and name before the download, original bytes, receiver copy outlives the cache, fallbacks, multi-item details, in-app IDs/marker, duplicates, failure, Locked Folder revocation")
+        print("Original drag checks passed: exact format or kind and real name before the download, a data receiver's file, original bytes, receiver copy outlives the cache, fallbacks, multi-item details, in-app IDs/marker, duplicates, failure, Locked Folder revocation")
     }
 }
