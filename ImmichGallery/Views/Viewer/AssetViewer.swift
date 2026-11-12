@@ -58,7 +58,7 @@ struct AssetViewer: View {
                     ScrollView {
                         LazyVStack(spacing: 0) {
                             media.frame(height: geometry.size.height)
-                            AssetInspector(assetID: item.id, layout: .belowPhoto, onExpandMap: onExpandMap)
+                            AssetInspector(assetID: item.id, layout: .belowPhoto, onExpandMap: onExpandMap, source: model.source)
                                 .frame(maxWidth: 900)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 12)

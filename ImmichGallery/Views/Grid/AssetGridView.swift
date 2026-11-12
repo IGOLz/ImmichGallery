@@ -191,7 +191,7 @@ struct AssetGridHost<Header: View>: View {
         .modifier(AssetsGridUtilities(model: model, utilities: utilities))
         .gridHeader(header, shown: !headerScrolls)
         .inspector(isPresented: Binding(get: { inspectorShown }, set: { showInspector = $0 })) {
-            AssetInspector(assetID: inspectedID)
+            AssetInspector(assetID: inspectedID, source: model.source)
                 .inspectorColumnWidth(min: 260, ideal: 300, max: 420)
         }
         .task(id: session.macGridRevision) { await model.loadIfNeeded() }
