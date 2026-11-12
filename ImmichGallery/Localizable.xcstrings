@@ -1,6 +1,36 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Date Scroller": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Barra delle date"
+          }
+        }
+      }
+    },
+    "Hide Date Scroller": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nascondi barra delle date"
+          }
+        }
+      }
+    },
+    "Show Date Scroller": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostra barra delle date"
+          }
+        }
+      }
+    },
     "Cities": {
       "localizations": {
         "it": {

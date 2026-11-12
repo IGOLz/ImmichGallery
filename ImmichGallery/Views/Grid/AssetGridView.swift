@@ -51,6 +51,7 @@ struct AssetGridHost<Header: View>: View {
     @State private var inspectorShown = UserDefaults.standard.bool(forKey: "showInspector")
     @AppStorage("gridThumbnailSize") private var thumbnailSize = GridMetrics.defaultSize
     @AppStorage(GridMetrics.aspectRatioKey) private var aspectRatio = false
+    @AppStorage(TimelineRail.shownKey) private var showsDateScroller = true
     @State private var pendingDelete: [String]?
     @State private var pendingRemoval: [String]?
     @State private var photoZoom: PhotoZoomRequest?
@@ -308,6 +309,14 @@ struct AssetGridHost<Header: View>: View {
             }
             if #available(macOS 26, *) { ToolbarSpacer(.fixed) }
             ToolbarItem(id: "aspectRatio") { aspectRatioButton.disabled(!grid) }
+            if model.showsSectionHeaders {
+                // The date scroller beside the grid: a calendar with a timeline at its trailing edge.
+                ToolbarItem(id: "dateScroller") {
+                    Toggle(isOn: $showsDateScroller) { Label("Date Scroller", systemImage: "calendar.day.timeline.trailing") }
+                        .help(showsDateScroller ? "Hide Date Scroller" : "Show Date Scroller")
+                        .disabled(!grid)
+                }
+            }
             if let page = model.source.gridPage {
                 ToolbarItem(id: "viewOptions") {
                     GridViewOptions(page: page, dateAddedAvailable: GridArrangement.supportsDateAdded(session.version))
@@ -425,6 +434,10 @@ struct AssetGridView: View {
     @State private var shownFit = UserDefaults.standard.bool(forKey: GridMetrics.aspectRatioKey)
     @State private var visibleCells = VisibleCells()
     @State private var emptyHeaderHeight: CGFloat = 0
+    @AppStorage(TimelineRail.shownKey) private var showsDateScroller = true
+    /// Follows `showsDateScroller`, keeping the first photo in view where it was as the columns change.
+    @State private var shownRail = UserDefaults.standard.object(forKey: TimelineRail.shownKey) as? Bool ?? true
+    @State private var railPosition = TimelineRailPosition()
 
     var body: some View {
         Group {
@@ -571,6 +584,11 @@ struct AssetGridView: View {
         .onScrollTargetVisibilityChange(idType: CellKey.self, threshold: 0.3) { keys in
             visibleCells.keys = keys
             model.showing(sections: keys.map(\.section))
+            if let first = visibleCells.first(in: model.sections),
+               let section = model.sections.first(where: { $0.id == first.section }) {
+                railPosition.month = first.section
+                railPosition.progress = Double(first.index) / Double(max(1, section.count))
+            }
         }
         // Zooming keeps the first photo in view where it was, and animates the photos to their new places, as
         // Photos does; a pinch follows the fingers, then settles on the nearest zoom level.
@@ -581,14 +599,38 @@ struct AssetGridView: View {
                 if let anchor { proxy.scrollTo(anchor, anchor: .topLeading) }
             }
         }
+        // The scroller's space changes the columns: the photo in the middle of the view stays in the middle. The grid
+        // lays out its new columns first, and a lazy grid's first scroll deep in a large library lands on its estimate
+        // of the rows above, so it scrolls a second time once they're measured.
+        .onChange(of: showsDateScroller) { _, shown in
+            let anchor = visibleCells.middle(in: model.sections)
+            shownRail = shown
+            guard let anchor else { return }
+            Task { @MainActor in
+                await Task.yield()
+                proxy.scrollTo(anchor, anchor: .center)
+                try? await Task.sleep(for: .milliseconds(30))
+                proxy.scrollTo(anchor, anchor: .center)
+            }
+        }
         .onChange(of: aspectRatio) { _, fit in
             withAnimation(.smooth(duration: 0.35)) { shownFit = fit }
         }
         // The grid's columns, for moving up and down a row: an adaptive grid fits as many minimum-width items
         // as the width holds.
         .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { gridWidth = $0 }
-        .onChange(of: GridColumns(width: gridWidth, size: shownSize), initial: true) { _, columns in
+        .onChange(of: GridColumns(width: photosWidth, size: shownSize), initial: true) { _, columns in
             model.columns = columns.count
+        }
+        .safeAreaInset(edge: .trailing, spacing: 0) {
+            if let months = railMonths {
+                let columns = GridColumns(width: photosWidth, size: shownSize).count
+                TimelineRail(sections: months, columns: columns,
+                             rowHeight: (photosWidth - 2 * CGFloat(columns - 1)) / CGFloat(columns) + 2,
+                             position: railPosition) { section in
+                    proxy.scrollTo(CellKey(section: section.id, index: 0, asset: section.assets?.first?.id), anchor: .top)
+                }
+            }
         }
         .safeAreaInset(edge: .top, spacing: 0) {
             // Assign Location: the list leaves out months whose check failed.
@@ -641,6 +683,19 @@ struct AssetGridView: View {
         .onKeyPress(action: handleKey)
         // ⌫ is the key of the Edit menu's Delete, which takes it before the grid sees it.
         .onDeleteCommand { delete(Array(model.selection), command: false) }
+    }
+
+    /// The months the date scroller shows: a timeline's, as months with headers, and enough of them to scroll through.
+    private var railMonths: [GridSection]? {
+        guard shownRail, model.showsSectionHeaders else { return nil }
+        let months = model.sections.filter { model.shownCount($0) > 0 }
+        guard months.count >= 3, months.allSatisfy({ TimelineRailLayout.isMonth($0.id) }) else { return nil }
+        return months
+    }
+
+    /// The photos' width, beside the date scroller.
+    private var photosWidth: CGFloat {
+        max(0, gridWidth - (railMonths == nil ? 0 : TimelineRail.inset))
     }
 
     /// As in Photos: ⌘⌫ deletes; ⌫ takes the photos out of an album, and deletes them elsewhere.
@@ -793,6 +848,13 @@ private final class VisibleCells {
         guard let section = sections.first(where: { shown.contains($0.id) }) else { return nil }
         return keys.filter { $0.section == section.id }.min { $0.index < $1.index }
     }
+
+    /// The cell in the middle of those in view, in the grid's order.
+    func middle(in sections: [GridSection]) -> CellKey? {
+        let order = Dictionary(sections.enumerated().map { ($1.id, $0) }, uniquingKeysWith: { first, _ in first })
+        let sorted = keys.sorted { (order[$0.section] ?? 0, $0.index) < (order[$1.section] ?? 0, $1.index) }
+        return sorted.isEmpty ? nil : sorted[sorted.count / 2]
+    }
 }
 
 struct SectionHeader: View {
@@ -916,7 +978,12 @@ struct ThumbnailCell: View {
     private var badges: some View {
         if let asset, asset.isFavorite || asset.isVideo || asset.livePhotoVideoID != nil || asset.stackCount != nil {
             HStack(spacing: 4) {
-                if asset.isFavorite { Image(systemName: "heart.fill") }
+                if asset.isFavorite {
+                    // On a dark plate, so it shows on snow and sky too.
+                    Image(systemName: "heart.fill")
+                        .padding(3)
+                        .background(.black.opacity(0.45), in: .rect(cornerRadius: 4))
+                }
                 Spacer(minLength: 0)
                 if let count = asset.stackCount {
                     Label("\(count)", systemImage: "square.stack.3d.up.fill").labelStyle(.titleAndIcon)

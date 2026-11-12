@@ -34,6 +34,7 @@ cases = {
     'viewer-swipe': ['ImmichGallery/Views/Viewer/ViewerSwipeNavigation.swift', 'ImmichGallery/Views/Viewer/ViewerScrollPan.swift', 'Tests/ViewerSwipeNavigationChecks.swift'],
     'sidebar-layout': [app('SidebarLayout'), 'Tests/SidebarLayoutChecks.swift'],
     'library-overview': [app('LibraryOverviewArrangement'), 'Tests/LibraryOverviewChecks.swift'],
+    'timeline-rail': [app('TimelineRailLayout'), 'Tests/TimelineRailChecks.swift'],
     'inspector-editing': models + [app('AssetInspectorState'), 'ImmichGallery/Views/InlineEditableText.swift', 'Tests/InspectorEditingChecks.swift'],
     'search-layout': ['ImmichGallery/Views/Grid/GridHeaderLayout.swift', 'Tests/SearchLayoutChecks.swift'],
     'search-landing': api + [support('ImagePipeline'), 'ImmichGallery/Views/Albums/RemoteThumbnail.swift', 'ImmichGallery/Views/Search/SearchLandingView.swift', 'Tests/SearchLandingChecks.swift'],
