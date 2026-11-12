@@ -13,6 +13,7 @@ enum SidebarItem: Hashable {
 
 struct MainView: View {
     @Environment(LibrarySession.self) private var session
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var selection: SidebarItem? = .library
     @State private var search = SearchFieldModel()
     @State private var toolbarCompact = false
@@ -89,6 +90,9 @@ struct MainView: View {
         }
         .onChange(of: search.text) { _, text in
             if text.isEmpty, selection == .search { submittedSearch = "" }
+        }
+        .transaction { transaction in
+            if reduceMotion { transaction.animation = nil; transaction.disablesAnimations = true }
         }
     }
 

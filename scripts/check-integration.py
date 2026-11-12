@@ -14,6 +14,7 @@ models = [f'ImmichGallery/API/{s}.swift' for s in ['Models', 'Models+Albums', 'M
 app = lambda s: f'ImmichGallery/App/{s}.swift'
 support = lambda s: f'ImmichGallery/Support/{s}.swift'
 cases = {
+    'quick-look-downloads': ['ImmichGallery/Views/MacIntegration/MacQuickLook.swift', 'Tests/QuickLookDownloadChecks.swift'],
     'password-banner': api + ['Tests/PasswordBannerChecks.swift'],
     'metadata-state': models + ['ImmichGallery/API/Models+Metadata.swift', app('MetadataState'), 'scripts/verify-metadata-state.swift'],
     'admin-refresh': models + ['ImmichGallery/API/Models+Admin.swift', 'ImmichGallery/API/ImmichClient+Admin.swift', app('AdminModel'), 'scripts/check-admin-refresh.swift'],
@@ -50,6 +51,11 @@ cases = {
 
 def check(item):
     name, sources = item
+    if name == 'quick-look-downloads':
+        # Open only access control for the offline harness; keep production download logic unchanged.
+        exposed = out / 'MacQuickLook.swift'
+        exposed.write_text((repo / sources[0]).read_text().replace('private ', ''))
+        sources = [str(exposed), *sources[1:]]
     binary = out / name
     log = out / (name + '.log')
     with log.open('w') as stream:

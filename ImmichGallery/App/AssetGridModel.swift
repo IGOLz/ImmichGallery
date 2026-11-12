@@ -147,7 +147,9 @@ final class AssetGridModel {
     private(set) var state: LoadState = .idle
     private(set) var searchResultsLoaded = 0
     @ObservationIgnored private var sortedSmartResults: [AssetResponse]?
-    var selection: Set<String> = []
+    var selection: Set<String> = [] {
+        didSet { if selection != oldValue { keyboardMoveGeneration = UUID() } }
+    }
     var viewerID: String?
     var viewerScrollTarget: String? // Viewer
     func viewerLoadSection(_ section: Int) async {
@@ -283,6 +285,7 @@ final class AssetGridModel {
 
     // Explore: remove sensitive items immediately from every cached grid and viewer.
     func exploreRemove(_ ids: Set<String>) {
+        keyboardMoveGeneration = UUID()
         if let viewerID, ids.contains(viewerID) { self.viewerID = nil }
         selection.subtract(ids)
         for i in sections.indices {
@@ -551,23 +554,40 @@ final class AssetGridModel {
 
     func neighbor(of id: String, delta: Int) async -> AssetItem? {
         guard let pos = index[id] else { return nil }
+        let generation = loadGeneration
         var s = pos.section
         var i = pos.item + delta
         while sections.indices.contains(s) {
-            if sections[s].assets == nil { await loadSection(id: sections[s].id).value }
+            let sectionID = sections[s].id
+            if sections[s].assets == nil {
+                await loadSection(id: sectionID).value
+                guard generation == loadGeneration, !Task.isCancelled, index[id] != nil,
+                      let current = sections.firstIndex(where: { $0.id == sectionID }) else { return nil }
+                s = current
+            }
             let count = sections[s].assets?.count ?? 0
             if i < 0 {
                 s -= 1
                 guard sections.indices.contains(s) else { return nil }
-                if sections[s].assets == nil { await loadSection(id: sections[s].id).value }
+                let previousID = sections[s].id
+                if sections[s].assets == nil {
+                    await loadSection(id: previousID).value
+                    guard generation == loadGeneration, !Task.isCancelled, index[id] != nil,
+                          let current = sections.firstIndex(where: { $0.id == previousID }) else { return nil }
+                    s = current
+                }
                 i = (sections[s].assets?.count ?? 0) - 1
             } else if i >= count {
                 if isPaged, s == sections.count - 1, nextPage != nil, !pageFailed {
                     do { try await fetchNextPage() }
                     catch {
+                        guard generation == loadGeneration, !Task.isCancelled else { return nil }
                         if !error.isCancellation { pageFailed = true; report(error) }
                         return nil
                     }
+                    guard generation == loadGeneration, !Task.isCancelled, index[id] != nil,
+                          let current = sections.firstIndex(where: { $0.id == sectionID }) else { return nil }
+                    s = current
                     continue
                 }
                 s += 1
@@ -582,6 +602,7 @@ final class AssetGridModel {
     // MARK: Selection
 
     func click(_ id: String) {
+        keyboardMoveGeneration = UUID()
         let flags = NSEvent.modifierFlags
         if flags.contains(.command) {
             if selection.contains(id) { selection.remove(id) } else { selection.insert(id) }
@@ -619,6 +640,7 @@ final class AssetGridModel {
 
     /// The item the arrow keys move from: the last one clicked or reached, as in Photos and Finder.
     @ObservationIgnored private var cursorID: String?
+    @ObservationIgnored private var keyboardMoveGeneration = UUID()
     /// How many items a row of the grid holds, set by the grid from its width.
     @ObservationIgnored var columns = 1
     /// The item the arrow keys reached, for the grid to scroll to.
@@ -641,6 +663,8 @@ final class AssetGridModel {
     /// Moves the cursor one item, or one row, and selects it; extending selects everything from where the
     /// selection started (the anchor) to it, as Shift does in Photos and Finder.
     func move(_ direction: Move, extending: Bool) async {
+        let request = UUID(), generation = loadGeneration
+        keyboardMoveGeneration = request
         let start = cursorID.flatMap { selection.contains($0) && index[$0] != nil ? $0 : nil }
             ?? (direction == .left || direction == .up ? orderedSelection.first : orderedSelection.last)
         guard let start else {
@@ -649,7 +673,9 @@ final class AssetGridModel {
             select(first.id)
             return
         }
-        guard let target = await self.target(from: start, direction) else { return }
+        guard let target = await self.target(from: start, direction), !Task.isCancelled,
+              generation == loadGeneration, request == keyboardMoveGeneration,
+              index[start] != nil, index[target] != nil else { return }
         cursorID = target
         if extending {
             let anchor = anchorID.flatMap { index[$0] != nil ? $0 : nil } ?? start
@@ -672,6 +698,7 @@ final class AssetGridModel {
     /// The item one step away: across months for left and right, by row for up and down. Each month starts a new
     /// row, so moving down from its last row goes to the same column of the next month's first row.
     private func target(from id: String, _ direction: Move) async -> String? {
+        let generation = loadGeneration
         switch direction {
         case .left: return await neighbor(of: id, delta: -1)?.id
         case .right: return await neighbor(of: id, delta: 1)?.id
@@ -685,7 +712,13 @@ final class AssetGridModel {
                 if pos.item / width < (count - 1) / width { return sections[pos.section].assets?.last?.id }
                 var s = pos.section + 1
                 while sections.indices.contains(s) {
-                    if sections[s].assets == nil { await loadSection(id: sections[s].id).value }
+                    let sectionID = sections[s].id
+                    if sections[s].assets == nil {
+                        await loadSection(id: sectionID).value
+                        guard generation == loadGeneration, !Task.isCancelled, index[id] != nil,
+                              let current = sections.firstIndex(where: { $0.id == sectionID }) else { return nil }
+                        s = current
+                    }
                     if let assets = sections[s].assets, !assets.isEmpty { return assets[min(column, assets.count - 1)].id }
                     s += 1
                 }
@@ -693,7 +726,13 @@ final class AssetGridModel {
                 if pos.item - width >= 0 { return sections[pos.section].assets?[pos.item - width].id }
                 var s = pos.section - 1
                 while sections.indices.contains(s) {
-                    if sections[s].assets == nil { await loadSection(id: sections[s].id).value }
+                    let sectionID = sections[s].id
+                    if sections[s].assets == nil {
+                        await loadSection(id: sectionID).value
+                        guard generation == loadGeneration, !Task.isCancelled, index[id] != nil,
+                              let current = sections.firstIndex(where: { $0.id == sectionID }) else { return nil }
+                        s = current
+                    }
                     if let assets = sections[s].assets, !assets.isEmpty {
                         let lastRow = (assets.count - 1) / width * width
                         return assets[min(lastRow + column, assets.count - 1)].id
@@ -711,10 +750,7 @@ final class AssetGridModel {
         var ids: [String] = []
         if pos.item > 0 { ids.append(assets[pos.item - 1].id) }
         if pos.item + 1 < assets.count { ids.append(assets[pos.item + 1].id) }
-        let width = max(1, columns)
-        if pos.item + width < assets.count { ids.append(assets[pos.item + width].id) }
-        if pos.item - width >= 0 { ids.append(assets[pos.item - width].id) }
-        return ids
+        return ids.filter { item($0)?.isVideo == false }
     }
 
     /// The selection's neighbours when one item is selected, else none.
@@ -730,6 +766,7 @@ final class AssetGridModel {
     /// Every photo, as in Photos: the loaded ones now, and the months not loaded yet as they load, unless the selection
     /// changes meanwhile.
     func selectAll() {
+        keyboardMoveGeneration = UUID()
         let loaded = Set(sections.flatMap { $0.assets ?? [] }.map(\.id))
         selection = loaded
         guard sections.contains(where: { $0.assets == nil }) || (isPaged && nextPage != nil) else { return }
@@ -741,6 +778,7 @@ final class AssetGridModel {
     }
 
     func open(_ id: String) {
+        keyboardMoveGeneration = UUID()
         selection = [id]
         anchorID = id
         viewerID = id
@@ -852,6 +890,7 @@ final class AssetGridModel {
     }
 
     private func remove(_ ids: [String]) {
+        keyboardMoveGeneration = UUID()
         sortedSmartResults = nil
         let removed = Set(ids)
         // Move the viewer to a neighbour before the current asset disappears.
