@@ -110,7 +110,9 @@ final class ViewerSlideLayerView: NSView {
     override func hitTest(_ point: NSPoint) -> NSView? { nil }
 
     private var middle: CGPoint { CGPoint(x: bounds.midX, y: bounds.midY) }
-    private var span: CGFloat { bounds.width + Self.gap }
+    /// How far one photo is from the next as they slide: the window's width and the gap, as in Photos, so a photo
+    /// leaving under the see-through sidebar goes on until it's past the window's edge.
+    private var span: CGFloat { max(bounds.width, window?.contentView?.bounds.width ?? 0) + Self.gap }
 
     func slide(from outgoing: CGImage, to incoming: CGImage, direction: Int) {
         guard bounds.width > 0, bounds.height > 0 else { return }
