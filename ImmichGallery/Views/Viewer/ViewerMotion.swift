@@ -109,12 +109,12 @@ final class ViewerSlideLayerView: NSView {
         CATransaction.begin()
         CATransaction.setDisableActions(true)
         show(current: outgoing)
+        finish()
         incomingLayer.contents = incoming
         incomingLayer.isHidden = false
         let distance = span * CGFloat(direction)
         move(currentLayer, from: middle, to: CGPoint(x: middle.x - distance, y: middle.y), duration: 0.3)
         move(incomingLayer, from: CGPoint(x: middle.x + distance, y: middle.y), to: middle, duration: 0.3)
-        finish()
         CATransaction.commit()
     }
 
@@ -148,6 +148,7 @@ final class ViewerSlideLayerView: NSView {
         dragging = false
         CATransaction.begin()
         CATransaction.setDisableActions(true)
+        finish()
         let current = currentLayer.presentation()?.position ?? currentLayer.position
         let incoming = incomingLayer.presentation()?.position ?? incomingLayer.position
         if let direction, direction == dragSide {
@@ -158,7 +159,6 @@ final class ViewerSlideLayerView: NSView {
             move(currentLayer, from: current, to: middle, duration: 0.25)
             move(incomingLayer, from: incoming, to: CGPoint(x: middle.x + span * CGFloat(dragSide), y: middle.y), duration: 0.25)
         }
-        finish()
         CATransaction.commit()
     }
 
@@ -179,7 +179,8 @@ final class ViewerSlideLayerView: NSView {
         isHidden = false
     }
 
-    /// Hides the layers when the running animations end, unless something newer has started.
+    /// Hides the layers when the animations added after it end, unless something newer has started. Set before the
+    /// animations: Core Animation calls it at once when none are added after it, which hid the slide as it began.
     private func finish() {
         let current = generation
         CATransaction.setCompletionBlock { [weak self] in
