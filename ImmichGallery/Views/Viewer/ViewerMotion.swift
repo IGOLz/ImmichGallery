@@ -85,6 +85,9 @@ final class ViewerSlideLayerView: NSView {
     /// The gap between two photos as they slide, as in Photos.
     private static let gap: CGFloat = 40
     private static let timing = CAMediaTimingFunction(controlPoints: 0.25, 0.8, 0.3, 1)
+    /// A step by the keys or the arrows, and the rest of a swipe once the fingers lift.
+    private static let slideDuration: CFTimeInterval = 0.36
+    private static let swipeDuration: CFTimeInterval = 0.3
 
     override init(frame: NSRect) {
         super.init(frame: frame)
@@ -124,8 +127,8 @@ final class ViewerSlideLayerView: NSView {
         incomingLayer.contents = incoming
         incomingLayer.isHidden = false
         let distance = span * CGFloat(direction)
-        move(currentLayer, from: middle, to: CGPoint(x: middle.x - distance, y: middle.y), duration: 0.3)
-        move(incomingLayer, from: CGPoint(x: middle.x + distance, y: middle.y), to: middle, duration: 0.3)
+        move(currentLayer, from: middle, to: CGPoint(x: middle.x - distance, y: middle.y), duration: Self.slideDuration)
+        move(incomingLayer, from: CGPoint(x: middle.x + distance, y: middle.y), to: middle, duration: Self.slideDuration)
         CATransaction.commit()
     }
 
@@ -164,11 +167,11 @@ final class ViewerSlideLayerView: NSView {
         let incoming = incomingLayer.presentation()?.position ?? incomingLayer.position
         if let direction, direction == dragSide {
             let distance = span * CGFloat(direction)
-            move(currentLayer, from: current, to: CGPoint(x: middle.x - distance, y: middle.y), duration: 0.25)
-            move(incomingLayer, from: incoming, to: middle, duration: 0.25)
+            move(currentLayer, from: current, to: CGPoint(x: middle.x - distance, y: middle.y), duration: Self.swipeDuration)
+            move(incomingLayer, from: incoming, to: middle, duration: Self.swipeDuration)
         } else {
-            move(currentLayer, from: current, to: middle, duration: 0.25)
-            move(incomingLayer, from: incoming, to: CGPoint(x: middle.x + span * CGFloat(dragSide), y: middle.y), duration: 0.25)
+            move(currentLayer, from: current, to: middle, duration: Self.swipeDuration)
+            move(incomingLayer, from: incoming, to: CGPoint(x: middle.x + span * CGFloat(dragSide), y: middle.y), duration: Self.swipeDuration)
         }
         CATransaction.commit()
     }
