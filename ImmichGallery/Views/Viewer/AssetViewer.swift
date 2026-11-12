@@ -9,6 +9,14 @@ struct AssetViewer: View {
     @Binding var playLive: Bool
     let onDelete: ([String]) -> Void
     var onTags: ([String], Bool) -> Void = { _, _ in }
+    /// ⌫ in an album: takes the photo out of it.
+    var onRemove: ([String]) -> Void = { _ in }
+    /// The toolbar's zoom buttons, ⌘+ and ⌘−.
+    var zoomRequest: PhotoZoomRequest?
+    /// Z, which the page turns into a zoom request.
+    var onZoom: (PhotoZoomRequest.Zoom) -> Void = { _ in }
+    /// The face boxes to draw, while the page shows face names.
+    var faces: [PeopleFace] = []
 
     @Environment(\.viewerContext) private var viewer
     var isPresentation = false
@@ -89,8 +97,15 @@ struct AssetViewer: View {
         .focusEffectDisabled()
         .onAppear { isFocused = true }
         .onKeyPress(action: handleKey)
+        // ⌫ is the key of the Edit menu's Delete, which takes it before the viewer sees it.
+        .onDeleteCommand { delete(command: false) }
         .onExitCommand { if isPresentation { viewer?.close() } else { model.viewerID = nil } }
         .task(id: item.id) { await prefetchNeighbours() }
+    }
+
+    /// As in Photos: ⌘⌫ deletes; ⌫ takes the photo out of an album, and deletes it elsewhere.
+    private func delete(command: Bool) {
+        if command || model.source.albumID == nil { onDelete([item.id]) } else { onRemove([item.id]) }
     }
 
     private var media: some View {
@@ -109,7 +124,8 @@ struct AssetViewer: View {
                     .modifier(ViewerVideoOptionsPlacement(visible: !isPresentation || viewer?.controlsVisible != false))
                     .draggable(OriginalTransfer(id: item.id, isVideo: true, client: session.client))
             } else {
-                ZoomableImage(item: item, rotation: viewer?.rotation ?? 0, showsFaces: !isPresentation, isZoomed: $isZoomed)
+                ZoomableImage(item: item, rotation: viewer?.rotation ?? 0, faces: faces, isZoomed: $isZoomed,
+                              zoomRequest: zoomRequest)
                     .id(item.id)
                 if playLive, let videoID = item.livePhotoVideoID {
                     VideoPlayerView(
@@ -131,6 +147,12 @@ struct AssetViewer: View {
                 .padding(.horizontal, 16)
             }
         }
+        .background(ViewerSwipeNavigation(
+            isEnabled: !item.isVideo && !isZoomed && (isPresentation || viewer?.window == nil),
+            isCurrent: { [model, id = item.id] in model.viewerID == id },
+            onNavigate: { delta in
+                if isPresentation { viewer?.stepWithoutWrapping(delta) } else { step(delta) }
+            }))
     }
 
     private var videoFinished: (@MainActor @Sendable () -> Void)? {
@@ -169,6 +191,11 @@ struct AssetViewer: View {
 
     private func handleKey(_ press: KeyPress) -> KeyPress.Result {
         guard !(NSApp.keyWindow?.firstResponder is NSText) else { return .ignored }
+        // Photos' ⌥Space plays a Live Photo; it doesn't close the photo as Space does.
+        if press.key == .space, press.modifiers.contains(.option) {
+            if item.livePhotoVideoID != nil { playLive.toggle() }
+            return .handled
+        }
         if isPresentation {
             if press.key == .escape { viewer?.close(); return .handled }
             if press.key == .return { return .handled }
@@ -182,14 +209,31 @@ struct AssetViewer: View {
         case .rightArrow: step(1)
         case .space where !item.isVideo, .escape, .return: model.viewerID = nil
         case .delete, .deleteForward:
-            guard press.modifiers.contains(.command) else { return .ignored }
-            onDelete([item.id])
+            guard press.modifiers.isDisjoint(with: [.shift, .option, .control]) else { return .ignored }
+            delete(command: press.modifiers.contains(.command))
         default:
-            guard press.characters == "." else { return .ignored }
-            Task { await model.toggleFavorite([item.id]) }
+            if press.characters == "z", press.modifiers.isEmpty, !item.isVideo {
+                onZoom(.toggle) // Photos' Z
+            } else if press.characters == "." {
+                Task { await model.toggleFavorite([item.id]) }
+            } else {
+                return .ignored
+            }
         }
         return .handled
     }
+}
+
+/// Zooming the open photo, from the toolbar's buttons, ⌘+ and ⌘−, or Z; each press is a new request.
+struct PhotoZoomRequest: Equatable {
+    enum Zoom { case zoomIn, zoomOut, toggle }
+    let zoom: Zoom
+    let generation: Int
+}
+
+/// The page's zoom for its open photo, for the View menu's Zoom In and Zoom Out.
+struct PhotoZoomAction {
+    let zoom: (PhotoZoomRequest.Zoom) -> Void
 }
 
 /// Shows the cached thumbnail instantly, then the preview, and fetches the original once the
@@ -199,8 +243,9 @@ private struct ZoomableImage: View {
     @Environment(LibrarySession.self) private var session
     let item: AssetItem
     let rotation: Int
-    var showsFaces = true
+    var faces: [PeopleFace] = []
     @Binding var isZoomed: Bool
+    var zoomRequest: PhotoZoomRequest?
     @AppStorage(HDRPhotos.enabledKey) private var showHDR = true
 
     @State private var image: CGImage?
@@ -224,6 +269,13 @@ private struct ZoomableImage: View {
                         .overlay {
                             if let hdrImage { HDRImageLayer(image: hdrImage).allowsHitTesting(false) }
                         }
+                        // On the photo itself, so the boxes zoom and pan with it.
+                        .overlay {
+                            Group {
+                                if rotation % 360 == 0, !faces.isEmpty { PhotoFaceBoxes(faces: faces, zoom: scale * gestureScale) }
+                            }
+                            .animation(.easeInOut(duration: 0.2), value: faces.isEmpty)
+                        }
                         .macOriginalDraggable(OriginalTransfer(id: item.id, client: session.client),
                                               isEnabled: scale * gestureScale <= 1)
                 } else if let hash = item.thumbhash, let placeholder = ThumbHash.image(base64: hash) {
@@ -233,17 +285,14 @@ private struct ZoomableImage: View {
                     ProgressView().controlSize(.large)
                 }
             }
+            // The photo fades in over its blurred placeholder, and the HDR version over the photo.
+            .animation(.easeOut(duration: 0.2), value: image == nil)
+            .animation(.easeOut(duration: 0.3), value: hdrImage != nil)
             .frame(width: swapsAxes ? geo.size.height : geo.size.width, height: swapsAxes ? geo.size.width : geo.size.height)
             .rotationEffect(.degrees(Double(rotation)))
             .frame(width: geo.size.width, height: geo.size.height)
             .scaleEffect(scale * gestureScale)
             .offset(offset)
-            .overlay {
-                if let image, showsFaces, rotation % 360 == 0 {
-                    PeopleFaceOverlay(assetID: item.id, imageSize: CGSize(width: image.width, height: image.height),
-                                      zoom: scale * gestureScale, offset: offset)
-                }
-            }
             .contentShape(Rectangle())
             .gesture(magnify)
             .simultaneousGesture(pan(in: geo.size), isEnabled: scale * gestureScale > 1)
@@ -263,6 +312,22 @@ private struct ZoomableImage: View {
         .onChange(of: scale * gestureScale) { _, value in isZoomed = value > 1 }
         .onChange(of: scale) { _, newValue in
             if newValue > 1.1 { hasOriginal = true }
+        }
+        .onChange(of: zoomRequest) { _, request in
+            if let request { zoom(request.zoom) }
+        }
+    }
+
+    /// Keeps the point in the middle of the view where it is, as pinching does. Toggling zooms as double-clicking does.
+    private func zoom(_ zoom: PhotoZoomRequest.Zoom) {
+        let target: CGFloat = switch zoom {
+        case .zoomIn: min(8, scale * 1.5)
+        case .zoomOut: max(1, scale / 1.5)
+        case .toggle: scale > 1 ? 1 : 2.5
+        }
+        withAnimation(.snappy) {
+            offset = target <= 1 ? .zero : CGSize(width: offset.width * target / scale, height: offset.height * target / scale)
+            scale = target
         }
     }
 

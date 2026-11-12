@@ -4,6 +4,8 @@ struct AlbumSelectionMenu: View {
     let session: LibrarySession
     let model: AssetGridModel?
     let ids: [String]
+    /// The menu bar's Image menu shows the keys, which a context menu leaves out.
+    var menuBarShortcuts = false
 
     var body: some View {
         Menu("Add to Album") {
@@ -20,19 +22,17 @@ struct AlbumSelectionMenu: View {
         .disabled(ids.isEmpty || model?.source == .trash)
         if let id = model?.source.albumID {
             Button("Remove from Album") {
-                session.albumActions.perform(session: session, albumID: id) {
-                    try await session.client.changeAlbumAssets(id, ids: ids, removing: true)
-                    model?.selection.subtract(ids)
-                }
+                session.albumActions.perform(session: session, albumID: id) { try await model?.removeFromAlbum(ids) }
             }
             .disabled(ids.isEmpty || session.albumActions.details[id]?.canEdit(session.user?.id) != true)
-            Button("Use as Album Cover") {
+            let cover = Button("Use as Album Cover") {
                 guard let assetID = ids.first else { return }
                 session.albumActions.perform(session: session, albumID: id, reloadTimeline: false) {
                     _ = try await session.client.updateAlbum(id, AlbumUpdate(albumThumbnailAssetId: assetID))
                 }
             }
             .disabled(ids.count != 1 || session.albumActions.details[id]?.isOwner(session.user?.id) != true)
+            if menuBarShortcuts { cover.keyboardShortcut("k", modifiers: [.command, .shift]) } else { cover } // Photos' Make Key Photo
         }
     }
 }
@@ -96,41 +96,49 @@ struct AlbumNameSheet: View {
 
 struct AlbumSidebarRows: View {
     @Environment(LibrarySession.self) private var session
+    @Environment(\.sidebarRowSize) private var rowSize
 
     let shared: Bool
     @Binding var storedLayout: String
-    @Binding var selection: SidebarItem?
 
     var body: some View {
         let layout = SidebarLayout(stored: storedLayout)
         ForEach(session.sidebarAlbums(in: (shared ? SidebarGroup.sharedAlbums : .myAlbums).rawValue, layout: layout)) { album in
-            SidebarSelectionRow(item: .album(album.id), selection: $selection) {
-                Label {
-                    Text(album.albumName)
-                } icon: {
-                    if let assetID = album.albumThumbnailAssetId {
-                        RemoteThumbnail(pipeline: session.pipeline, assetID: assetID,
-                                        placeholderSystemImage: shared ? "person.2.crop.square.stack" : "rectangle.stack")
-                            .frame(width: 24, height: 24)
-                            .clipShape(.rect(cornerRadius: 4))
-                            .accessibilityHidden(true)
-                    } else {
-                        Image(systemName: shared ? "person.2.crop.square.stack" : "rectangle.stack")
-                    }
+            Label {
+                Text(album.albumName)
+            } icon: {
+                if let assetID = album.albumThumbnailAssetId {
+                    RemoteThumbnail(pipeline: session.pipeline, assetID: assetID,
+                                    placeholderSystemImage: shared ? "person.2.crop.square.stack" : "rectangle.stack")
+                        .frame(width: thumbnailSize, height: thumbnailSize)
+                        .clipShape(.rect(cornerRadius: 4))
+                        .accessibilityHidden(true)
+                } else {
+                    Image(systemName: shared ? "person.2.crop.square.stack" : "rectangle.stack")
                 }
             }
+                .tag(SidebarItem.album(album.id))
                 .modifier(AlbumRowUploadDrop(queue: session.upload, albumID: album.id, addAssets: { add($0, to: album) })) // Upload
-                .id(SidebarItem.album(album.id))
                 .contextMenu {
                     MacAlbumWindowMenu(albumID: album.id)
+                    CrosslinkMenuItems(item: .album(album.id)) // Crosslink
                     Divider()
                     Button("Hide from Sidebar") {
                         var layout = SidebarLayout(stored: storedLayout)
                         layout.setDynamicItemHidden(true, key: session.sidebarItemKey("album:" + album.id))
-                        storedLayout = layout.stored
+                        withAnimation(.easeInOut(duration: 0.2)) { storedLayout = layout.stored }
                     }
                 }
                 .modifier(AlbumRowAssetDrop { add($0, to: album) })
+        }
+    }
+
+    /// The cover fills the space of a sidebar icon at the system's sidebar icon size.
+    private var thumbnailSize: CGFloat {
+        switch rowSize {
+        case .small: 16
+        case .large: 24
+        default: 20
         }
     }
 

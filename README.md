@@ -81,6 +81,7 @@ The demo is shared with everyone and doesn't accept uploads.
 | Feature                                                          | Immich Gallery |
 | :--------------------------------------------------------------- | :------------: |
 | Timeline grouped by month, with ThumbHash placeholders           | ✅ |
+| Library as Years, Months or All Photos, like Photos; square or aspect-ratio grid | ✅ |
 | View options: favorites only, photos or videos only, newest or oldest first, date taken or date added | ✅ |
 | Favorites, Videos, Archive, Recently Deleted                     | ✅ |
 | Viewer with zoom, video, Live Photos, slideshow and full screen  | ✅ |
@@ -97,15 +98,17 @@ The demo is shared with everyone and doesn't accept uploads.
 | Search filters: people, place, camera, date, type, rating        | ✅ |
 | Global map with clusters, places by city or country, memories    | ✅ |
 | Tags and folder view                                             | ✅ |
-| Locked Folder (PIN)                                              | ✅ |
+| Locked Folder (PIN, or Touch ID)                                 | ✅ |
 | Stacks, duplicates, large files, photos without a location      | ✅ |
 | Public shared links, filtered by type, and partner sharing       | ✅ |
 | Several accounts and servers                                     | ✅ |
 | API keys, sessions, notifications, preferences                   | ✅ |
 | Administration: stats, jobs, users, external libraries           | ✅ |
 | Several windows and tabs, Quick Look, drag and drop              | ✅ |
-| Customizable sidebar, edited in place, with collapsible sections and a choice of how many albums it lists | ✅ |
+| Customizable sidebar, edited in place, with collapsible sections and a choice of how many albums it lists; it follows the system's sidebar icon size | ✅ |
+| Customizable toolbar, grouped like Photos                        | ✅ |
 | Shortcuts actions and the macOS share sheet                      | ✅ |
+| Show in other Immich apps ([Immich Crosslink](https://jakob.hviid.phd/immich-crosslink/)), Open in Immich, Copy Immich Link | ✅ |
 | Desktop widgets: photos (featured, album, person, place, favorites, chosen), mosaic, library | ✅ |
 | In-app updates, optionally automatic                             | ✅ |
 | English and Italian                                              | ✅ |
@@ -117,28 +120,44 @@ The demo is shared with everyone and doesn't accept uploads.
 <details>
 <summary><b>Keyboard shortcuts</b></summary>
 
-| Action                         | Shortcut |
-| :----------------------------- | :------- |
-| Search                         | ⌘F |
-| Search filters                 | ⌥⌘F |
-| Info inspector                 | ⌘I |
-| Favorite                       | . |
-| Archive                        | ⌃⌘A |
-| Delete / restore               | ⌘⌫ |
-| Bigger / smaller thumbnails    | ⌘+ / ⌘− |
-| Refresh                        | ⌘R |
-| Import                         | ⇧⌘I |
-| Export unmodified original     | ⇧⌘E |
-| New album                      | ⌥⌘N |
-| Rotate left / right            | ⌥⌘R / ⇧⌥⌘R |
-| Copy image                     | ⌘C |
-| Quick Look                     | Space |
-| New window / new tab           | ⌘N / ⌘T |
-| Administration (admins)        | ⌥⌘A |
+| Action                                                        | Shortcut |
+| :------------------------------------------------------------ | :------- |
+| Search                                                        | ⌘F |
+| Search filters                                                | ⌥⌘F |
+| Years / Months / All Photos                                   | ⌘1 / ⌘2 / ⌘3 |
+| Info inspector                                                | ⌘I |
+| Favorite                                                      | . |
+| Archive / unarchive                                           | ⌘L |
+| Remove from album (in an album; elsewhere, delete)            | ⌫ |
+| Delete                                                        | ⌘⌫ |
+| Bigger / smaller thumbnails, or zoom the open photo           | ⌘+ / ⌘− |
+| Zoom the open photo in, or back to fit                        | Z |
+| Play a Live Photo                                             | ⌥Space |
+| Refresh                                                       | ⌘R |
+| Import                                                        | ⇧⌘I |
+| Export unmodified original                                    | ⇧⌘E |
+| New album                                                     | ⌥⌘N |
+| Use as album cover                                            | ⇧⌘K |
+| Rotate left / right                                           | ⇧⌘R / ⌥⌘R |
+| Copy image                                                    | ⌘C |
+| Move through photos / extend the selection                    | Arrow keys / ⇧ arrow keys |
+| Select all / deselect all                                     | ⌘A / ⇧⌘A |
+| Quick Look (arrow keys step through)                          | Space |
+| New window / new tab                                          | ⌘N / ⌘T |
+| Administration (admins)                                       | ⌥⌘A |
 
 </details>
 
 When filtering Library to photos or videos only, results contain your own items. Partner photos remain available in the unfiltered Library and on partner pages. Date Added sorting is available for the unfiltered timeline on Immich v3.0 or later.
+
+### Works with other Immich apps
+
+Immich Gallery takes part in [Immich Crosslink](https://jakob.hviid.phd/immich-crosslink/), an open protocol for links
+between Immich apps on the same Mac. With another app that takes part installed, such as
+[Immich Mount](https://github.com/jakobhviid/immich-mount), which shows your library as a drive in Finder, photos,
+albums, people and places get a **Show in** item for it, and the gallery opens what that app sends in return. There is
+nothing to set up: apps find each other once they are installed, and Settings ▸ Other Apps turns this off, for every
+app or for one.
 
 ## Screenshots
 
