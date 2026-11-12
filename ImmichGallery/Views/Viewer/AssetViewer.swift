@@ -203,9 +203,10 @@ struct AssetViewer: View {
         await (isPresentation ? viewer?.neighbor(of: item.id, delta: delta) : model.neighbor(of: item.id, delta: delta))
     }
 
+    /// Videos' too: the slide to a video shows its preview frame.
     private func prefetchNeighbours() async {
         for delta in [1, -1] {
-            if let next = await neighbour(delta), !next.isVideo {
+            if let next = await neighbour(delta) {
                 _ = await session.pipeline.thumbnail(next.id, size: .preview)
             }
         }
