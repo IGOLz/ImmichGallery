@@ -257,6 +257,8 @@
 				SPARKLE_FEED_URL = "https://github.com/IGOLz/ImmichGallery/releases/latest/download/appcast.xml";
 				IMMICH_APP_NAME = "Immich Gallery Dev";
 				IMMICH_URL_SCHEME = immichgallery-dev;
+				IMMICH_CROSSLINK_SCHEME = immich-crosslink-dev;
+				IMMICH_CROSSLINK_VERSION = "0.2-dev";
 				MARKETING_VERSION = 0.5.0;
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -293,6 +295,8 @@
 				SPARKLE_FEED_URL = "https://github.com/IGOLz/ImmichGallery/releases/latest/download/appcast.xml";
 				IMMICH_APP_NAME = ImmichGallery;
 				IMMICH_URL_SCHEME = immichgallery;
+				IMMICH_CROSSLINK_SCHEME = immich-crosslink;
+				IMMICH_CROSSLINK_VERSION = 0.2;
 				MARKETING_VERSION = 0.5.0;
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
