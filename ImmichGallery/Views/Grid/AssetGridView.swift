@@ -410,15 +410,22 @@ struct AssetGridHost<Header: View>: View {
         return (neighbors.previous, neighbors.next)
     }
 
+    /// A swipe's neighbour on the side of `delta`, as the slide's layers show it.
+    private func slideNeighbour(_ delta: Int) -> ViewerSlideNeighbour {
+        guard let openNeighbors else { return .pending }
+        guard let id = delta > 0 ? openNeighbors.next : openNeighbors.previous else { return .end }
+        return slidePicture(id).map { .picture($0) } ?? .pending
+    }
+
     /// The photos follow a trackpad swipe: the open one, and the neighbour it uncovers.
     private func swipeDrag(_ width: CGFloat) {
         guard let id = model.viewerID, let current = slidePicture(id) else { return }
-        slider.drag(width, current: current, previous: openNeighbors?.previous.flatMap(slidePicture),
-                    next: openNeighbors?.next.flatMap(slidePicture))
+        slider.drag(width, current: current, previous: slideNeighbour(-1), next: slideNeighbour(1))
     }
 
-    /// The swipe ended: far enough, it finishes the step on the layers and moves to that photo; otherwise back. Before
-    /// the open photo's neighbours are known, it looks the neighbour up, as the keys do.
+    /// The swipe ended: far enough, it moves to that photo, finishing the step on the layers when its picture was
+    /// showing and at once when it wasn't; otherwise back. Before the open photo's neighbours are known, it looks the
+    /// neighbour up, as the keys do.
     private func swipeEnd(_ direction: Int?) {
         guard let id = model.viewerID, let direction else {
             slider.endDrag(direction: nil, toID: nil)
@@ -435,7 +442,7 @@ struct AssetGridHost<Header: View>: View {
     }
 
     private func step(to target: String?, direction: Int) {
-        guard let target, slidePicture(target) != nil else {
+        guard let target else {
             slider.endDrag(direction: nil, toID: nil)
             return
         }
