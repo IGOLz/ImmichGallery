@@ -313,9 +313,12 @@ struct AssetGridHost<Header: View>: View {
     private func startMotion(from old: String?, to new: String?) {
         let generation = (motion?.generation ?? 0) + 1
         let next = makeMotion(from: old, to: new, generation: generation)
-        // A photo closing into a square off screen fades instead; the grid scrolls to it as it shows again. The grid
-        // doesn't follow while hidden behind a photo: scrolling it then made AppKit's layout loop and throw.
-        if let old, new == nil, next == nil { model.viewerScrollTarget = old }
+        // A photo closing into a square off screen fades instead; the grid scrolls to the selected photo as it shows
+        // again: the one that closed, unless a face below a photo chose another (`showSelected`). The grid doesn't
+        // follow while hidden behind a photo: scrolling it then made AppKit's layout loop and throw.
+        if let old, new == nil, next == nil {
+            model.viewerScrollTarget = model.selection.count == 1 ? model.selection.first : old
+        }
         settledID = new
         pinchedScale = nil
         motion = next
