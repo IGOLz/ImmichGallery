@@ -22,7 +22,7 @@ extension View {
     func macOriginalDragContainer(model: AssetGridModel, client: ImmichClient) -> some View {
         if #available(macOS 26, *) {
             dragContainer(for: OriginalTransfer.self) { (ids: [String]) in
-                ids.map { OriginalTransfer(id: $0, isVideo: model.item($0)?.isVideo ?? false, client: client) }
+                ids.map { model.macOriginalTransfer($0, isVideo: model.item($0)?.isVideo ?? false, client: client) }
             }
             .dragContainerSelection(Array(model.selection))
         } else {
@@ -50,6 +50,18 @@ extension View {
             // Parent gestures use their own content shape, so they still get events.
             legacyAssetDrag(original: item).allowsHitTesting(isEnabled)
         }
+    }
+}
+
+extension AssetGridModel {
+    var macOrderedSelection: [String] {
+        sections.flatMap { $0.assets ?? [] }.filter { selection.contains($0.id) }.map(\.id)
+    }
+
+    /// The macOS 26+ drag item of one grid asset. Each container item carries only its own ID for
+    /// album drops; Locked Folder items carry none, so they can't be added to albums.
+    func macOriginalTransfer(_ id: String, isVideo: Bool, client: ImmichClient) -> OriginalTransfer {
+        OriginalTransfer(id: id, isVideo: isVideo, client: client, albumIDs: source == .locked ? nil : [id])
     }
 }
 
@@ -133,7 +145,7 @@ struct AlbumRowAssetDrop: ViewModifier {
     func body(content: Content) -> some View {
         if #available(macOS 26, *) {
             content.dropDestination(for: AlbumAssetTransfer.self) { (values: [AlbumAssetTransfer], _: CGPoint) -> Bool in
-                return addAssets(values.flatMap(\.ids))
+                return addAssets(AlbumAssetTransfer.mergedIDs(values))
             }
         } else {
             content
