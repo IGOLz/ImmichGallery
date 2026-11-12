@@ -160,7 +160,10 @@ struct AssetGridHost<Header: View>: View {
             if let old, let new { slide(from: old, to: new) }
             expandedMap = nil
             startMotion(from: old, to: new)
+            // The HDR photos kept for sliding, here or in the full-screen viewer, which closes through this too.
+            if new == nil { session.pipeline.releaseHDR() }
         }
+        .onChange(of: showHDR) { _, shown in if !shown { session.pipeline.releaseHDR() } }
         .onAppear { settledID = model.viewerID }
         .modifier(MetadataHost(model: model)) // Metadata
         .navigationTitle(viewerItem?.date.map { Text(ImmichDate.day($0)) } ?? (headerNamesPage ? Text(verbatim: "") : title))
