@@ -202,6 +202,56 @@ final class ViewerSlideLayerView: NSView {
     }
 }
 
+/// Whether the pointer is over the page, for the open photo's side arrows: an AppKit tracking area on a view that stays
+/// while photos change. SwiftUI's hover, on each photo's viewer, started out as not over it until the pointer moved,
+/// and missed some moves. This one also asks where the pointer is whenever its area changes.
+struct ViewerPointerTracking: NSViewRepresentable {
+    let onChange: (Bool) -> Void
+
+    func makeNSView(context: Context) -> TrackingView { TrackingView() }
+
+    func updateNSView(_ view: TrackingView, context: Context) { view.onChange = onChange }
+
+    final class TrackingView: NSView {
+        var onChange: ((Bool) -> Void)?
+        private var isInside: Bool?
+
+        override func hitTest(_ point: NSPoint) -> NSView? { nil }
+
+        override func updateTrackingAreas() {
+            super.updateTrackingAreas()
+            for area in trackingAreas { removeTrackingArea(area) }
+            addTrackingArea(NSTrackingArea(rect: .zero, options: [.mouseEnteredAndExited, .mouseMoved, .activeInActiveApp,
+                                                                  .inVisibleRect], owner: self))
+            locatePointer()
+        }
+
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            locatePointer()
+        }
+
+        override func mouseEntered(with event: NSEvent) { report(true) }
+        override func mouseMoved(with event: NSEvent) { report(true) }
+        override func mouseExited(with event: NSEvent) { report(false) }
+
+        /// Where the pointer is, without waiting for it to move. After the layout pass that asked: the page's state
+        /// can't change during one.
+        private func locatePointer() {
+            Task { @MainActor [weak self] in
+                guard let self, let window = self.window else { return }
+                self.report(self.visibleRect.contains(self.convert(window.mouseLocationOutsideOfEventStream, from: nil)))
+            }
+        }
+
+        private func report(_ inside: Bool) {
+            guard inside != isInside else { return }
+            isInside = inside
+            onChange?(inside)
+        }
+    }
+}
+
 /// A two-finger double-tap on the trackpad, Photos' smart zoom. It arrives as an AppKit event, not a SwiftUI gesture.
 struct ViewerSmartZoom: NSViewRepresentable {
     let onSmartZoom: () -> Void
