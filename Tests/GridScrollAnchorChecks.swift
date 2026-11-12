@@ -58,6 +58,13 @@ private struct AnchorGrid<Cell: View>: View {
     }
 }
 
+// Match the cell's outer availability-based drag modifier, without starting an actual drag.
+private extension View {
+    @ViewBuilder func conditionalDrag() -> some View {
+        if #available(macOS 26, *) { draggable("fixture") } else { self }
+    }
+}
+
 @main private struct GridScrollAnchorChecks {
     /// The cells built, and the seconds taken, by the zoom's scroll to `target`.
     @MainActor static func zoom<Cell: View>(to target: Key, @ViewBuilder cell: @escaping (Key) -> Cell) -> (Int, TimeInterval) {
@@ -81,16 +88,18 @@ private struct AnchorGrid<Cell: View>: View {
     @MainActor static func main() {
         NSApplication.shared.setActivationPolicy(.prohibited)
         let deep = Key(section: sections - 1, index: items - 10), total = sections * items
-        let (baseline, baselineTime) = zoom(to: deep) { key in Group { content(key) } }
+        let (baseline, baselineTime) = zoom(to: deep) { key in Group { content(key) }.overlay { Color.clear }.conditionalDrag() }
         print(String(format: "Group cells, scroll to the last section: %d of %d cells built, %.3fs", baseline, total, baselineTime))
         precondition(baseline >= total * 9 / 10, "Baseline must reproduce building the cells before the anchor")
         for target in [Key(section: 0, index: 3), Key(section: sections / 2, index: items / 2), deep] {
-            let (builds, time) = zoom(to: target) { key in gridCell { content(key) } }
+            let (builds, time) = zoom(to: target) { key in gridCell { Group { content(key) }.overlay { Color.clear }.conditionalDrag() } }
             print(String(format: "gridCell cells, scroll to section %d item %d: %d cells built, %.3fs", target.section, target.index, builds, time))
             precondition(builds < 1_000, "Scrolling to a cell must not build the cells before it")
         }
         let grid = try! String(contentsOfFile: "ImmichGallery/Views/Grid/AssetGridView.swift", encoding: .utf8)
         precondition(grid.contains("return gridCell {"), "AssetGridView's cell must be a gridCell")
+        let cell = grid.components(separatedBy: "return gridCell {")[1].components(separatedBy: ".onAppear")[0]
+        precondition(cell.contains(".macOriginalContainerItem") && cell.trimmingCharacters(in: .whitespacesAndNewlines).hasSuffix("}"), "The conditional drag modifier must be inside gridCell")
         print("Grid scroll anchor checks passed")
     }
 }

@@ -638,24 +638,26 @@ struct AssetGridView: View {
             fit: shownFit
         )
         return gridCell {
-            if let asset {
-                if #available(macOS 26, *) {
-                    // One drag source (`macOriginalContainerItem`) carries the original and album IDs.
-                    thumbnail
+            Group {
+                if let asset {
+                    if #available(macOS 26, *) {
+                        // One drag source (`macOriginalContainerItem`) carries the original and album IDs.
+                        thumbnail
+                    } else {
+                        // Locked items can't be dropped on albums; they can still be dragged out as files.
+                        let albumIDs = model.source == .locked ? nil : AlbumAssetTransfer(ids: model.selection.contains(asset.id) ? Array(model.selection) : [asset.id])
+                        thumbnail.legacyAssetDrag(albumIDs: albumIDs, original: OriginalTransfer(id: asset.id, isVideo: asset.isVideo, client: session.client))
+                    }
                 } else {
-                    // Locked items can't be dropped on albums; they can still be dragged out as files.
-                    let albumIDs = model.source == .locked ? nil : AlbumAssetTransfer(ids: model.selection.contains(asset.id) ? Array(model.selection) : [asset.id])
-                    thumbnail.legacyAssetDrag(albumIDs: albumIDs, original: OriginalTransfer(id: asset.id, isVideo: asset.isVideo, client: session.client))
+                    thumbnail
                 }
-            } else {
-                thumbnail
             }
+            .overlay(alignment: .topLeading) {
+                AssetsLargeFileBadge(asset: asset, source: model.source)
+                AssetsLocationBadge(asset: asset, source: model.source, arrangement: model.arrangement)
+            }
+            .macOriginalContainerItem(asset.map { model.macOriginalTransfer($0.id, isVideo: $0.isVideo, client: session.client) })
         }
-        .overlay(alignment: .topLeading) {
-            AssetsLargeFileBadge(asset: asset, source: model.source)
-            AssetsLocationBadge(asset: asset, source: model.source, arrangement: model.arrangement)
-        }
-        .macOriginalContainerItem(asset.map { model.macOriginalTransfer($0.id, isVideo: $0.isVideo, client: session.client) })
         .onAppear { model.cellAppeared(section: s, item: i) }
         .onTapGesture(count: 2) { if let asset { model.open(asset.id) } }
         .simultaneousGesture(TapGesture().onEnded { if let asset { model.click(asset.id) } })
