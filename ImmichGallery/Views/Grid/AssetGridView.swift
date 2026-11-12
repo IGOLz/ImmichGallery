@@ -637,7 +637,7 @@ struct AssetGridView: View {
             size: thumbnailRequestSize,
             fit: shownFit
         )
-        return Group {
+        return gridCell {
             if let asset {
                 if #available(macOS 26, *) {
                     // One drag source (`macOriginalContainerItem`) carries the original and album IDs.

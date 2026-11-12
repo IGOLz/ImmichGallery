@@ -22,7 +22,9 @@ extension View {
     func macOriginalDragContainer(model: AssetGridModel, client: ImmichClient) -> some View {
         if #available(macOS 26, *) {
             dragContainer(for: OriginalTransfer.self) { (ids: [String]) in
-                ids.map { model.macOriginalTransfer($0, isVideo: model.item($0)?.isVideo ?? false, client: client) }
+                let items = ids.map { model.macOriginalTransfer($0, isVideo: model.item($0)?.isVideo ?? false, client: client) }
+                items.forEach { $0.file.start() }
+                return items
             }
             .dragContainerSelection(Array(model.selection))
         } else {
@@ -73,11 +75,11 @@ extension View {
     func legacyAssetDrag(albumIDs: AlbumAssetTransfer? = nil, original: OriginalTransfer) -> some View {
         onDrag {
             let provider = NSItemProvider()
-            // The Finder names the file when the drag starts, before the original (and its real
-            // filename) is downloaded; the asset ID beats the default name "data".
-            provider.suggestedName = original.id
+            // The Finder names the file when the drag starts, before the original is downloaded.
+            let file = original.file.resolved
+            provider.suggestedName = file.name
             // The original first: the Finder takes the first representation it can save.
-            provider.registerFileRepresentation(forTypeIdentifier: UTType.data.identifier, fileOptions: [], visibility: .all) { completion in
+            provider.registerFileRepresentation(forTypeIdentifier: file.type.identifier, fileOptions: [], visibility: .all) { completion in
                 Task {
                     do { completion(try await original.client.macIntegrationOriginal(original.id), false, nil) }
                     catch { completion(nil, false, error) }

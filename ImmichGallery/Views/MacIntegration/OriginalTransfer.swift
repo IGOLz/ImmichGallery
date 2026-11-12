@@ -1,5 +1,6 @@
 import CoreTransferable
 import Foundation
+import Synchronization
 import UniformTypeIdentifiers
 
 /// The single drag payload of a grid or viewer asset. Outside the app it is only the original
@@ -10,15 +11,88 @@ struct OriginalTransfer: Transferable, Identifiable, Sendable {
     let client: ImmichClient
     /// Asset IDs for album drops. `nil` (Locked Folder, viewer) exports no album representation.
     var albumIDs: [String]? = nil
+    /// The original's name and type, read only once a drag starts.
+    let file: OriginalFile
+
+    init(id: String, isVideo: Bool = false, client: ImmichClient, albumIDs: [String]? = nil) {
+        self.id = id
+        self.isVideo = isVideo
+        self.client = client
+        self.albumIDs = albumIDs
+        file = OriginalFile(id: id, client: client)
+    }
 
     static var transferRepresentation: some TransferRepresentation {
-        // The original first: the Finder saves the first representation it can.
-        // The timeline has no filename/type metadata. Advertise a file rather than mislabel RAW/HEIC.
-        FileRepresentation(exportedContentType: .data) { item in
-            SentTransferredFile(try await item.client.macIntegrationOriginal(item.id), allowAccessingOriginalFile: true)
-        }
+        // The original first: the Finder saves the first representation it can. Exactly one of these is exported,
+        // by the original's kind, with its real name: receivers name the file before it is downloaded.
+        original(.image)
+        original(.movie)
+        original(.data)
         ProxyRepresentation(exporting: { _ in OriginalDragMarker() })
         ProxyRepresentation(exporting: { item in AlbumAssetTransfer(ids: item.albumIDs ?? []) })
             .exportingCondition { $0.albumIDs != nil }
+    }
+
+    private static func original(_ type: UTType) -> some TransferRepresentation<OriginalTransfer> {
+        FileRepresentation(exportedContentType: type) { item in
+            // A copy for the receiver: the cached original expires after ten minutes.
+            SentTransferredFile(try await item.client.macIntegrationOriginal(item.id), allowAccessingOriginalFile: false)
+        }
+        .exportingCondition { $0.file.resolved.type == type }
+        .suggestedFileName { $0.file.resolved.name }
+    }
+}
+
+/// The name and type of an original, which receivers such as the Finder take when the drag starts, before the
+/// original is downloaded. The timeline has neither, so they come from the asset's details, read only for the
+/// assets being dragged and waited for only briefly, since the drag can't start until then.
+final class OriginalFile: Sendable {
+    struct Resolved: Sendable, Equatable {
+        let name: String
+        /// `.image`, `.movie` or `.data`: Immich's kind of asset. The name's extension gives the exact format.
+        let type: UTType
+    }
+
+    static let timeout: TimeInterval = 1
+    private let id: String
+    private let client: ImmichClient
+    private let lookup = DispatchGroup()
+    private let state = Mutex<(started: Date?, resolved: Resolved?)>((nil, nil))
+
+    init(id: String, client: ImmichClient) {
+        self.id = id
+        self.client = client
+    }
+
+    /// Starts reading the details, so a multi-item drag reads them all at once.
+    func start() {
+        state.withLock { state in
+            guard state.started == nil else { return }
+            state.started = Date()
+            lookup.enter()
+            Task.detached { [self] in
+                let asset = try? await client.asset(id)
+                self.state.withLock { $0.resolved = asset.map(Self.resolve) }
+                lookup.leave()
+            }
+        }
+    }
+
+    /// The server's name and kind, or the asset ID and generic data when they don't arrive in time.
+    var resolved: Resolved {
+        start()
+        let deadline = state.withLock { $0.started! }.addingTimeInterval(Self.timeout)
+        _ = lookup.wait(timeout: .now() + max(0, deadline.timeIntervalSinceNow))
+        return state.withLock { $0.resolved } ?? Resolved(name: id, type: .data)
+    }
+
+    static func resolve(_ asset: AssetResponse) -> Resolved {
+        let name = (asset.originalFileName as NSString).lastPathComponent
+        let type: UTType = switch asset.type {
+        case .image: .image
+        case .video: .movie
+        default: .data
+        }
+        return Resolved(name: name.isEmpty || name == "." || name == ".." ? asset.id : name, type: type)
     }
 }

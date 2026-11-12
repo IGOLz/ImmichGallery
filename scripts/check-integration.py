@@ -29,6 +29,7 @@ cases = {
     'locked-folder-touch-id': api + [app('LockedFolderTouchID'), 'Tests/LockedFolderTouchIDChecks.swift'],
     'tag-picker': api + ['ImmichGallery/Views/Explore/ExploreTagPicker.swift', 'Tests/ExploreTagPickerChecks.swift'],
     'grid-context-menu': ['ImmichGallery/Views/Grid/DeferredContextMenu.swift', 'Tests/GridContextMenuChecks.swift'],
+    'grid-scroll-anchor': ['ImmichGallery/Views/Grid/GridCell.swift', 'Tests/GridScrollAnchorChecks.swift'],
     'viewer-scroll-pan': ['ImmichGallery/Views/Viewer/ViewerScrollPan.swift', 'Tests/ViewerScrollPanChecks.swift'],
     'viewer-swipe': ['ImmichGallery/Views/Viewer/ViewerSwipeNavigation.swift', 'ImmichGallery/Views/Viewer/ViewerScrollPan.swift', 'Tests/ViewerSwipeNavigationChecks.swift'],
     'sidebar-layout': [app('SidebarLayout'), 'Tests/SidebarLayoutChecks.swift'],
