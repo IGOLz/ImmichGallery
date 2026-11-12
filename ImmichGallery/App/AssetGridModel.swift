@@ -371,6 +371,8 @@ final class AssetGridModel {
 
     /// Called as cells scroll into view.
     func cellAppeared(section: Int, item: Int) {
+        // The cell's section offset can outlive a month removed or reloaded since it was laid out.
+        guard sections.indices.contains(section) else { return }
         if isPaged {
             if section == sections.count - 1, item >= sections[section].count - 60 { loadNextPage() }
         } else {
@@ -394,10 +396,13 @@ final class AssetGridModel {
                 let columns = try await source.albumID != nil
                     ? session.client.albumTimeBucket(id, query, order: albumOrder)
                     : session.client.timeBucket(id, query)
+                // A month can hold tens of thousands of items: convert them off the main actor.
+                let includingLocked = source == .locked
+                let items = await Task.detached { AssetItem.from(columns, includingLocked: includingLocked) }.value
                 try Task.checkCancellation()
                 guard generation == loadGeneration,
                       let i = sections.firstIndex(where: { $0.id == id }) else { return }
-                var assets = AssetItem.from(columns, includingLocked: source == .locked).filter { self.source != .geolocation || (session.user?.id != nil && $0.ownerId == session.user?.id) }
+                var assets = items.filter { self.source != .geolocation || (session.user?.id != nil && $0.ownerId == session.user?.id) }
                 // Another window may have assigned a location after this request began.
                 for i in assets.indices {
                     if let location = assignedLocations[assets[i].id] {
