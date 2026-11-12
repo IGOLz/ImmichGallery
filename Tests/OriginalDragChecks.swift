@@ -130,10 +130,22 @@ final class OriginalFixtureProtocol: URLProtocol, @unchecked Sendable {
 
         // Details too slow: the drag starts after the timeout, with the fallback.
         let slowStart = Date()
-        let slow = provider(OriginalTransfer(id: "slow", client: client))
+        let slowItem = OriginalTransfer(id: "slow", client: client)
+        let slow = provider(slowItem)
         let waited = Date().timeIntervalSince(slowStart)
         precondition(slow.registeredTypeIdentifiers == [data, marker] && slow.suggestedName == "slow")
         precondition(waited >= OriginalFile.timeout * 0.9 && waited < OriginalFile.timeout + 0.5, "Waited \(waited)s")
+
+        // A response after the deadline cannot change the type/name between representation conditions.
+        let lateJSON: [String: Any] = ["id": "slow", "type": "IMAGE", "originalFileName": "LATE.JPG",
+            "fileCreatedAt": "2024-01-01T00:00:00.000Z", "localDateTime": "2024-01-01T00:00:00.000Z",
+            "isFavorite": false, "isTrashed": false]
+        OriginalFixtureProtocol.stalled.withLock { $0.removeFirst() }.send(status: 200,
+            headers: ["Content-Type": "application/json"], body: try JSONSerialization.data(withJSONObject: lateJSON))
+        try await Task.sleep(for: .milliseconds(100))
+        precondition(slowItem.file.resolved == .init(name: "slow", type: .data))
+        let late = provider(slowItem)
+        precondition(late.registeredTypeIdentifiers == [data, marker] && late.suggestedName == "slow")
 
         // A multi-item drag reads every item's details at once (one 0.4 s round trip, not four).
         let batchStart = Date()

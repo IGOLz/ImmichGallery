@@ -57,7 +57,7 @@ final class OriginalFile: Sendable {
     private let id: String
     private let client: ImmichClient
     private let lookup = DispatchGroup()
-    private let state = Mutex<(started: Date?, resolved: Resolved?)>((nil, nil))
+    private let state = Mutex<(started: Date?, resolved: Resolved?, decision: Resolved?)>((nil, nil, nil))
 
     init(id: String, client: ImmichClient) {
         self.id = id
@@ -80,10 +80,16 @@ final class OriginalFile: Sendable {
 
     /// The server's name and kind, or the asset ID and generic data when they don't arrive in time.
     var resolved: Resolved {
+        if let decision = state.withLock({ $0.decision }) { return decision }
         start()
         let deadline = state.withLock { $0.started! }.addingTimeInterval(Self.timeout)
         _ = lookup.wait(timeout: .now() + max(0, deadline.timeIntervalSinceNow))
-        return state.withLock { $0.resolved } ?? Resolved(name: id, type: .data)
+        return state.withLock { state in
+            if let decision = state.decision { return decision }
+            let decision = state.resolved ?? Resolved(name: id, type: .data)
+            state.decision = decision
+            return decision
+        }
     }
 
     static func resolve(_ asset: AssetResponse) -> Resolved {
