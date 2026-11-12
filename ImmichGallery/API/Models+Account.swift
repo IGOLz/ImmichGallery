@@ -32,27 +32,27 @@ struct AccountNotification: Decodable, Identifiable, Sendable {
 }
 
 /// Optional groups preserve compatibility with servers predating individual preferences.
-struct AccountPreferences: Codable, Sendable {
-    struct Feature: Codable, Sendable {
+struct AccountPreferences: Codable, Equatable, Sendable {
+    struct Feature: Codable, Equatable, Sendable {
         var enabled: Bool?
         var sidebarWeb: Bool?
         var duration: Int?
         var minimumFaces: Int?
         var updateStrategy: String?
     }
-    struct Download: Codable, Sendable {
+    struct Download: Codable, Equatable, Sendable {
         var archiveSize: Int64?
         var includeEmbeddedVideos: Bool?
     }
-    struct Email: Codable, Sendable {
+    struct Email: Codable, Equatable, Sendable {
         var enabled: Bool?
         var albumInvite: Bool?
         var albumUpdate: Bool?
     }
-    struct Albums: Codable, Sendable { var defaultAssetOrder: String? }
-    struct Cast: Codable, Sendable { var gCastEnabled: Bool? }
-    struct RecentlyAdded: Codable, Sendable { var sidebarWeb: Bool? }
-    struct Purchase: Codable, Sendable { var showSupportBadge: Bool?; var hideBuyButtonUntil: String? }
+    struct Albums: Codable, Equatable, Sendable { var defaultAssetOrder: String? }
+    struct Cast: Codable, Equatable, Sendable { var gCastEnabled: Bool? }
+    struct RecentlyAdded: Codable, Equatable, Sendable { var sidebarWeb: Bool? }
+    struct Purchase: Codable, Equatable, Sendable { var showSupportBadge: Bool?; var hideBuyButtonUntil: String? }
     var memories: Feature?
     var ratings: Feature?
     var folders: Feature?

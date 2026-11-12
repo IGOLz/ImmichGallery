@@ -5,6 +5,11 @@ struct AccountPreferencesView: View {
     @State private var draft = AccountPreferences()
     @State private var operation = AccountOperation()
     @State private var loaded = false
+    /// What the server last returned: the draft is saved whenever it differs.
+    @State private var saved: AccountPreferences?
+    @State private var saveError: String?
+    @State private var pendingSave: Task<Void, Never>?
+    @State private var saving: Task<Void, Never>?
 
     var body: some View {
         Form {
@@ -61,23 +66,60 @@ struct AccountPreferencesView: View {
                 if draft.purchase?.showSupportBadge != nil {
                     Toggle("Show Support Badge", isOn: Binding(get: { draft.purchase?.showSupportBadge ?? false }, set: { draft.purchase?.showSupportBadge = $0 }))
                 }
-                Button("Save Preferences") {
-                    operation.run {
-                        session.setPreferences(try await session.client.updateAccountPreferences(draft))
-                        draft = session.preferences ?? draft
-                        operation.message = String(localized: "Preferences saved.")
-                    }
-                }
-                Text("These preferences are stored on your Immich server. Web sidebar options affect the web client.").font(.caption).foregroundStyle(.secondary)
+                Text("Changes are saved on your Immich server as you make them. Web sidebar options affect the web client.").font(.caption).foregroundStyle(.secondary)
             }
             AccountOperationStatus(operation: operation)
+            if let saveError { Text(saveError).foregroundStyle(.red).textSelection(.enabled) }
         }
         .formStyle(.grouped).disabled(operation.busy)
+        // As in System Settings, a change applies as it is made: a switch at once, typing once it pauses, and
+        // anything still pending when the window closes.
+        .onChange(of: draft) { _, value in
+            guard loaded, value != saved else { return }
+            scheduleSave()
+        }
+        .onDisappear {
+            pendingSave?.cancel()
+            if loaded, draft != saved { save(draft) }
+        }
         .task {
             operation.run(probe: true) {
-                draft = try await session.client.accountPreferences()
-                session.setPreferences(draft)
+                let preferences = try await session.client.accountPreferences()
+                saved = preferences
+                draft = preferences
+                session.setPreferences(preferences)
                 loaded = true
+            }
+        }
+    }
+
+    private func scheduleSave() {
+        pendingSave?.cancel()
+        pendingSave = Task {
+            try? await Task.sleep(for: .milliseconds(500))
+            guard !Task.isCancelled else { return }
+            save(draft)
+        }
+    }
+
+    /// Saves run one after another, so the server ends with the last change; a failed save puts back what the
+    /// server has and says why.
+    private func save(_ value: AccountPreferences) {
+        let previous = saving
+        let session = session
+        saving = Task {
+            await previous?.value
+            guard value != saved else { return }
+            do {
+                let stored = try await session.client.updateAccountPreferences(value)
+                session.setPreferences(stored)
+                saved = stored
+                saveError = nil
+                // Later edits made while this was saving stay in the draft for their own save.
+                if draft == value { draft = stored }
+            } catch {
+                saveError = error.localizedDescription
+                if draft == value, let saved { draft = saved }
             }
         }
     }
