@@ -29,6 +29,8 @@ cases = {
     'grid-context-menu': ['ImmichGallery/Views/Grid/DeferredContextMenu.swift', 'Tests/GridContextMenuChecks.swift'],
     'viewer-scroll-pan': ['ImmichGallery/Views/Viewer/ViewerScrollPan.swift', 'Tests/ViewerScrollPanChecks.swift'],
     'sidebar-layout': [app('SidebarLayout'), 'Tests/SidebarLayoutChecks.swift'],
+    'library-overview': [app('LibraryOverviewArrangement'), 'Tests/LibraryOverviewChecks.swift'],
+    'inspector-editing': models + [app('AssetInspectorState'), 'ImmichGallery/Views/InlineEditableText.swift', 'Tests/InspectorEditingChecks.swift'],
     'search-layout': ['ImmichGallery/Views/Grid/GridHeaderLayout.swift', 'Tests/SearchLayoutChecks.swift'],
     'search-landing': api + [support('ImagePipeline'), 'ImmichGallery/Views/Albums/RemoteThumbnail.swift', 'ImmichGallery/Views/Search/SearchLandingView.swift', 'Tests/SearchLandingChecks.swift'],
     'metadata': models + ['ImmichGallery/API/Models+Metadata.swift', 'scripts/verify-metadata.swift'],
@@ -43,6 +45,7 @@ cases = {
     'crosslink': [app('Crosslink'), 'Tests/CrosslinkChecks.swift'],
     'crosslink-navigation': [app('Crosslink'), app('CrosslinkNavigation'), 'Tests/CrosslinkNavigationChecks.swift'],
     'similar-photos': api + [app('SimilarPhotos'), app('SimilarPhotosAnalyzer'), app('SimilarPhotosModel'), app('AssetsStackMutation'), support('ImagePipeline'), support('Formatters'), 'Tests/SimilarPhotosChecks.swift'],
+    'crosslink-page-navigation': [app('Crosslink'), app('CrosslinkNavigation'), 'ImmichGallery/Views/PageNavigation.swift', 'ImmichGallery/Views/PageNavigation+Crosslink.swift', 'Tests/CrosslinkPageNavigationChecks.swift'],
 }
 
 def check(item):

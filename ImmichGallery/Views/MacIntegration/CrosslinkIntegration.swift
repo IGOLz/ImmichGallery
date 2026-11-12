@@ -339,27 +339,6 @@ extension LibrarySession {
     }
 }
 
-/// What a library window pushes for a crosslink besides a person (People's own destination): a place's search.
-enum CrosslinkDestination: Hashable {
-    case place(Crosslink.Place)
-
-    var source: GridSource {
-        switch self {
-        case .place(let place):
-            var query = SearchQuery()
-            query.city = place.city ?? ""
-            query.country = place.country ?? ""
-            return .filteredSearch(query)
-        }
-    }
-
-    var title: String {
-        switch self {
-        case .place(let place): place.city ?? place.country ?? ""
-        }
-    }
-}
-
 // MARK: Settings
 
 /// The protocol's switch, as every app that takes part shows it, and the apps found; and the web links.

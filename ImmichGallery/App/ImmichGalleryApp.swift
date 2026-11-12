@@ -177,6 +177,12 @@ extension FocusedValues {
     @Entry var sidebarActions: SidebarActions?
     @Entry var librarySession: LibrarySession?
     @Entry var gridModel: AssetGridModel?
+    /// Library's Years, Months and All Photos, while Library is shown.
+    @Entry var libraryMode: Binding<LibraryMode>?
+    /// While a photo is open, on a server that finds faces.
+    @Entry var faceNamesAvailable: Bool?
+    /// While a photo is open: ⌘+ and ⌘− zoom it rather than the grid behind it.
+    @Entry var photoZoom: PhotoZoomAction?
 }
 
 struct AppCommands: Commands {
@@ -184,9 +190,23 @@ struct AppCommands: Commands {
     @FocusedValue(\.searchActions) private var searchActions
     @FocusedValue(\.sidebarActions) private var sidebarActions
     @FocusedValue(\.gridModel) private var grid
+    @FocusedValue(\.libraryMode) private var libraryMode
+    @FocusedValue(\.faceNamesAvailable) private var faceNamesAvailable
+    @FocusedValue(\.photoZoom) private var photoZoom
+    @AppStorage(PhotoFaces.shownKey) private var faceNamesShown = false
     @FocusedValue(\.librarySession) private var session
     @AppStorage("gridThumbnailSize") private var thumbnailSize = GridMetrics.defaultSize
+    @AppStorage(GridMetrics.aspectRatioKey) private var aspectRatio = false
     @AppStorage("showInspector") private var showInspector = false
+
+    /// Library's Years, Months or All Photos, with Photos' ⌘1, ⌘2 and ⌘3.
+    private func libraryModeItem(_ mode: LibraryMode, key: KeyEquivalent) -> some View {
+        Toggle(isOn: Binding(get: { libraryMode?.wrappedValue == mode }, set: { _ in libraryMode?.wrappedValue = mode })) {
+            Text(mode.title)
+        }
+        .keyboardShortcut(key, modifiers: .command)
+        .disabled(libraryMode == nil || grid?.viewerID != nil)
+    }
 
     var body: some Commands {
         CommandGroup(after: .appSettings) {
@@ -234,6 +254,9 @@ struct AppCommands: Commands {
             Button("Select All Photos") { grid?.selectAll() }
                 .keyboardShortcut("a", modifiers: .command)
                 .disabled(grid == nil || grid?.viewerID != nil)
+            Button("Deselect All") { grid?.selection = [] }
+                .keyboardShortcut("a", modifiers: [.command, .shift])
+                .disabled(grid.map { $0.selection.isEmpty || $0.viewerID != nil } ?? true)
         }
 
         CommandGroup(after: .sidebar) {
@@ -242,10 +265,23 @@ struct AppCommands: Commands {
         }
 
         CommandGroup(before: .sidebar) {
-            Button("Zoom In") { thumbnailSize = GridMetrics.zoomIn(thumbnailSize) }
+            libraryModeItem(.years, key: "1")
+            libraryModeItem(.months, key: "2")
+            libraryModeItem(.all, key: "3")
+            Divider()
+            // The grid's size, so not while a photo hides the grid; the photo has its own buttons.
+            // With a photo open, the photo zooms, as in Photos; the grid behind it doesn't. Not with a video open.
+            Button("Zoom In") {
+                if let photoZoom { photoZoom.zoom(.zoomIn) } else { thumbnailSize = GridMetrics.zoomIn(thumbnailSize) }
+            }
                 .keyboardShortcut("+", modifiers: .command)
-            Button("Zoom Out") { thumbnailSize = GridMetrics.zoomOut(thumbnailSize) }
+                .disabled(grid?.viewerID != nil && photoZoom == nil)
+            Button("Zoom Out") {
+                if let photoZoom { photoZoom.zoom(.zoomOut) } else { thumbnailSize = GridMetrics.zoomOut(thumbnailSize) }
+            }
                 .keyboardShortcut("-", modifiers: .command)
+                .disabled(grid?.viewerID != nil && photoZoom == nil)
+            Button(aspectRatio ? "Show Square Photos" : "Show Aspect Ratio") { aspectRatio.toggle() }
             Divider()
             Button("Refresh") {
                 if let session = session {
@@ -257,6 +293,8 @@ struct AppCommands: Commands {
                 .keyboardShortcut("r", modifiers: .command)
                 .disabled(grid == nil)
             Divider()
+            Button(faceNamesShown ? "Hide Face Names" : "Show Face Names") { faceNamesShown.toggle() } // Photos' View menu
+                .disabled(faceNamesAvailable != true)
             Button(showInspector ? "Hide Info" : "Show Info") { showInspector.toggle() }
                 .keyboardShortcut("i", modifiers: .command)
             Divider()
@@ -276,7 +314,7 @@ struct AppCommands: Commands {
                 Button("Remove from Locked Folder") { if let grid { Task { await grid.removeFromLockedFolder(ids) } } }
                     .disabled(grid?.canMutate(ids) != true) // Explore
             } else {
-                if let session = session { AlbumSelectionMenu(session: session, model: grid, ids: ids) } // Albums
+                if let session = session { AlbumSelectionMenu(session: session, model: grid, ids: ids, menuBarShortcuts: true) } // Albums
                 if session != nil, grid?.source != .trash { WidgetChosenMenuItem(ids: ids) } // Widget
                 Button("Move to Locked Folder") { if let grid { Task { await grid.moveToLockedFolder(ids) } } }
                     .disabled(ids.isEmpty || grid?.canMutate(ids) != true) // Explore
@@ -286,10 +324,11 @@ struct AppCommands: Commands {
                 .disabled(grid?.canMutate(ids) != true)
             if grid?.source == .archive {
                 Button("Unarchive") { if let grid { Task { await grid.setArchived(ids, false) } } }
+                    .keyboardShortcut("l", modifiers: .command)
                     .disabled(grid?.canMutate(ids) != true)
             } else if grid?.source != .locked {
                 Button(String(localized: "Archive Selected Photos")) { if let grid { Task { await grid.setArchived(ids, true) } } }
-                    .keyboardShortcut("a", modifiers: [.command, .control])
+                    .keyboardShortcut("l", modifiers: .command) // Photos' Hide
                     .disabled(ids.isEmpty || grid?.canMutate(ids) != true)
             }
         }

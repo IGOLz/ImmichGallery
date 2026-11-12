@@ -8315,16 +8315,6 @@
         }
       }
     },
-    "Show Faces": {
-      "localizations": {
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mostra volti"
-          }
-        }
-      }
-    },
     "Show Hidden People": {
       "localizations": {
         "it": {
@@ -8381,16 +8371,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mostra barra delle schede"
-          }
-        }
-      }
-    },
-    "Show faces and manage people": {
-      "localizations": {
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mostra volti e gestisci persone"
           }
         }
       }
@@ -10035,16 +10015,6 @@
         }
       }
     },
-    "Sidebar Options": {
-      "localizations": {
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Opzioni barra laterale"
-          }
-        }
-      }
-    },
     "Expand": {
       "localizations": {
         "it": {
@@ -11263,6 +11233,266 @@
           "stringUnit": {
             "state": "translated",
             "value": "Eliminati di recente non è disponibile. Nessuna foto è stata rimossa."
+          }
+        }
+      }
+    },
+    "Face Names": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nomi dei volti"
+          }
+        }
+      }
+    },
+    "Hide Face Names": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nascondi nomi dei volti"
+          }
+        }
+      }
+    },
+    "Show Face Names": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostra nomi dei volti"
+          }
+        }
+      }
+    },
+    "Deselect All": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deseleziona tutto"
+          }
+        }
+      }
+    },
+    "Remove %lld items from the album?": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Remove %lld item from the album?"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Remove %lld items from the album?"
+                }
+              }
+            }
+          }
+        },
+        "it": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Rimuovere %lld elemento dall'album?"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Rimuovere %lld elementi dall'album?"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "The photos remain in your library.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le foto rimarranno nella libreria."
+          }
+        }
+      }
+    },
+    "Settings…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impostazioni…"
+          }
+        }
+      }
+    },
+    "Options": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opzioni"
+          }
+        }
+      }
+    },
+    "Rotate": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ruota"
+          }
+        }
+      }
+    },
+    "Rotate left, or right with Option": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ruota a sinistra, o a destra con Opzione"
+          }
+        }
+      }
+    },
+    "Show Aspect Ratio": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostra proporzioni"
+          }
+        }
+      }
+    },
+    "Show Square Photos": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostra foto quadrate"
+          }
+        }
+      }
+    },
+    "All Photos": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tutte le foto"
+          }
+        }
+      }
+    },
+    "Months": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mesi"
+          }
+        }
+      }
+    },
+    "Years": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anni"
+          }
+        }
+      }
+    },
+    "More": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Altro"
+          }
+        }
+      }
+    },
+    "%@ (owner)": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ (proprietario)"
+          }
+        }
+      }
+    },
+    "Album": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Album"
+          }
+        }
+      }
+    },
+    "Person": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Persona"
+          }
+        }
+      }
+    },
+    "Use as Face Photo": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usa come foto del volto"
+          }
+        }
+      }
+    },
+    "Add a Name": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aggiungi un nome"
+          }
+        }
+      }
+    },
+    "Add Birthday": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aggiungi compleanno"
+          }
+        }
+      }
+    },
+    "Click to edit": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fai clic per modificare"
           }
         }
       }
