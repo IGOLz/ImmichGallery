@@ -104,10 +104,12 @@ import SwiftUI
         let window = FakeWindow()
         window.userSelects(.people)
         window.navigation.open(FakePerson(id: "x"))
+        let stacks = window.navigation.linkPages
         window.show(.asset("a", .person("p")))
         await settle()
         let count = window.navigation.path(for: .people).count
         check(window.selection == .people && count == 1, "person from a person's page: replaces them (\(count))")
+        check(window.navigation.linkPages == stacks + 1, "person from a person's page: on a new stack")
         check(window.reveals == ["a in person p, current"], "person from a person's page: asset revealed \(window.reveals)")
     }
 
