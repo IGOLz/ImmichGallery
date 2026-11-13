@@ -768,6 +768,9 @@ final class AssetGridModel {
         index[id].map { (sections[$0.section].id, $0.item) }
     }
 
+    /// Where a loaded photo is in the grid's order, by section and item index.
+    func order(of id: String) -> (section: Int, item: Int)? { index[id] }
+
     /// Every photo, as in Photos: the loaded ones now, and the months not loaded yet as they load, unless the selection
     /// changes meanwhile.
     func selectAll() {
@@ -787,6 +790,15 @@ final class AssetGridModel {
         selection = [id]
         anchorID = id
         viewerID = id
+    }
+
+    /// Selects `id` without opening it, closing a photo the grid had open: a face below a photo shows the person's grid
+    /// with that photo selected.
+    func showSelected(_ id: String) {
+        keyboardMoveGeneration = UUID()
+        selection = [id]
+        anchorID = id
+        viewerID = nil
     }
 
     // MARK: Actions
