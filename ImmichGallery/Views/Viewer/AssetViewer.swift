@@ -118,6 +118,7 @@ struct AssetViewer: View {
             Image(systemName: symbol)
                 .font(.title2.weight(.semibold))
                 .frame(width: 36, height: 36)
+                .contentShape(Circle())
         }
         .buttonStyle(.plain)
         .adaptiveGlass(in: .circle, interactive: true)
