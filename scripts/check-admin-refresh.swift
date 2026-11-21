@@ -29,6 +29,9 @@ enum ImmichError: Error { case http(Int, String?) }
         self.serverURL = serverURL; self.apiURL = apiURL
         self.credential = credential; self.session = session
     }
+    func isolatedClient(_ configuration: URLSessionConfiguration) -> ImmichClient {
+        ImmichClient(serverURL: serverURL, apiURL: apiURL, credential: credential, session: URLSession(configuration: configuration))
+    }
     func currentUser() async throws -> User {
         accessChecks += 1
         return try JSONDecoder().decode(User.self, from: Data(#"{"id":"admin","name":"Admin","email":"admin@example.com","isAdmin":true}"#.utf8))

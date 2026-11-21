@@ -171,34 +171,42 @@ final class ImmichProviderRemote: ProviderRemote {
 
     func downloadOriginal(_ id: String, into directory: URL, progress: Progress) async throws -> URL {
         let request = client.originalRequest(id)
-        let session = client.session
-        let state = Mutex<URLSessionDownloadTask?>(nil)
-        return try await withTaskCancellationHandler {
-            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<URL, Error>) in
-                let task = session.downloadTask(with: request) { location, response, error in
-                    do {
-                        if let error { throw error }
-                        guard let http = response as? HTTPURLResponse, let location else { throw URLError(.badServerResponse) }
-                        switch http.statusCode {
-                        case 200: break
-                        case 401: throw ImmichError.unauthorized(nil)
-                        default: throw ImmichError.http(http.statusCode, nil)
+        return try await client.withSession { session in
+            let state = Mutex((task: Optional<URLSessionDownloadTask>.none, cancelled: false))
+            return try await withTaskCancellationHandler {
+                try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<URL, Error>) in
+                    let task = session.downloadTask(with: request) { location, response, error in
+                        do {
+                            if let error { throw error }
+                            guard let http = response as? HTTPURLResponse, let location else { throw URLError(.badServerResponse) }
+                            switch http.statusCode {
+                            case 200: break
+                            case 401: throw ImmichError.unauthorized(nil)
+                            default: throw ImmichError.http(http.statusCode, nil)
+                            }
+                            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+                            let destination = directory.appendingPathComponent(UUID().uuidString)
+                            try FileManager.default.moveItem(at: location, to: destination)
+                            continuation.resume(returning: destination)
+                        } catch {
+                            continuation.resume(throwing: error)
                         }
-                        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-                        let destination = directory.appendingPathComponent(UUID().uuidString)
-                        try FileManager.default.moveItem(at: location, to: destination)
-                        continuation.resume(returning: destination)
-                    } catch {
-                        continuation.resume(throwing: error)
                     }
+                    progress.addChild(task.progress, withPendingUnitCount: max(progress.totalUnitCount, 1))
+                    progress.cancellationHandler = { task.cancel() }
+                    let cancelled = state.withLock { value in
+                        value.task = task
+                        return value.cancelled
+                    }
+                    if cancelled || progress.isCancelled { task.cancel() } else { task.resume() }
                 }
-                state.withLock { $0 = task }
-                progress.addChild(task.progress, withPendingUnitCount: max(progress.totalUnitCount, 1))
-                progress.cancellationHandler = { task.cancel() }
-                task.resume()
+            } onCancel: {
+                let task = state.withLock { value in
+                    value.cancelled = true
+                    return value.task
+                }
+                task?.cancel()
             }
-        } onCancel: {
-            state.withLock { $0?.cancel() }
         }
     }
 

@@ -18,6 +18,7 @@ final class RecordingService: NSObject, FinderAccessService, @unchecked Sendable
         reply(nil)
     }
     func forgetCredential(reply: @escaping @Sendable (NSError?) -> Void) { reply(nil) }
+    func cancelDirectRequests(reply: @escaping @Sendable (NSError?) -> Void) { reply(nil) }
 }
 
 struct Timeout: Error {}

@@ -67,7 +67,7 @@ enum AssetsDownloader {
                             label.stringValue = String(localized: "\(part) · \(ByteCountFormatter.string(fromByteCount: previousBytes + written, countStyle: .file)) of \(ByteCountFormatter.string(fromByteCount: info.totalSize, countStyle: .file))")
                         }
                     }
-                    let (temp, response) = try await session.client.session.download(for: session.client.assetsArchiveRequest(archive.assetIds, archiveName: "\(baseName)-\(timestamp)-\(index + 1)"), delegate: delegate)
+                    let (temp, response) = try await session.client.download(for: session.client.assetsArchiveRequest(archive.assetIds, archiveName: "\(baseName)-\(timestamp)-\(index + 1)"), delegate: delegate)
                     defer { try? FileManager.default.removeItem(at: temp) }
                     try Task.checkCancellation()
                     guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {

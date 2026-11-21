@@ -68,6 +68,34 @@ enum FinderAccess {
         directory(for: domain)?.appendingPathComponent("configuration.json")
     }
 
+    private static func proxyBlockURL(for domain: String) -> URL? {
+        guard isDomainIdentifier(domain) else { return nil }
+        return rootDirectory?.appendingPathComponent("ProxyBlocked", isDirectory: true).appendingPathComponent(domain)
+    }
+
+    static func isProxyBlocked(_ domain: String) -> Bool {
+        guard let url = proxyBlockURL(for: domain) else { return true }
+        do {
+            _ = try FileManager.default.attributesOfItem(atPath: url.path)
+            return true
+        } catch CocoaError.fileNoSuchFile { return false }
+        catch CocoaError.fileReadNoSuchFile { return false }
+        catch { return true }
+    }
+
+    static func setProxyBlocked(_ blocked: Bool, for domain: String) throws {
+        guard let url = proxyBlockURL(for: domain) else { throw CocoaError(.fileWriteNoPermission) }
+        if blocked {
+            try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true,
+                                                    attributes: [.posixPermissions: 0o700])
+            try Data().write(to: url, options: .atomic)
+        } else {
+            do { try FileManager.default.removeItem(at: url) }
+            catch CocoaError.fileNoSuchFile {}
+            catch CocoaError.fileReadNoSuchFile {}
+        }
+    }
+
     static func storeDirectory(for domain: String) -> URL? {
         directory(for: domain)?.appendingPathComponent("Replica", isDirectory: true)
     }
@@ -121,4 +149,6 @@ struct FinderAccessConfiguration: Codable, Sendable, Equatable {
     func setCredential(_ credential: Data, reply: @escaping @Sendable (NSError?) -> Void)
     /// Deletes the extension's keychain item for this domain.
     func forgetCredential(reply: @escaping @Sendable (NSError?) -> Void)
+    /// Cancels in-flight requests after the app blocks this domain's direct route.
+    func cancelDirectRequests(reply: @escaping @Sendable (NSError?) -> Void)
 }

@@ -24,7 +24,7 @@ final class LockedFolderMedia {
         isDiscarded = true
         onRequestFailed = {}
         pipeline.removeAll()
-        client.session.invalidateAndCancel()
+        client.invalidateSession()
         if let root = client.transferRoot { MacTransferCache.discard(root: root) }
         if let pasteboardChangeCount, NSPasteboard.general.changeCount == pasteboardChangeCount { NSPasteboard.general.clearContents() }
         pasteboardChangeCount = nil

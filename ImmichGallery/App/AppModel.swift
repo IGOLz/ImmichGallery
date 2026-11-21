@@ -18,6 +18,7 @@ final class AppModel {
         }
     }
     private(set) var entries: [AccountVault.Entry] = []
+    private(set) var proxyServers: Set<String> = []
     private(set) var switching = false
     private(set) var currentAccountID: String?
     var accountError: String?
@@ -30,7 +31,10 @@ final class AppModel {
 
     init() { MacIntegrationRouter.shared.app = self }
 
-    private func refreshEntries() throws { entries = try AccountVault.loadEntries() }
+    private func refreshEntries() throws {
+        entries = try AccountVault.loadEntries()
+        proxyServers = Set(try AccountVault.loadProxies().keys)
+    }
 
     func restore() async {
         if let restoreTask { await restoreTask.value; return }
@@ -49,7 +53,7 @@ final class AppModel {
                 return
             }
             currentAccountID = selected?.id
-            let client = ImmichClient(serverURL: account.serverURL, apiURL: account.apiURL, credential: account.credential)
+            let client = try AccountVault.client(for: account)
             let user: User?
             do { user = try await client.currentUser() }
             catch ImmichError.unauthorized {
@@ -58,13 +62,16 @@ final class AppModel {
                     try AccountVault.remove(selected.id)
                     try removeSavedCache(selected)
                     // Finder access: the account's location goes too. Its key can't be deleted with a refused login.
-                    await FinderAccessModel.shared.accountRemoved(apiURL: selected.account.apiURL, userID: selected.userID, credential: nil)
+                    await FinderAccessModel.shared.accountRemoved(apiURL: selected.account.apiURL, userID: selected.userID, client: nil)
                 }
                 try refreshEntries()
                 UserDefaults.standard.set(true, forKey: "accountVaultMigrated")
                 phase = .signedOut
                 return
-            } catch { user = nil }
+            } catch {
+                if client.proxy != nil { accountError = error.localizedDescription }
+                user = nil
+            }
             if let user {
                 try AccountVault.save(account: account, user: user)
                 try refreshEntries()
@@ -85,10 +92,54 @@ final class AppModel {
         defer { switching = false }
         let authed = client.with(credential: credential)
         let user = try await authed.currentUser()
-        try AccountVault.save(account: .init(serverURL: authed.serverURL, apiURL: authed.apiURL, credential: credential), user: user)
+        let account = AccountStore.Account(serverURL: authed.serverURL, apiURL: authed.apiURL, credential: credential)
+        let id = account.apiURL.absoluteString + "|" + user.id
+        let key = ServerProxy.serverKey(account.serverURL)
+        let oldProxy = try AccountVault.loadProxies()[key]
+        let changedServer = entries.first { $0.id == id }.map { ServerProxy.serverKey($0.account.serverURL) != key } == true
+        if oldProxy != authed.proxy || changedServer || authed.proxy != nil {
+            try await FinderAccessModel.shared.updateProxyPolicy(account: account, userID: user.id, entries: entries, blocked: authed.proxy != nil) {
+                try AccountVault.save(account: account, user: user, proxy: authed.proxy)
+                if oldProxy != authed.proxy { ImmichClient.invalidateAccountSessions(serverURL: account.serverURL) }
+            }
+        } else {
+            try AccountVault.save(account: account, user: user)
+        }
         try refreshEntries()
-        currentAccountID = authed.apiURL.absoluteString + "|" + user.id
-        start(client: authed, user: user, cacheUserID: user.id)
+        currentAccountID = id
+        let changedActiveRoute = oldProxy != authed.proxy && services.map {
+            ServerProxy.serverKey($0.client.serverURL) == key
+        } == true
+        start(client: authed, user: user, cacheUserID: user.id, preservingCache: changedActiveRoute)
+    }
+
+    func updateProxy(_ proxy: ServerProxy?, for entry: AccountVault.Entry) async throws {
+        guard !switching else { return }
+        switching = true
+        defer { switching = false }
+        let account = entry.account
+        let key = ServerProxy.serverKey(account.serverURL)
+        let oldProxy = try AccountVault.loadProxies()[key]
+        let candidate = try AccountVault.client(for: account, proxy: proxy)
+        guard try await candidate.currentUser().id == entry.userID else {
+            throw ImmichError.http(400, String(localized: "The server answered for a different account."))
+        }
+
+        let active = services.flatMap { ServerProxy.serverKey($0.client.serverURL) == key ? $0 : nil }
+        let replacement: ImmichClient?
+        if let active, let credential = active.client.credential, oldProxy != proxy {
+            let activeAccount = AccountStore.Account(serverURL: active.client.serverURL, apiURL: active.client.apiURL, credential: credential)
+            replacement = try AccountVault.client(for: activeAccount, proxy: proxy)
+        } else { replacement = nil }
+
+        try await FinderAccessModel.shared.updateProxyPolicy(account: account, userID: entry.userID, entries: entries, blocked: proxy != nil) {
+            try AccountVault.saveProxy(proxy, for: account.serverURL)
+            if oldProxy != proxy { ImmichClient.invalidateAccountSessions(serverURL: account.serverURL) }
+            if proxy != nil { proxyServers.insert(key) } else { proxyServers.remove(key) }
+            if let active, let replacement {
+                start(client: replacement, user: active.user, cacheUserID: active.cacheUserID, preservingCache: true)
+            }
+        }
     }
 
     func signOut() async {
@@ -113,7 +164,7 @@ final class AppModel {
         currentAccountID = nil
         // Finder access: remove the account's location and its server key while the login still works.
         if let userID = services.user?.id ?? userIDForFinder {
-            await FinderAccessModel.shared.accountRemoved(apiURL: services.client.apiURL, userID: userID, credential: services.client.credential)
+            await FinderAccessModel.shared.accountRemoved(apiURL: services.client.apiURL, userID: userID, client: services.client)
             if let error = FinderAccessModel.shared.error { accountError = error }
         }
         if case .accessToken = services.client.credential { try? await services.client.logout() }
@@ -126,7 +177,7 @@ final class AppModel {
         defer { switching = false }
         let previous = services
         let account = entry.account
-        let client = ImmichClient(serverURL: account.serverURL, apiURL: account.apiURL, credential: account.credential)
+        let client = try AccountVault.client(for: account)
         let user = try await client.currentUser()
         guard services === previous else { return }
         try AccountVault.select(entry.id)
@@ -137,11 +188,12 @@ final class AppModel {
 
     func removeAccount(_ entry: AccountVault.Entry) throws {
         guard !switching else { return }
+        let cleanupClient = try? AccountVault.client(for: entry.account)
         try LockedFolderTouchID.forget(server: entry.account.serverURL, userID: entry.userID)
         try AccountVault.remove(entry.id)
         try refreshEntries()
         // Finder access: the account's location and its server key go too.
-        Task { await FinderAccessModel.shared.accountRemoved(apiURL: entry.account.apiURL, userID: entry.userID, credential: entry.account.credential) }
+        Task { await FinderAccessModel.shared.accountRemoved(apiURL: entry.account.apiURL, userID: entry.userID, client: cleanupClient) }
         if currentAccountID == entry.id {
             let old = services
             if let old { endSession(old) }
@@ -152,12 +204,12 @@ final class AppModel {
         try removeSavedCache(entry)
     }
 
-    private func endSession(_ services: AccountServices) {
+    private func endSession(_ services: AccountServices, clearingCache: Bool = true) {
         services.bootstrapTask?.cancel()
         services.notificationTask?.cancel()
         services.upload.cancelAll()
         for window in services.windows.allObjects { window.endSession() }
-        services.pipeline.removeAll()
+        if clearingCache { services.pipeline.removeAll() }
         MacIntegrationRouter.shared.pending.removeAll()
         MacIntegrationRouter.shared.widgetLinks.removeAll() // Widget
         MacQuickLook.shared.dismiss()
@@ -180,7 +232,7 @@ final class AppModel {
         }
     }
 
-    private func start(client: ImmichClient, user: User?, cacheUserID: String) {
+    private func start(client: ImmichClient, user: User?, cacheUserID: String, preservingCache: Bool = false) {
         let isolated = client.accountIsolated(userID: cacheUserID)
         let services = AccountServices(client: isolated, user: user, cacheUserID: cacheUserID)
         let legacyCache = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
@@ -202,7 +254,7 @@ final class AppModel {
                 self.currentAccountID = client.apiURL.absoluteString + "|" + user.id
             } catch { self.accountError = error.localizedDescription }
         }
-        if let previous = self.services { endSession(previous) }
+        if let previous = self.services { endSession(previous, clearingCache: !preservingCache) }
         MacIntegrationRouter.shared.pending.removeAll()
         MacQuickLook.shared.dismiss()
         phase = .signedIn(services)

@@ -50,6 +50,13 @@ final class FinderAccessServiceSource: NSObject, NSFileProviderServiceSource, Fi
         reply(nil)
     }
 
+    func cancelDirectRequests(reply: @escaping @Sendable (NSError?) -> Void) {
+        Task {
+            await owner?.cancelDirectRequests()
+            reply(nil)
+        }
+    }
+
     /// `anchor apple generic and identifier "<app>" and certificate leaf[subject.OU] = "<team>"`, from this
     /// extension's own signature and Info.plist.
     static let appRequirement: String? = {

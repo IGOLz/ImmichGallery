@@ -1,6 +1,76 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Couldn't connect through the HTTP CONNECT proxy. Check the proxy address and whether it can reach the server.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossibile connettersi tramite il proxy HTTP CONNECT. Controlla l’indirizzo del proxy e verifica che possa raggiungere il server."
+          }
+        }
+      }
+    },
+    "Couldn't establish a secure connection to the Immich server through the proxy. Check the server's HTTPS certificate.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossibile stabilire una connessione sicura al server Immich tramite il proxy. Controlla il certificato HTTPS del server."
+          }
+        }
+      }
+    },
+    "Enter a proxy hostname or IP address and a port from 1 to 65535. Enter a username if you supply a password.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inserisci il nome host o l’indirizzo IP del proxy e una porta da 1 a 65535. Se inserisci una password, indica anche il nome utente."
+          }
+        }
+      }
+    },
+    "Enter an Immich server hostname. macOS can bypass the proxy for IP addresses and localhost.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inserisci il nome host del server Immich. macOS può ignorare il proxy per gli indirizzi IP e per localhost."
+          }
+        }
+      }
+    },
+    "Finder access is paused while this server uses an HTTP CONNECT proxy.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L’accesso dal Finder è sospeso mentre questo server usa un proxy HTTP CONNECT."
+          }
+        }
+      }
+    },
+    "HTTP CONNECT requires an HTTPS Immich server address.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HTTP CONNECT richiede un indirizzo HTTPS del server Immich."
+          }
+        }
+      }
+    },
+    "The proxy rejected the connection. Check the proxy username and password.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il proxy ha rifiutato la connessione. Controlla il nome utente e la password del proxy."
+          }
+        }
+      }
+    },
     "%lld items could not be added: %@.": {
       "localizations": {
         "it": {

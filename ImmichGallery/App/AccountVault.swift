@@ -12,6 +12,7 @@ enum AccountVault {
     private struct Contents: Codable {
         var entries: [Entry] = []
         var selected: String?
+        var serverProxies: [String: ServerProxy]?
     }
     private static var query: [String: Any] {
         [kSecClass as String: kSecClassGenericPassword,
@@ -61,12 +62,48 @@ enum AccountVault {
         UserDefaults.standard.bool(forKey: "accountVaultMigrated") ? nil : AccountStore.load()
     }
     static func loadEntries() throws -> [Entry] { try read().entries }
+    static func loadProxies() throws -> [String: ServerProxy] { try read().serverProxies ?? [:] }
+
+    static func client(for account: AccountStore.Account) throws -> ImmichClient {
+        let proxy = try loadProxies()[ServerProxy.serverKey(account.serverURL)]
+        return try client(for: account, proxy: proxy)
+    }
+
+    static func client(for account: AccountStore.Account, proxy: ServerProxy?) throws -> ImmichClient {
+        if proxy != nil {
+            try ServerProxy.validateOrigin(account.serverURL)
+            try ServerProxy.validateOrigin(account.apiURL)
+        }
+        return ImmichClient(serverURL: account.serverURL, apiURL: account.apiURL, credential: account.credential, proxy: proxy)
+    }
+
+    static func saveProxy(_ proxy: ServerProxy?, for serverURL: URL) throws {
+        var contents = try read()
+        setProxy(proxy, for: serverURL, in: &contents)
+        try write(contents)
+    }
+
+    private static func setProxy(_ proxy: ServerProxy?, for serverURL: URL, in contents: inout Contents) {
+        var proxies = contents.serverProxies ?? [:]
+        proxies[ServerProxy.serverKey(serverURL)] = proxy
+        contents.serverProxies = proxies.isEmpty ? nil : proxies
+    }
     static func selectedEntry() throws -> Entry? {
         let contents = try read()
         return contents.entries.first { $0.id == contents.selected }
     }
     static func save(account: AccountStore.Account, user: User) throws {
+        try save(account: account, user: user, in: read())
+    }
+
+    static func save(account: AccountStore.Account, user: User, proxy: ServerProxy?) throws {
         var contents = try read()
+        setProxy(proxy, for: account.serverURL, in: &contents)
+        try save(account: account, user: user, in: contents)
+    }
+
+    private static func save(account: AccountStore.Account, user: User, in previous: Contents) throws {
+        var contents = previous
         let id = account.apiURL.absoluteString + "|" + user.id
         let entry = Entry(id: id, name: user.name, email: user.email, userID: user.id, account: account)
         contents.entries.removeAll { $0.id == id }

@@ -20,7 +20,7 @@ enum Exporter {
             for id in ids {
                 do {
                     let asset = try await session.client.asset(id)
-                    let (temp, response) = try await session.client.session.download(for: session.client.originalRequest(id))
+                    let (temp, response) = try await session.client.download(for: session.client.originalRequest(id))
                     guard (response as? HTTPURLResponse)?.statusCode == 200 else { failures += 1; continue }
                     let destination = uniqueURL(in: folder, name: asset.originalFileName)
                     try FileManager.default.moveItem(at: temp, to: destination)

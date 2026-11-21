@@ -1,6 +1,226 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Browser sign-in uses system network settings. If it cannot reach this server, use an API key or password.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L’accesso tramite browser usa le impostazioni di rete del sistema. Se il browser non raggiunge il server, usa una chiave API o una password."
+          }
+        }
+      }
+    },
+    "Couldn't connect through the HTTP CONNECT proxy. Check the proxy address and whether it can reach the server.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossibile connettersi tramite il proxy HTTP CONNECT. Controlla l’indirizzo del proxy e verifica che possa raggiungere il server."
+          }
+        }
+      }
+    },
+    "Couldn't establish a secure connection to the Immich server through the proxy. Check the server's HTTPS certificate.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossibile stabilire una connessione sicura al server Immich tramite il proxy. Controlla il certificato HTTPS del server."
+          }
+        }
+      }
+    },
+    "Downloading video…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download del video…"
+          }
+        }
+      }
+    },
+    "Enter a proxy hostname or IP address and a port from 1 to 65535. Enter a username if you supply a password.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inserisci il nome host o l’indirizzo IP del proxy e una porta da 1 a 65535. Se inserisci una password, indica anche il nome utente."
+          }
+        }
+      }
+    },
+    "Enter an Immich server hostname. macOS can bypass the proxy for IP addresses and localhost.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inserisci il nome host del server Immich. macOS può ignorare il proxy per gli indirizzi IP e per localhost."
+          }
+        }
+      }
+    },
+    "Finder access is paused while this server uses an HTTP CONNECT proxy.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L’accesso dal Finder è sospeso mentre questo server usa un proxy HTTP CONNECT."
+          }
+        }
+      }
+    },
+    "Finder access is updating for this server. Try again in a moment.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "È in corso l’aggiornamento dell’accesso dal Finder per questo server. Riprova tra poco."
+          }
+        }
+      }
+    },
+    "HTTP CONNECT requires an HTTPS Immich server address.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HTTP CONNECT richiede un indirizzo HTTPS del server Immich."
+          }
+        }
+      }
+    },
+    "Port": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Porta"
+          }
+        }
+      }
+    },
+    "Proxy": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Proxy"
+          }
+        }
+      }
+    },
+    "Proxy Host": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Host del proxy"
+          }
+        }
+      }
+    },
+    "Proxy Password (Optional)": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Password del proxy (facoltativa)"
+          }
+        }
+      }
+    },
+    "Proxy Port": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Porta del proxy"
+          }
+        }
+      }
+    },
+    "Proxy Username (Optional)": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nome utente del proxy (facoltativo)"
+          }
+        }
+      }
+    },
+    "Proxy…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Proxy…"
+          }
+        }
+      }
+    },
+    "Server Proxy": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Proxy del server"
+          }
+        }
+      }
+    },
+    "System Settings": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impostazioni di sistema"
+          }
+        }
+      }
+    },
+    "The proxy rejected the connection. Check the proxy username and password.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il proxy ha rifiutato la connessione. Controlla il nome utente e la password del proxy."
+          }
+        }
+      }
+    },
+    "The server answered for a different account.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il server ha risposto per un altro account."
+          }
+        }
+      }
+    },
+    "This video format cannot be downloaded for proxy playback.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Non è possibile scaricare questo formato video per la riproduzione tramite proxy."
+          }
+        }
+      }
+    },
+    "This video is larger than the 512 MiB limit for proxy playback.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Questo video supera il limite di 512 MiB per la riproduzione tramite proxy."
+          }
+        }
+      }
+    },
     "Cities": {
       "localizations": {
         "it": {

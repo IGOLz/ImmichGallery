@@ -144,7 +144,7 @@ struct AssetsPreview: View {
     var body: some View {
         Group {
             if asset.type == .video && (!clickToPlay || playing) {
-                VideoPlayerView(url: session.client.videoURL(asset.id), headers: session.client.credential?.headers ?? [:]).id(asset.id)
+                AssetVideoPlayer(client: session.client, assetID: asset.id).id(asset.id)
             } else if let image {
                 Image(decorative: image, scale: 1).resizable().scaledToFit()
                     .id(imageID)
