@@ -375,7 +375,7 @@ enum FinderAccessError: LocalizedError {
         case .noService: String(localized: "Finder didn't respond. Try again in a moment.")
         case .keyKept: String(localized: "The Finder key couldn't be deleted from the server.")
         case .busy: String(localized: "Finder access is updating for this server. Try again in a moment.")
-        case .proxyBlocked: String(localized: "Finder access is paused while this server uses an HTTP CONNECT proxy.")
+        case .proxyBlocked: String(localized: "Finder access is paused while this server uses a proxy.")
         case .permissionsRefused(let detail):
             [String(localized: "This server didn't accept a key limited to what Finder access needs, so no key was made. Update Immich, or sign in to this account with an API key you created to let Finder use that key."),
              detail].compactMap { $0 }.joined(separator: " ")

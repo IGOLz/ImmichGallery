@@ -1,12 +1,22 @@
 {
   "sourceLanguage": "en",
   "strings": {
-    "Couldn't connect through the HTTP CONNECT proxy. Check the proxy address and whether it can reach the server.": {
+    "For SOCKS5 authentication, enter a username and password of up to 255 bytes each.": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Impossibile connettersi tramite il proxy HTTP CONNECT. Controlla l’indirizzo del proxy e verifica che possa raggiungere il server."
+            "value": "Per l’autenticazione SOCKS5, inserisci un nome utente e una password di massimo 255 byte ciascuno."
+          }
+        }
+      }
+    },
+    "Couldn't connect through the proxy. Check the proxy address and whether it can reach the server.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossibile connettersi tramite il proxy. Controlla l’indirizzo del proxy e verifica che possa raggiungere il server."
           }
         }
       }
@@ -41,22 +51,22 @@
         }
       }
     },
-    "Finder access is paused while this server uses an HTTP CONNECT proxy.": {
+    "Finder access is paused while this server uses a proxy.": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "L’accesso dal Finder è sospeso mentre questo server usa un proxy HTTP CONNECT."
+            "value": "L’accesso dal Finder è sospeso mentre questo server usa un proxy."
           }
         }
       }
     },
-    "HTTP CONNECT requires an HTTPS Immich server address.": {
+    "Use an HTTPS Immich server address when a proxy is enabled.": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "HTTP CONNECT richiede un indirizzo HTTPS del server Immich."
+            "value": "Usa un indirizzo HTTPS del server Immich quando è attivo un proxy."
           }
         }
       }

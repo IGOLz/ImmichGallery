@@ -66,9 +66,9 @@ On macOS 15 everything works, with a few differences from macOS 26 Tahoe:
 - On pages opened from a grid (a place, tag, album or person), the Import button is hidden until you go back. **File › Import…** stays available.
 - Video options sit in a strip above the video instead of over it.
 
-### Connect through an HTTP proxy
+### Connect through a proxy
 
-On the server setup screen, choose **Proxy › HTTP CONNECT** before clicking **Continue**. Enter the proxy host and port, plus its username and password if required. Use your Immich server's HTTPS hostname. You can edit or clear the proxy later under **Settings › Accounts › Proxy…**. The setting applies to all accounts saved for that server address.
+On the server setup screen, choose **HTTP CONNECT** or **SOCKS5** under **Proxy** before clicking **Continue**. Enter the proxy host and port, plus its username and password if required. Use your Immich server's HTTPS hostname. You can edit or clear the proxy later under **Settings › Accounts › Proxy…**. The setting applies to all accounts saved for that server address. SOCKS5 carries HTTPS over TCP.
 
 With a proxy enabled, supported videos and Live Photos download before playback, up to 512 MiB per clip. Finder access pauses for that server. Browser sign-in uses the system network settings, so use an API key or password if the browser cannot reach Immich.
 

@@ -123,7 +123,7 @@ private struct FinderAccessAccountSection: View {
             }
         } footer: {
             if proxyEnabled {
-                Text("Finder access is paused while this server uses an HTTP CONNECT proxy.")
+                Text("Finder access is paused while this server uses a proxy.")
                     .font(.caption).foregroundStyle(.secondary)
             } else if location == nil {
                 if case .apiKey = entry.account.credential {

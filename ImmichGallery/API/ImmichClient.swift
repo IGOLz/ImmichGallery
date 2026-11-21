@@ -5,28 +5,58 @@ import Network
 import Synchronization
 
 struct ServerProxy: Codable, Equatable, Sendable {
+    enum Transport: String, Codable, Hashable, Sendable {
+        case httpConnect
+        case socks5
+    }
+
+    let transport: Transport
     let host: String
     let port: UInt16
     let username: String?
     let password: String?
 
-    init(host: String, port: String, username: String, password: String) throws {
+    init(transport: Transport, host: String, port: String, username: String, password: String) throws {
         var host = host.trimmingCharacters(in: .whitespacesAndNewlines)
         if host.hasPrefix("["), host.hasSuffix("]") { host = String(host.dropFirst().dropLast()) }
         let hostname = !host.isEmpty && host.unicodeScalars.allSatisfy {
             CharacterSet.alphanumerics.contains($0) || $0 == "." || $0 == "-" || $0 == "_"
         }
         guard hostname || IPv6Address(host) != nil,
-              let port = UInt16(port.trimmingCharacters(in: .whitespacesAndNewlines)), port > 0,
-              !username.isEmpty || password.isEmpty else { throw ImmichError.invalidProxy }
+              let port = UInt16(port.trimmingCharacters(in: .whitespacesAndNewlines)), port > 0 else {
+            throw ImmichError.invalidProxy
+        }
+        if transport == .socks5, !username.isEmpty || !password.isEmpty {
+            guard (1...255).contains(username.utf8.count), (1...255).contains(password.utf8.count) else {
+                throw ImmichError.invalidSOCKS5Credentials
+            }
+        }
+        guard !username.isEmpty || password.isEmpty else { throw ImmichError.invalidProxy }
+        self.transport = transport
         self.host = host.lowercased()
         self.port = port
         self.username = username.isEmpty ? nil : username
         self.password = username.isEmpty ? nil : password
     }
 
+    private enum CodingKeys: String, CodingKey { case transport, host, port, username, password }
+
+    init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        // Profiles written before SOCKS5 was available contain just the endpoint and credentials.
+        let transport = try values.decodeIfPresent(Transport.self, forKey: .transport) ?? .httpConnect
+        try self.init(transport: transport, host: values.decode(String.self, forKey: .host),
+                      port: String(values.decode(UInt16.self, forKey: .port)),
+                      username: values.decodeIfPresent(String.self, forKey: .username) ?? "",
+                      password: values.decodeIfPresent(String.self, forKey: .password) ?? "")
+    }
+
     func configure(_ configuration: URLSessionConfiguration) {
-        var proxy = ProxyConfiguration(httpCONNECTProxy: .hostPort(host: NWEndpoint.Host(host), port: NWEndpoint.Port(rawValue: port)!))
+        let endpoint = NWEndpoint.hostPort(host: NWEndpoint.Host(host), port: NWEndpoint.Port(rawValue: port)!)
+        var proxy: ProxyConfiguration = switch transport {
+        case .httpConnect: ProxyConfiguration(httpCONNECTProxy: endpoint)
+        case .socks5: ProxyConfiguration(socksv5Proxy: endpoint)
+        }
         if let username, let password { proxy.applyCredential(username: username, password: password) }
         proxy.allowFailover = false
         configuration.proxyConfigurations = [proxy]
@@ -180,6 +210,7 @@ enum Credential: Codable, Sendable, Equatable {
 enum ImmichError: LocalizedError {
     case invalidServerURL
     case invalidProxy
+    case invalidSOCKS5Credentials
     case proxyRequiresHTTPS
     case proxyRequiresHostname
     case proxyAuthentication
@@ -195,14 +226,16 @@ enum ImmichError: LocalizedError {
             String(localized: "That doesn't look like a valid server address.")
         case .invalidProxy:
             String(localized: "Enter a proxy hostname or IP address and a port from 1 to 65535. Enter a username if you supply a password.")
+        case .invalidSOCKS5Credentials:
+            String(localized: "For SOCKS5 authentication, enter a username and password of up to 255 bytes each.")
         case .proxyRequiresHTTPS:
-            String(localized: "HTTP CONNECT requires an HTTPS Immich server address.")
+            String(localized: "Use an HTTPS Immich server address when a proxy is enabled.")
         case .proxyRequiresHostname:
             String(localized: "Enter an Immich server hostname. macOS can bypass the proxy for IP addresses and localhost.")
         case .proxyAuthentication:
             String(localized: "The proxy rejected the connection. Check the proxy username and password.")
         case .proxyConnection:
-            String(localized: "Couldn't connect through the HTTP CONNECT proxy. Check the proxy address and whether it can reach the server.")
+            String(localized: "Couldn't connect through the proxy. Check the proxy address and whether it can reach the server.")
         case .proxyTLS:
             String(localized: "Couldn't establish a secure connection to the Immich server through the proxy. Check the server's HTTPS certificate.")
         case .serverUnreachable(let detail):
@@ -356,7 +389,7 @@ final class ImmichClient: Sendable {
         case 200..<300: return data
         case 401:
             throw ImmichError.unauthorized((try? JSONDecoder().decode(ServerErrorBody.self, from: data))?.text)
-        case 407 where proxy != nil:
+        case 407 where proxy?.transport == .httpConnect:
             throw ImmichError.proxyAuthentication
         default:
             let message = (try? JSONDecoder().decode(ServerErrorBody.self, from: data))?.text
@@ -432,7 +465,7 @@ extension ImmichClient {
             }
             let (data, reply) = response
             let status = (reply as? HTTPURLResponse)?.statusCode
-            if proxy != nil, status == 407 { throw ImmichError.proxyAuthentication }
+            if proxy?.transport == .httpConnect, status == 407 { throw ImmichError.proxyAuthentication }
             struct Pong: Decodable { let res: String }
             if (proxy == nil || status == 200), (try? JSONDecoder().decode(Pong.self, from: data))?.res == "pong" {
                 return ImmichClient(serverURL: base, apiURL: api, credential: nil, proxy: proxy)

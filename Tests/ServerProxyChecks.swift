@@ -13,16 +13,31 @@ import Network
         for address in ["https://localhost.", "https://127.0.0.1", "https://2130706433", "https://192.0.2.10", "https://[::1]"] {
             do {
                 try ServerProxy.validateOrigin(URL(string: address)!)
-                preconditionFailure("URLSession can bypass HTTP CONNECT for \(address)")
+                preconditionFailure("URLSession can bypass an explicit proxy for \(address)")
             } catch ImmichError.proxyRequiresHostname {}
         }
         do {
             try ServerProxy.validateOrigin(URL(string: "http://photos.example.test")!)
-            preconditionFailure("HTTP CONNECT must require an HTTPS origin")
+            preconditionFailure("Explicit proxies must require an HTTPS origin")
         } catch ImmichError.proxyRequiresHTTPS {}
 
-        let proxy = try ServerProxy(host: "127.0.0.1", port: "3128", username: "fixture", password: "initial")
-        let changed = try ServerProxy(host: "127.0.0.1", port: "3128", username: "fixture", password: "changed")
+        let legacy = Data(#"{"host":"127.0.0.1","port":3128,"username":"fixture","password":"initial"}"#.utf8)
+        let proxy = try JSONDecoder().decode(ServerProxy.self, from: legacy)
+        precondition(proxy.transport == .httpConnect && proxy.port == 3128 && proxy.password == "initial")
+        let changed = try ServerProxy(transport: .httpConnect, host: "127.0.0.1", port: "3128", username: "fixture", password: "changed")
+        let socks = try ServerProxy(transport: .socks5, host: "127.0.0.1", port: "3128", username: "fixture", password: "changed")
+        let anonymous = try ServerProxy(transport: .socks5, host: "127.0.0.1", port: "3128", username: "", password: "")
+        precondition(anonymous.username == nil && anonymous.password == nil)
+        for profile in [proxy, socks, anonymous] {
+            let roundTrip = try JSONDecoder().decode(ServerProxy.self, from: JSONEncoder().encode(profile))
+            precondition(roundTrip == profile)
+        }
+        for secret in ["", String(repeating: "é", count: 128)] {
+            do {
+                _ = try ServerProxy(transport: .socks5, host: "127.0.0.1", port: "3128", username: "fixture", password: secret)
+                preconditionFailure("SOCKS5 credentials must each fit in one length byte")
+            } catch ImmichError.invalidSOCKS5Credentials {}
+        }
         let user = "proxy-check-\(UUID().uuidString)"
         defer { try? ImmichClient.removeAccountCache(apiURL: api, userID: user) }
         let direct = ImmichClient(serverURL: server, apiURL: api, credential: nil).accountIsolated(userID: user)
@@ -56,14 +71,22 @@ import Network
                 preconditionFailure("A retired account route accepted another request")
             } catch is CancellationError {}
         }
+        let socksAccount = ImmichClient(serverURL: server, apiURL: api, credential: nil, proxy: socks).accountIsolated(userID: user)
+        precondition(socksAccount.session !== updated.session)
+        precondition(socksAccount.proxy?.transport == .socks5)
+        precondition(socksAccount.session.configuration.proxyConfigurations.first?.allowFailover == false)
+        do {
+            _ = try await updated.data(for: updated.request("server/ping"))
+            preconditionFailure("A transport-only edit did not retire the old route")
+        } catch is CancellationError {}
         let other = ImmichClient(serverURL: alias, apiURL: api, credential: nil).accountIsolated(userID: user)
-        precondition(other.session !== updated.session)
+        precondition(other.session !== socksAccount.session)
         precondition(other.session.configuration.proxyConfigurations.isEmpty)
 
         let denied = NSError(domain: NSPOSIXErrorDomain, code: Int(POSIXErrorCode.EAUTH.rawValue))
         guard case ImmichError.proxyAuthentication = ImmichClient.proxyError(denied) else {
             preconditionFailure("A rejected CONNECT login must stay separate from Immich's 401")
         }
-        print("HTTP CONNECT settings, failover policy, and session isolation passed.")
+        print("Legacy profiles, HTTP CONNECT and SOCKS5 settings, and session isolation passed.")
     }
 }

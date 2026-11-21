@@ -76,7 +76,7 @@ extension ImmichClient {
         defer { try? FileManager.default.removeItem(at: temporary) }
         let status = (response as? HTTPURLResponse)?.statusCode
         if status == 401 { throw ImmichError.unauthorized(nil) }
-        if status == 407 { throw ImmichError.proxyAuthentication }
+        if status == 407, proxy?.transport == .httpConnect { throw ImmichError.proxyAuthentication }
         guard status == 200 else { throw ImmichError.http(status ?? 0, nil) }
         let size = try temporary.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
         guard size <= PlaybackDownloadLimit.maxBytes else { throw PlaybackDownloadLimit.tooLarge }

@@ -1,14 +1,15 @@
 import SwiftUI
 
 struct ServerProxyDraft {
-    var enabled: Bool
+    var transport: ServerProxy.Transport?
     var host: String
     var port: String
     var username: String
     var password: String
+    var enabled: Bool { transport != nil }
 
     init(_ proxy: ServerProxy? = nil) {
-        enabled = proxy != nil
+        transport = proxy?.transport
         host = proxy?.host ?? ""
         port = proxy.map { String($0.port) } ?? ""
         username = proxy?.username ?? ""
@@ -16,8 +17,8 @@ struct ServerProxyDraft {
     }
 
     func value() throws -> ServerProxy? {
-        guard enabled else { return nil }
-        return try ServerProxy(host: host, port: port, username: username, password: password)
+        guard let transport else { return nil }
+        return try ServerProxy(transport: transport, host: host, port: port, username: username, password: password)
     }
 }
 
@@ -27,9 +28,10 @@ struct ServerProxyFields: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Picker("Proxy", selection: $draft.enabled) {
-                Text("System Settings").tag(false)
-                Text(verbatim: "HTTP CONNECT").tag(true)
+            Picker("Proxy", selection: $draft.transport) {
+                Text("System Settings").tag(nil as ServerProxy.Transport?)
+                Text(verbatim: "HTTP CONNECT").tag(ServerProxy.Transport.httpConnect as ServerProxy.Transport?)
+                Text(verbatim: "SOCKS5").tag(ServerProxy.Transport.socks5 as ServerProxy.Transport?)
             }
             if draft.enabled {
                 HStack {
@@ -65,7 +67,7 @@ struct ServerProxySettings: View {
             if let fields = Binding($draft) {
                 ServerProxyFields(draft: fields)
                 if fields.wrappedValue.enabled {
-                    Text("Finder access is paused while this server uses an HTTP CONNECT proxy.")
+                    Text("Finder access is paused while this server uses a proxy.")
                         .font(.caption).foregroundStyle(.secondary)
                 }
             }

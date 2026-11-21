@@ -53,7 +53,7 @@ extension ImmichClient {
         guard let http = response as? HTTPURLResponse else { throw URLError(.badServerResponse) }
         guard (200..<300).contains(http.statusCode) else {
             if http.statusCode == 401 { throw ImmichError.unauthorized(nil) }
-            if http.statusCode == 407, proxy != nil { throw ImmichError.proxyAuthentication }
+            if http.statusCode == 407, proxy?.transport == .httpConnect { throw ImmichError.proxyAuthentication }
             struct Failure: Decodable { let message: String? }
             throw ImmichError.http(http.statusCode, (try? JSONDecoder().decode(Failure.self, from: data))?.message)
         }

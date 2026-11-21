@@ -111,7 +111,7 @@ final class FileProviderExtension: NSObject, NSFileProviderReplicatedExtension, 
     }
 
     private static var proxyBlocked: ProviderFailure {
-        .cannotSynchronize(String(localized: "Finder access is paused while this server uses an HTTP CONNECT proxy."))
+        .cannotSynchronize(String(localized: "Finder access is paused while this server uses a proxy."))
     }
 
     func credentialChanged() {
