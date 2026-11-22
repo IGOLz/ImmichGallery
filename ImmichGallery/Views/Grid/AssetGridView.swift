@@ -418,6 +418,7 @@ struct AssetGridView: View {
     @AppStorage("gridThumbnailSize") private var thumbnailSize = GridMetrics.defaultSize
     @State private var zoomBase: Double?
     @State private var gridWidth: CGFloat = 0
+    @State private var gridHeight: CGFloat = 0
     /// Whole photos in their own shape, rather than cropped to squares, as Photos' Aspect Ratio grid.
     @AppStorage(GridMetrics.aspectRatioKey) private var aspectRatio = false
     /// The size and shape the grid shows, which follow the saved ones with Photos' transition.
@@ -545,6 +546,7 @@ struct AssetGridView: View {
         ScrollView {
             if let scrollHeader {
                 scrollHeader.onScrollVisibilityChange(threshold: 0.25) { model.headerInView = $0 }
+                    .id(GridTop.id)
             }
             LazyVGrid(
                 columns: [GridItem(.adaptive(minimum: shownSize, maximum: shownSize * 1.8), spacing: 2)],
@@ -585,10 +587,13 @@ struct AssetGridView: View {
             withAnimation(.smooth(duration: 0.35)) { shownFit = fit }
         }
         // The grid's columns, for moving up and down a row: an adaptive grid fits as many minimum-width items
-        // as the width holds.
-        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { gridWidth = $0 }
+        // as the width holds. Its rows in view, for moving a page.
+        .onGeometryChange(for: CGSize.self) { $0.size } action: { gridWidth = $0.width; gridHeight = $0.height }
         .onChange(of: GridColumns(width: gridWidth, size: shownSize), initial: true) { _, columns in
             model.columns = columns.count
+        }
+        .onChange(of: GridColumns(width: gridWidth, size: shownSize).pageRows(height: gridHeight), initial: true) { _, rows in
+            model.pageRows = rows
         }
         .safeAreaInset(edge: .top, spacing: 0) {
             // Assign Location: the list leaves out months whose check failed.
@@ -610,7 +615,12 @@ struct AssetGridView: View {
         .onChange(of: model.keyboardScrollTarget) { _, id in
             // Only as far as needed to show it, as Finder and Photos scroll with the arrow keys.
             guard let id, let position = model.position(of: id) else { return }
-            proxy.scrollTo(CellKey(section: position.section, index: position.item, asset: id))
+            if scrollHeader != nil, model.isFirst(id) {
+                // The first item: back to the top, with the page's header, as Home does.
+                proxy.scrollTo(GridTop.id, anchor: .top)
+            } else {
+                proxy.scrollTo(CellKey(section: position.section, index: position.item, asset: id))
+            }
             model.keyboardScrollTarget = nil
         }
         .onChange(of: model.selection) {
@@ -717,15 +727,8 @@ struct AssetGridView: View {
         case .delete, .deleteForward:
             guard !ids.isEmpty, press.modifiers.isDisjoint(with: [.shift, .option, .control]) else { return .ignored }
             delete(ids, command: press.modifiers.contains(.command))
-        case .leftArrow, .rightArrow, .upArrow, .downArrow:
-            // Command with an arrow is left to the menus and the system.
-            guard !press.modifiers.contains(.command) else { return .ignored }
-            let direction: AssetGridModel.Move = switch press.key {
-            case .leftArrow: .left
-            case .rightArrow: .right
-            case .upArrow: .up
-            default: .down
-            }
+        case .leftArrow, .rightArrow, .upArrow, .downArrow, .home, .end, .pageUp, .pageDown:
+            guard let direction = Self.move(for: press.key, modifiers: press.modifiers) else { return .ignored }
             let extending = press.modifiers.contains(.shift)
             Task { await model.move(direction, extending: extending) }
         case .escape:
@@ -742,16 +745,42 @@ struct AssetGridView: View {
 }
 
 extension AssetGridView {
+    /// The arrow keys move an item or a row; with Option, or Page Up and Page Down, a page; with Command, or Home
+    /// and End, to the first or last item, as in Finder's lists. Command with left and right is left to the menus
+    /// and the system.
+    static func move(for key: KeyEquivalent, modifiers: EventModifiers) -> AssetGridModel.Move? {
+        let command = modifiers.contains(.command), option = modifiers.contains(.option)
+        switch key {
+        case .leftArrow: return command ? nil : .left
+        case .rightArrow: return command ? nil : .right
+        case .upArrow: return command ? .first : option ? .pageUp : .up
+        case .downArrow: return command ? .last : option ? .pageDown : .down
+        case .home: return .first
+        case .end: return .last
+        case .pageUp: return .pageUp
+        case .pageDown: return .pageDown
+        default: return nil
+        }
+    }
+
     /// Quick Look: an arrow key pressed in the panel moves the grid, which the panel then follows.
     private func quickLookArrow(_ event: NSEvent) -> Bool {
-        let direction: AssetGridModel.Move
+        let key: KeyEquivalent
         switch event.keyCode {
-        case 123: direction = .left
-        case 124: direction = .right
-        case 125: direction = .down
-        case 126: direction = .up
+        case 123: key = .leftArrow
+        case 124: key = .rightArrow
+        case 125: key = .downArrow
+        case 126: key = .upArrow
+        case 115: key = .home
+        case 119: key = .end
+        case 116: key = .pageUp
+        case 121: key = .pageDown
         default: return false
         }
+        var modifiers: EventModifiers = []
+        if event.modifierFlags.contains(.command) { modifiers.insert(.command) }
+        if event.modifierFlags.contains(.option) { modifiers.insert(.option) }
+        guard let direction = Self.move(for: key, modifiers: modifiers) else { return false }
         let extending = event.modifierFlags.contains(.shift)
         Task { await model.move(direction, extending: extending) }
         return true
@@ -761,10 +790,24 @@ extension AssetGridView {
 /// An adaptive grid's column count: as many minimum-width items, with their spacing, as the width holds.
 struct GridColumns: Equatable {
     let count: Int
+    let width: CGFloat
+    let spacing: CGFloat
     init(width: CGFloat, size: Double, spacing: CGFloat = 2) {
         count = max(1, Int((width + spacing) / (CGFloat(size) + spacing)))
+        self.width = width
+        self.spacing = spacing
+    }
+
+    /// How many whole square rows a height shows, at least one: the cells grow to share the width.
+    func pageRows(height: CGFloat) -> Int {
+        let side = (width - spacing * CGFloat(count - 1)) / CGFloat(count)
+        guard side > 0, height > 0 else { return 1 }
+        return max(1, Int((height + spacing) / (side + spacing)))
     }
 }
+
+/// The top of the grid's scroll view, for scrolling back to the page's header.
+private enum GridTop { static let id = "grid-top" }
 
 /// A cell: its photo once its month has loaded, so removing photos moves the others to their new places, as Photos
 /// does; until then its place.
