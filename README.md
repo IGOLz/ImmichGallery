@@ -51,7 +51,7 @@ Or install manually:
 
 1. Download **ImmichGallery-x.y.z.dmg** from the [latest release](https://github.com/IGOLz/ImmichGallery/releases/latest).
 2. Open it and drag **Immich Gallery** to Applications.
-3. Sign in with your server address and your email and password, single sign-on (OAuth), or an API key.
+3. Sign in with your server address and your email and password, single sign-on (OAuth), or an API key. An API key can be limited to the [permissions](#api-key-permissions) of the features you use.
 
 The app is signed with a Developer ID and notarized by Apple, so it opens without Gatekeeper warnings.
 
@@ -150,6 +150,36 @@ The demo is shared with everyone and doesn't accept uploads.
 | Administration (admins)                                       | ⌥⌘A |
 
 </details>
+
+### API key permissions
+
+When you sign in with an API key, you can create it in Immich (**Account Settings › API Keys**) with only the permissions of the features you use, instead of **all**. Immich refuses any action the key isn't allowed, and the app shows the server's message; the rest keeps working. Names follow Immich v3.3.
+
+| Feature | Permissions |
+| :------ | :---------- |
+| **Sign in and browse** the library, search, similar photos, partner photos and places (required) | `user.read`, `asset.read`, `asset.view` |
+| Full-resolution and HDR photos in the viewer, copy, export, Quick Look and dragging to the Finder | `asset.download` |
+| Avatars and your preferences (which of memories, tags, folders and shared links are on, download options) | `userProfileImage.read`, `userPreference.read` |
+| Favorite, archive, and edit descriptions, dates, ratings and locations | `asset.update` |
+| Crop and straighten | `asset.edit.get`, `asset.edit.create`, `asset.edit.delete` |
+| Delete, and restore or empty Recently Deleted | `asset.delete` |
+| Import | `asset.upload` (plus `albumAsset.create` to import into an album) |
+| Albums | `album.read`; to manage them `album.create`, `album.update`, `album.delete`, `albumAsset.create`, `albumAsset.delete` |
+| Shared albums and their activity | `albumUser.create`, `albumUser.update`, `albumUser.delete`, `user.read`, `activity.read`, `activity.statistics`, `activity.create`, `activity.delete` |
+| People and faces | `person.read`, `face.read`; to manage them `person.create`, `person.update`, `person.merge`, `face.update`, `face.delete` |
+| Tags | `tag.read`; to manage them `tag.create`, `tag.update`, `tag.delete`, `tag.asset` |
+| Memories | `memory.read`, `memory.update`; to remove them `memory.delete`, `memoryAsset.delete` |
+| Map and folders | `map.read`, `folder.read` |
+| Stacks | `stack.read`, `stack.create`, `stack.update`, `stack.delete` |
+| Duplicates | `duplicate.read`, `duplicate.delete` |
+| Shared links | `sharedLink.read`, `sharedLink.create`, `sharedLink.update`, `sharedLink.delete` |
+| Partner sharing | `partner.read`, `partner.create`, `partner.update`, `partner.delete` |
+| Widget | `asset.statistics`, `server.storage` |
+| Account settings: profile, preferences and avatar | `user.update`, `userPreference.update`, `userProfileImage.update`, `userProfileImage.delete` |
+| Account settings: API keys, sessions and notifications | `apiKey.read`, `apiKey.create`, `apiKey.update`, `apiKey.delete`, `session.read`, `session.delete`, `notification.read`, `notification.update`, `notification.delete` |
+| Administration (admin accounts) | `adminUser.read`, `adminUser.create`, `adminUser.update`, `adminUser.delete`, `library.read`, `library.create`, `library.update`, `library.delete`, `library.statistics`, `queue.read`, `queue.update`, `queueJob.delete`, `job.create`, `server.statistics`, `server.storage`, `server.versionCheck`, `systemConfig.read` |
+
+Finder access (**Settings › Finder**) uses the key you signed in with, so give it `asset.read`, `asset.view`, `asset.download`, `asset.upload`, `asset.update`, `asset.delete`, `album.read`, `album.create`, `album.update`, `album.delete`, `albumAsset.create`, `albumAsset.delete` and `user.read`. The Locked Folder needs a password or single sign-on login: Immich doesn't open it to API keys.
 
 When filtering Library to photos or videos only, results contain your own items. Partner photos remain available in the unfiltered Library and on partner pages. Date Added sorting is available for the unfiltered timeline on Immich v3.0 or later.
 
