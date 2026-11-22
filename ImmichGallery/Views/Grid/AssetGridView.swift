@@ -592,8 +592,8 @@ struct AssetGridView: View {
         .onChange(of: GridColumns(width: gridWidth, size: shownSize), initial: true) { _, columns in
             model.columns = columns.count
         }
-        .onChange(of: GridColumns(width: gridWidth, size: shownSize).pageRows(height: gridHeight), initial: true) { _, rows in
-            model.pageRows = rows
+        .onChange(of: GridColumns(width: gridWidth, size: shownSize).page(height: gridHeight), initial: true) { _, page in
+            model.page = page
         }
         .safeAreaInset(edge: .top, spacing: 0) {
             // Assign Location: the list leaves out months whose check failed.
@@ -750,6 +750,8 @@ extension AssetGridView {
     /// and the system.
     static func move(for key: KeyEquivalent, modifiers: EventModifiers) -> AssetGridModel.Move? {
         let command = modifiers.contains(.command), option = modifiers.contains(.option)
+        // Control with these keys belongs to the system (Mission Control, Spaces).
+        guard !modifiers.contains(.control), !(command && option) else { return nil }
         switch key {
         case .leftArrow: return command ? nil : .left
         case .rightArrow: return command ? nil : .right
@@ -780,6 +782,7 @@ extension AssetGridView {
         var modifiers: EventModifiers = []
         if event.modifierFlags.contains(.command) { modifiers.insert(.command) }
         if event.modifierFlags.contains(.option) { modifiers.insert(.option) }
+        if event.modifierFlags.contains(.control) { modifiers.insert(.control) }
         guard let direction = Self.move(for: key, modifiers: modifiers) else { return false }
         let extending = event.modifierFlags.contains(.shift)
         Task { await model.move(direction, extending: extending) }
@@ -798,11 +801,11 @@ struct GridColumns: Equatable {
         self.spacing = spacing
     }
 
-    /// How many whole square rows a height shows, at least one: the cells grow to share the width.
-    func pageRows(height: CGFloat) -> Int {
-        let side = (width - spacing * CGFloat(count - 1)) / CGFloat(count)
-        guard side > 0, height > 0 else { return 1 }
-        return max(1, Int((height + spacing) / (side + spacing)))
+    /// A height and the heights of a row of square cells, which grow to share the width, and of a month header
+    /// (`SectionHeader`: a headline in a capsule, about 47 points with their padding).
+    func page(height: CGFloat) -> AssetGridModel.PageMetrics {
+        let side = max(0, (width - spacing * CGFloat(count - 1)) / CGFloat(count))
+        return .init(height: height, row: side + spacing, header: 47)
     }
 }
 

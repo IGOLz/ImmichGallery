@@ -143,7 +143,7 @@ The demo is shared with everyone and doesn't accept uploads.
 | Copy image                                                    | ⌘C |
 | Move through photos / extend the selection                    | Arrow keys / ⇧ arrow keys |
 | Move a page up / down                                         | ⌥↑ / ⌥↓, Page Up / Page Down |
-| Go to the first / last photo                                  | ⌘↑ / ⌘↓, Home / End |
+| Go to the first / last photo, or select up to it with ⇧       | ⌘↑ / ⌘↓, Home / End |
 | Select all / deselect all                                     | ⌘A / ⇧⌘A |
 | Quick Look (arrow keys step through)                          | Space |
 | New window / new tab                                          | ⌘N / ⌘T |

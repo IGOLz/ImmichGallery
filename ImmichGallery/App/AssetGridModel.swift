@@ -648,8 +648,13 @@ final class AssetGridModel {
     @ObservationIgnored private var keyboardMoveGeneration = UUID()
     /// How many items a row of the grid holds, set by the grid from its width.
     @ObservationIgnored var columns = 1
-    /// How many rows the grid shows at once, set by the grid from its size, for Page Up and Page Down.
-    @ObservationIgnored var pageRows = 1
+    /// The grid's visible height, a row's and a month header's, set by the grid, for Page Up and Page Down.
+    struct PageMetrics: Equatable {
+        var height: CGFloat = 0
+        var row: CGFloat = 0
+        var header: CGFloat = 0
+    }
+    @ObservationIgnored var page = PageMetrics()
     /// The item the arrow keys reached, for the grid to scroll to.
     var keyboardScrollTarget: String?
     /// Whether a page header above the photos (an album's, a person's) is in view: while it is, it names the page
@@ -692,16 +697,34 @@ final class AssetGridModel {
         guard let target = await self.target(from: start, direction), !Task.isCancelled,
               generation == loadGeneration, request == keyboardMoveGeneration,
               index[start] != nil, index[target] != nil else { return }
-        cursorID = target
         if extending {
             let anchor = anchorID.flatMap { index[$0] != nil ? $0 : nil } ?? start
+            // Every month in between, so the range holds all of their items.
+            guard await loadSections(between: anchor, and: target, request: request) else { return }
+            cursorID = target
             anchorID = anchor
             selection = range(from: anchor, to: target)
         } else {
+            cursorID = target
             selection = [target]
             anchorID = target
         }
         keyboardScrollTarget = target
+    }
+
+    /// Loads the months from one item to another, both still in the grid, unless the load or the move is
+    /// replaced, or a month fails to load.
+    private func loadSections(between a: String, and b: String, request: UUID) async -> Bool {
+        let generation = loadGeneration
+        while let pa = index[a], let pb = index[b] {
+            let span = min(pa.section, pb.section)...max(pa.section, pb.section)
+            guard let s = span.first(where: { sections[$0].assets == nil && shownCount(sections[$0]) > 0 }) else { return true }
+            let sectionID = sections[s].id
+            await loadSection(id: sectionID).value
+            guard generation == loadGeneration, request == keyboardMoveGeneration, !Task.isCancelled,
+                  sections.first(where: { $0.id == sectionID })?.assets != nil else { return false }
+        }
+        return false
     }
 
     private func select(_ id: String) {
@@ -719,11 +742,15 @@ final class AssetGridModel {
         case .first: return await edgeItem(last: false)
         case .last: return await edgeItem(last: true)
         case .pageUp, .pageDown:
-            // Row by row, so a page crosses months as the arrows do, and stops at either end.
-            var current = id
-            for _ in 0..<max(1, pageRows) {
-                guard let next = await target(from: current, direction == .pageUp ? .up : .down),
-                      generation == loadGeneration, !Task.isCancelled else { break }
+            // Row by row, so a page crosses months as the arrows do, and stops at either end: as many rows, and
+            // the month headers crossed, as the grid's height holds, at least one.
+            var current = id, room = page.height
+            while let next = await target(from: current, direction == .pageUp ? .up : .down),
+                  generation == loadGeneration, !Task.isCancelled,
+                  let from = index[current], let to = index[next] {
+                let height = page.row + (showsSectionHeaders && from.section != to.section ? page.header : 0)
+                if current != id && height > room { break }
+                room -= height
                 current = next
             }
             return current == id ? nil : current
@@ -771,18 +798,37 @@ final class AssetGridModel {
         }
     }
 
-    /// The grid's first or last item, loading its month if needed. Paged sources (search) end at the last page
-    /// loaded so far; scrolling there loads the next one.
+    /// The grid's first or last item, loading its month, or a paged source's remaining pages, if needed. Stops if
+    /// a load fails, or the load or the move is replaced.
     private func edgeItem(last: Bool) async -> String? {
-        let generation = loadGeneration
+        let generation = loadGeneration, request = keyboardMoveGeneration
+        func current() -> Bool { generation == loadGeneration && request == keyboardMoveGeneration && !Task.isCancelled }
+        if last, isPaged {
+            while nextPage != nil, !pageFailed {
+                let loaded = sections.reduce(0) { $0 + ($1.assets?.count ?? 0) }
+                if let pageTask {
+                    await pageTask.value
+                } else {
+                    do { try await fetchNextPage() } catch {
+                        if current(), !error.isCancellation { pageFailed = true; report(error) }
+                        return nil
+                    }
+                }
+                guard current() else { return nil }
+                // A page that added nothing, or a load that ended without one: no further to go.
+                if sections.reduce(0, { $0 + ($1.assets?.count ?? 0) }) == loaded { break }
+            }
+        }
         var s = last ? sections.count - 1 : 0
         while sections.indices.contains(s) {
             let sectionID = sections[s].id
-            if sections[s].assets == nil {
+            // Months a filter hides until they load (Assign Location) aren't in the grid.
+            if sections[s].assets == nil, shownCount(sections[s]) > 0 {
                 await loadSection(id: sectionID).value
-                guard generation == loadGeneration, !Task.isCancelled,
-                      let current = sections.firstIndex(where: { $0.id == sectionID }) else { return nil }
-                s = current
+                guard current(), let i = sections.firstIndex(where: { $0.id == sectionID }) else { return nil }
+                // A month that failed to load: don't skip past it to the wrong end.
+                guard sections[i].assets != nil else { return nil }
+                s = i
             }
             if let assets = sections[s].assets, let item = last ? assets.last : assets.first { return item.id }
             s += last ? -1 : 1
