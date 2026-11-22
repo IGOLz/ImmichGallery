@@ -648,6 +648,13 @@ final class AssetGridModel {
     @ObservationIgnored private var keyboardMoveGeneration = UUID()
     /// How many items a row of the grid holds, set by the grid from its width.
     @ObservationIgnored var columns = 1
+    /// The grid's visible height, a row's and a month header's, set by the grid, for Page Up and Page Down.
+    struct PageMetrics: Equatable {
+        var height: CGFloat = 0
+        var row: CGFloat = 0
+        var header: CGFloat = 0
+    }
+    @ObservationIgnored var page = PageMetrics()
     /// The item the arrow keys reached, for the grid to scroll to.
     var keyboardScrollTarget: String?
     /// Whether a page header above the photos (an album's, a person's) is in view: while it is, it names the page
@@ -663,34 +670,61 @@ final class AssetGridModel {
         if months != visibleMonths { visibleMonths = months }
     }
 
-    enum Move { case left, right, up, down }
+    enum Move {
+        case left, right, up, down
+        /// A page of rows: Page Up and Page Down, or Option with the up and down arrows.
+        case pageUp, pageDown
+        /// The first or last item: Home and End, or Command with the up and down arrows.
+        case first, last
 
-    /// Moves the cursor one item, or one row, and selects it; extending selects everything from where the
-    /// selection started (the anchor) to it, as Shift does in Photos and Finder.
+        var isBackward: Bool { [.left, .up, .pageUp, .first].contains(self) }
+    }
+
+    /// Moves the cursor one item, one row, a page or to either end, and selects it; extending selects everything
+    /// from where the selection started (the anchor) to it, as Shift does in Photos and Finder.
     func move(_ direction: Move, extending: Bool) async {
         let request = UUID(), generation = loadGeneration
         keyboardMoveGeneration = request
         let start = cursorID.flatMap { selection.contains($0) && index[$0] != nil ? $0 : nil }
-            ?? (direction == .left || direction == .up ? orderedSelection.first : orderedSelection.last)
+            ?? (direction.isBackward ? orderedSelection.first : orderedSelection.last)
         guard let start else {
-            // Nothing selected: the first item, as Photos does.
-            guard let first = sections.lazy.compactMap({ $0.assets?.first }).first else { return }
-            select(first.id)
+            // Nothing selected: the first item, as Photos does, or the last one for End.
+            guard let target = await edgeItem(last: direction == .last), !Task.isCancelled,
+                  generation == loadGeneration, request == keyboardMoveGeneration, index[target] != nil else { return }
+            select(target)
             return
         }
         guard let target = await self.target(from: start, direction), !Task.isCancelled,
               generation == loadGeneration, request == keyboardMoveGeneration,
               index[start] != nil, index[target] != nil else { return }
-        cursorID = target
         if extending {
             let anchor = anchorID.flatMap { index[$0] != nil ? $0 : nil } ?? start
+            // Every month in between, so the range holds all of their items.
+            guard await loadSections(between: anchor, and: target, request: request) else { return }
+            cursorID = target
             anchorID = anchor
             selection = range(from: anchor, to: target)
         } else {
+            cursorID = target
             selection = [target]
             anchorID = target
         }
         keyboardScrollTarget = target
+    }
+
+    /// Loads the months from one item to another, both still in the grid, unless the load or the move is
+    /// replaced, or a month fails to load.
+    private func loadSections(between a: String, and b: String, request: UUID) async -> Bool {
+        let generation = loadGeneration
+        while let pa = index[a], let pb = index[b] {
+            let span = min(pa.section, pb.section)...max(pa.section, pb.section)
+            guard let s = span.first(where: { sections[$0].assets == nil && shownCount(sections[$0]) > 0 }) else { return true }
+            let sectionID = sections[s].id
+            await loadSection(id: sectionID).value
+            guard generation == loadGeneration, request == keyboardMoveGeneration, !Task.isCancelled,
+                  sections.first(where: { $0.id == sectionID })?.assets != nil else { return false }
+        }
+        return false
     }
 
     private func select(_ id: String) {
@@ -705,6 +739,21 @@ final class AssetGridModel {
     private func target(from id: String, _ direction: Move) async -> String? {
         let generation = loadGeneration
         switch direction {
+        case .first: return await edgeItem(last: false)
+        case .last: return await edgeItem(last: true)
+        case .pageUp, .pageDown:
+            // Row by row, so a page crosses months as the arrows do, and stops at either end: as many rows, and
+            // the month headers crossed, as the grid's height holds, at least one.
+            var current = id, room = page.height
+            while let next = await target(from: current, direction == .pageUp ? .up : .down),
+                  generation == loadGeneration, !Task.isCancelled,
+                  let from = index[current], let to = index[next] {
+                let height = page.row + (showsSectionHeaders && from.section != to.section ? page.header : 0)
+                if current != id && height > room { break }
+                room -= height
+                current = next
+            }
+            return current == id ? nil : current
         case .left: return await neighbor(of: id, delta: -1)?.id
         case .right: return await neighbor(of: id, delta: 1)?.id
         case .up, .down:
@@ -749,6 +798,44 @@ final class AssetGridModel {
         }
     }
 
+    /// The grid's first or last item, loading its month, or a paged source's remaining pages, if needed. Stops if
+    /// a load fails, or the load or the move is replaced.
+    private func edgeItem(last: Bool) async -> String? {
+        let generation = loadGeneration, request = keyboardMoveGeneration
+        func current() -> Bool { generation == loadGeneration && request == keyboardMoveGeneration && !Task.isCancelled }
+        if last, isPaged {
+            while nextPage != nil, !pageFailed {
+                let loaded = sections.reduce(0) { $0 + ($1.assets?.count ?? 0) }
+                if let pageTask {
+                    await pageTask.value
+                } else {
+                    do { try await fetchNextPage() } catch {
+                        if current(), !error.isCancellation { pageFailed = true; report(error) }
+                        return nil
+                    }
+                }
+                guard current() else { return nil }
+                // A page that added nothing, or a load that ended without one: no further to go.
+                if sections.reduce(0, { $0 + ($1.assets?.count ?? 0) }) == loaded { break }
+            }
+        }
+        var s = last ? sections.count - 1 : 0
+        while sections.indices.contains(s) {
+            let sectionID = sections[s].id
+            // Months a filter hides until they load (Assign Location) aren't in the grid.
+            if sections[s].assets == nil, shownCount(sections[s]) > 0 {
+                await loadSection(id: sectionID).value
+                guard current(), let i = sections.firstIndex(where: { $0.id == sectionID }) else { return nil }
+                // A month that failed to load: don't skip past it to the wrong end.
+                guard sections[i].assets != nil else { return nil }
+                s = i
+            }
+            if let assets = sections[s].assets, let item = last ? assets.last : assets.first { return item.id }
+            s += last ? -1 : 1
+        }
+        return nil
+    }
+
     /// The items next to one, already loaded, for Quick Look to fetch ahead.
     func loadedNeighbours(of id: String) -> [String] {
         guard let pos = index[id], let assets = sections[pos.section].assets else { return [] }
@@ -761,6 +848,12 @@ final class AssetGridModel {
     /// The selection's neighbours when one item is selected, else none.
     var quickLookAhead: [String] {
         selection.count == 1 ? selection.first.map(loadedNeighbours(of:)) ?? [] : []
+    }
+
+    /// Whether an item is the grid's first, with nothing loaded or waiting to load before it.
+    func isFirst(_ id: String) -> Bool {
+        guard let pos = index[id], pos.item == 0 else { return false }
+        return sections[..<pos.section].allSatisfy { $0.assets?.isEmpty ?? (shownCount($0) == 0) }
     }
 
     /// Where an item sits, for scrolling to it.

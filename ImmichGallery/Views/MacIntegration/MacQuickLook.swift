@@ -145,9 +145,20 @@ final class MacQuickLook: NSResponder, @preconcurrency QLPreviewPanelDataSource,
     }
 
     /// With one item shown, the arrow keys move the grid's selection, which the panel then follows; with several,
-    /// the panel steps through them itself, as Finder's does.
+    /// the panel steps through them itself, as Finder's does. Moves by a page, to either end or extending the
+    /// selection always go to the grid, so they keep working once the selection holds several items.
     func previewPanel(_ panel: QLPreviewPanel!, handle event: NSEvent!) -> Bool {
-        guard let event, event.type == .keyDown, ids.count <= 1, let onArrow else { return false }
+        guard let event, event.type == .keyDown, let onArrow else { return false }
+        guard ids.count <= 1 || Self.movesGrid(event) else { return false }
         return onArrow(event)
+    }
+
+    /// Page Up, Page Down, Home and End, or an arrow with Shift, Option or Command.
+    private static func movesGrid(_ event: NSEvent) -> Bool {
+        switch event.keyCode {
+        case 115, 116, 119, 121: true
+        case 123...126: !event.modifierFlags.isDisjoint(with: [.shift, .option, .command])
+        default: false
+        }
     }
 }
