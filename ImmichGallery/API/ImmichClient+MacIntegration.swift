@@ -1,5 +1,6 @@
 import Foundation
 import Synchronization
+import UniformTypeIdentifiers
 
 /// Preview files remain leased until the panel closes. Drag promises expire after ten minutes.
 enum MacTransferCache {
@@ -56,8 +57,47 @@ enum MacTransferCache {
 }
 
 extension ImmichClient {
+    func downloadVideoForPlayback(_ id: String) async throws -> URL {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.urlCache = nil
+        configuration.timeoutIntervalForResource = 300
+        configuration.httpAdditionalHeaders = ["User-Agent": Self.userAgent]
+        let downloadSession = dedicatedSession(configuration)
+        defer { invalidateSession(downloadSession, cancelPending: false) }
+        let progress = PlaybackDownloadLimit()
+        let temporary: URL
+        let response: URLResponse
+        do {
+            (temporary, response) = try await download(for: request("assets/\(id)/video/playback"), delegate: progress, session: downloadSession)
+        } catch {
+            if progress.exceeded.withLock({ $0 }) { throw PlaybackDownloadLimit.tooLarge }
+            throw error
+        }
+        defer { try? FileManager.default.removeItem(at: temporary) }
+        let status = (response as? HTTPURLResponse)?.statusCode
+        if status == 401 { throw ImmichError.unauthorized(nil) }
+        if status == 407, proxy?.transport == .httpConnect { throw ImmichError.proxyAuthentication }
+        guard status == 200 else { throw ImmichError.http(status ?? 0, nil) }
+        let size = try temporary.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
+        guard size <= PlaybackDownloadLimit.maxBytes else { throw PlaybackDownloadLimit.tooLarge }
+        guard let mime = response.mimeType, let type = UTType(mimeType: mime),
+              type.conforms(to: .movie), let fileExtension = type.preferredFilenameExtension else {
+            throw ImmichError.http(415, String(localized: "This video format cannot be downloaded for proxy playback."))
+        }
+        try Task.checkCancellation()
+        let folder = try MacTransferCache.create(preview: true, root: transferRoot ?? MacTransferCache.root)
+        do {
+            let destination = folder.appendingPathComponent("Video").appendingPathExtension(fileExtension)
+            try FileManager.default.moveItem(at: temporary, to: destination)
+            return destination
+        } catch {
+            MacTransferCache.release(folder, remove: true)
+            throw error
+        }
+    }
+
     func macIntegrationOriginal(_ id: String, preview: Bool = false) async throws -> URL {
-        let (temporary, response) = try await session.download(for: originalRequest(id))
+        let (temporary, response) = try await download(for: originalRequest(id))
         defer { try? FileManager.default.removeItem(at: temporary) }
         if (response as? HTTPURLResponse)?.statusCode == 401 { throw ImmichError.unauthorized(nil) }
         guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
@@ -77,4 +117,22 @@ extension ImmichClient {
             throw error
         }
     }
+}
+
+private final class PlaybackDownloadLimit: NSObject, URLSessionDownloadDelegate, Sendable {
+    static let maxBytes: Int64 = 512 * 1024 * 1024
+    static var tooLarge: ImmichError {
+        .http(413, String(localized: "This video is larger than the 512 MiB limit for proxy playback."))
+    }
+    let exceeded = Mutex(false)
+
+    func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didWriteData bytesWritten: Int64,
+                    totalBytesWritten: Int64, totalBytesExpectedToWrite: Int64) {
+        if max(totalBytesWritten, totalBytesExpectedToWrite) > Self.maxBytes {
+            exceeded.withLock { $0 = true }
+            downloadTask.cancel()
+        }
+    }
+
+    func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {}
 }

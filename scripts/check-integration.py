@@ -26,6 +26,7 @@ cases = {
     'people-cache': api + [support('ImagePipeline'), 'scripts/checks/people-network.swift'],
     'search': api + ['scripts/check-search.swift'],
     'oauth': api + ['Tests/OAuthChecks.swift'],
+    'server-proxy': api + ['Tests/ServerProxyChecks.swift'],
     'locked-folder-touch-id': api + [app('LockedFolderTouchID'), 'Tests/LockedFolderTouchIDChecks.swift'],
     'tag-picker': api + ['ImmichGallery/Views/Explore/ExploreTagPicker.swift', 'Tests/ExploreTagPickerChecks.swift'],
     'grid-context-menu': ['ImmichGallery/Views/Grid/DeferredContextMenu.swift', 'Tests/GridContextMenuChecks.swift'],

@@ -37,14 +37,23 @@ extension ImmichClient {
         let configuration = session.configuration
         configuration.timeoutIntervalForRequest = 3600
         configuration.timeoutIntervalForResource = 7 * 24 * 3600
-        let uploadSession = URLSession(configuration: configuration)
-        defer { uploadSession.finishTasksAndInvalidate() }
+        let uploadSession = dedicatedSession(configuration)
+        defer { invalidateSession(uploadSession, cancelPending: false) }
         let size = try multipart.file.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
         progress(0, Int64(size))
-        let (data, response) = try await uploadSession.upload(for: request, fromFile: multipart.file, delegate: UploadProgress(progress))
+        let data: Data
+        let response: URLResponse
+        let uploadRequest = request
+        do {
+            (data, response) = try await withSession(uploadSession) {
+                try await $0.upload(for: uploadRequest, fromFile: multipart.file, delegate: UploadProgress(progress))
+            }
+        }
+        catch where proxy != nil { throw Self.proxyError(error) }
         guard let http = response as? HTTPURLResponse else { throw URLError(.badServerResponse) }
         guard (200..<300).contains(http.statusCode) else {
             if http.statusCode == 401 { throw ImmichError.unauthorized(nil) }
+            if http.statusCode == 407, proxy?.transport == .httpConnect { throw ImmichError.proxyAuthentication }
             struct Failure: Decodable { let message: String? }
             throw ImmichError.http(http.statusCode, (try? JSONDecoder().decode(Failure.self, from: data))?.message)
         }

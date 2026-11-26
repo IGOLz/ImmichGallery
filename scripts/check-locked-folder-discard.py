@@ -113,6 +113,9 @@ final class ImmichClient: Sendable {
         session = URLSession(configuration: configuration)
     }
     func explorePrivateClient() -> ImmichClient { ImmichClient() }
+    func invalidateSession(cancelPending: Bool = true) {
+        if cancelPending { session.invalidateAndCancel() } else { session.finishTasksAndInvalidate() }
+    }
     func send(_ method: String, _ path: String) async throws -> Data {
         var request = URLRequest(url: serverURL.appendingPathComponent("api/" + path))
         request.httpMethod = method

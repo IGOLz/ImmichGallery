@@ -57,12 +57,21 @@ extension ImmichClient {
         let directory = accountCacheDirectory(apiURL: apiURL, userID: userID)
         accountSessions.lock.lock()
         defer { accountSessions.lock.unlock() }
-        if let session = accountSessions.sessions.removeValue(forKey: directory.path) {
-            session.invalidateAndCancel()
-            session.configuration.urlCache?.removeAllCachedResponses()
+        if let entry = accountSessions.sessions.removeValue(forKey: directory.path) {
+            entry.scope.invalidate()
+            entry.session.configuration.urlCache?.removeAllCachedResponses()
         }
         if FileManager.default.fileExists(atPath: directory.path) {
             try FileManager.default.removeItem(at: directory)
+        }
+    }
+
+    static func invalidateAccountSessions(serverURL: URL) {
+        let server = ServerProxy.serverKey(serverURL)
+        accountSessions.lock.lock()
+        defer { accountSessions.lock.unlock() }
+        for key in accountSessions.sessions.keys.filter({ accountSessions.sessions[$0]?.server == server }) {
+            accountSessions.sessions.removeValue(forKey: key)?.scope.invalidate()
         }
     }
 
@@ -71,22 +80,35 @@ extension ImmichClient {
         let directory = Self.accountCacheDirectory(apiURL: apiURL, userID: userID)
         Self.accountSessions.lock.lock()
         defer { Self.accountSessions.lock.unlock() }
-        let session: URLSession
-        if let existing = Self.accountSessions.sessions[directory.path] { session = existing }
+        let server = ServerProxy.serverKey(serverURL)
+        let entry: AccountSessionRegistry.Entry
+        let existing = Self.accountSessions.sessions[directory.path]
+        if let existing, existing.server == server, existing.proxy == proxy { entry = existing }
         else {
+            existing?.scope.invalidate()
             let config = URLSessionConfiguration.default
             config.urlCache = URLCache(memoryCapacity: 64 << 20, diskCapacity: 4 << 30, directory: directory)
             config.httpAdditionalHeaders = ["User-Agent": Self.userAgent]
             config.httpMaximumConnectionsPerHost = 8
             config.timeoutIntervalForRequest = 30
-            session = URLSession(configuration: config)
-            Self.accountSessions.sessions[directory.path] = session
+            let session = Self.makeSession(config, proxy: proxy)
+            let scope = ImmichSessionScope()
+            scope.register(session)
+            entry = AccountSessionRegistry.Entry(server: server, proxy: proxy, session: session, scope: scope)
+            Self.accountSessions.sessions[directory.path] = entry
         }
-        return ImmichClient(serverURL: serverURL, apiURL: apiURL, credential: credential, session: session)
+        return ImmichClient(serverURL: serverURL, apiURL: apiURL, credential: credential, session: entry.session,
+                            proxy: proxy, sessionScope: entry.scope)
     }
 }
 
 private final class AccountSessionRegistry: @unchecked Sendable {
+    struct Entry {
+        let server: String
+        let proxy: ServerProxy?
+        let session: URLSession
+        let scope: ImmichSessionScope
+    }
     let lock = NSLock()
-    var sessions: [String: URLSession] = [:]
+    var sessions: [String: Entry] = [:]
 }

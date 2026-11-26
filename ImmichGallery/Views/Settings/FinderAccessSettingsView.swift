@@ -20,7 +20,9 @@ struct FinderAccessSettingsView: View {
                 Section { Text("Sign in to show an account in Finder.").foregroundStyle(.secondary) }
             }
             ForEach(app.entries) { entry in
-                FinderAccessAccountSection(entry: entry, model: model, confirmingOff: $confirmingOff)
+                FinderAccessAccountSection(entry: entry, model: model,
+                                           proxyEnabled: app.proxyServers.contains(ServerProxy.serverKey(entry.account.serverURL)),
+                                           confirmingOff: $confirmingOff)
             }
             let orphans = model.locations.filter { location in
                 !app.entries.contains { FinderAccess.domainIdentifier(apiURL: $0.account.apiURL, userID: $0.userID) == location.id }
@@ -57,7 +59,7 @@ struct FinderAccessSettingsView: View {
             Button("Remove from Finder", role: .destructive) {
                 Task {
                     let id = FinderAccess.domainIdentifier(apiURL: entry.account.apiURL, userID: entry.userID)
-                    let client = ImmichClient(serverURL: entry.account.serverURL, apiURL: entry.account.apiURL, credential: entry.account.credential)
+                    let client = try? AccountVault.client(for: entry.account)
                     await model.disable(id, client: client)
                 }
             }
@@ -70,6 +72,7 @@ struct FinderAccessSettingsView: View {
 private struct FinderAccessAccountSection: View {
     let entry: AccountVault.Entry
     let model: FinderAccessModel
+    let proxyEnabled: Bool
     @Binding var confirmingOff: AccountVault.Entry?
 
     private var domainID: String { FinderAccess.domainIdentifier(apiURL: entry.account.apiURL, userID: entry.userID) }
@@ -89,10 +92,10 @@ private struct FinderAccessAccountSection: View {
                             .font(.caption).foregroundStyle(.secondary)
                     }
                 }
-                .disabled(busy || !model.available)
+                .disabled(busy || !model.available || (proxyEnabled && location == nil))
                 if busy { ProgressView().controlSize(.small) }
             }
-            if let configuration {
+            if let configuration, !proxyEnabled {
                 Toggle(isOn: Binding(get: { configuration.allowChanges }, set: { model.setOptions(domainID, allowChanges: $0) })) {
                     VStack(alignment: .leading) {
                         Text("Allow Changes")
@@ -119,7 +122,10 @@ private struct FinderAccessAccountSection: View {
                 }.disabled(busy)
             }
         } footer: {
-            if location == nil {
+            if proxyEnabled {
+                Text("Finder access is paused while this server uses a proxy.")
+                    .font(.caption).foregroundStyle(.secondary)
+            } else if location == nil {
                 if case .apiKey = entry.account.credential {
                     Text("Finder uses this account's API key. It never opens the Locked Folder.")
                         .font(.caption).foregroundStyle(.secondary)

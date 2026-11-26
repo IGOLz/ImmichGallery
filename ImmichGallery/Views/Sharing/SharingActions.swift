@@ -125,7 +125,7 @@ private struct ShareFilesView: View {
             folder = destination
             for id in assetIDs {
                 try Task.checkCancellation()
-                let (temp, response) = try await session.client.session.download(for: session.client.originalRequest(id))
+                let (temp, response) = try await session.client.download(for: session.client.originalRequest(id))
                 guard let response = response as? HTTPURLResponse else { throw ImmichError.http(400, String(localized: "Couldn't download an original.")) }
                 if response.statusCode == 401 { throw ImmichError.unauthorized(nil) }
                 guard (200..<300).contains(response.statusCode) else { throw ImmichError.http(response.statusCode, String(localized: "Couldn't download an original.")) }

@@ -167,7 +167,7 @@ final class ViewerState: NSObject, NSWindowDelegate {
             do {
                 if asFile {
                     let asset = try await session.client.asset(id)
-                    let (temporaryFile, response) = try await session.client.session.download(for: session.client.originalRequest(id))
+                    let (temporaryFile, response) = try await session.client.download(for: session.client.originalRequest(id))
                     defer { try? FileManager.default.removeItem(at: temporaryFile) }
                     guard (response as? HTTPURLResponse)?.statusCode == 200 else { throw CocoaError(.fileReadUnknown) }
                     guard session.lockedFolder?.isDiscarded != true else { return }
@@ -183,7 +183,7 @@ final class ViewerState: NSObject, NSWindowDelegate {
                 } else {
                     let image: NSImage
                     if original {
-                        let (file, response) = try await session.client.session.download(for: session.client.originalRequest(id))
+                        let (file, response) = try await session.client.download(for: session.client.originalRequest(id))
                         defer { try? FileManager.default.removeItem(at: file) }
                         guard (response as? HTTPURLResponse)?.statusCode == 200,
                               let source = CGImageSourceCreateWithURL(file as CFURL, nil),

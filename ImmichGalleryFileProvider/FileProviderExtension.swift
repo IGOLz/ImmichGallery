@@ -16,6 +16,7 @@ final class FileProviderExtension: NSObject, NSFileProviderReplicatedExtension, 
         var engineKey: String?
         /// The engine's own session, invalidated with it so a replaced engine leaves nothing running.
         var session: URLSession?
+        var sessionScope = ImmichSessionScope()
         var tasks: [UUID: Task<Void, Never>] = [:]
         /// Kept for the extension's lifetime: the XPC listener lives in it.
         var service: FinderAccessServiceSource?
@@ -32,12 +33,23 @@ final class FileProviderExtension: NSObject, NSFileProviderReplicatedExtension, 
     }
 
     func invalidate() {
-        let (tasks, session) = state.withLock { state in
-            defer { state.tasks.removeAll(); state.engine = nil; state.engineKey = nil; state.session = nil }
-            return (Array(state.tasks.values), state.session)
+        replaceScope().invalidate()
+    }
+
+    func cancelDirectRequests() async {
+        await replaceScope().invalidateAndWait()
+    }
+
+    private func replaceScope() -> ImmichSessionScope {
+        let (tasks, scope) = state.withLock { state in
+            defer {
+                state.tasks.removeAll(); state.engine = nil; state.engineKey = nil; state.session = nil
+                state.sessionScope = ImmichSessionScope()
+            }
+            return (Array(state.tasks.values), state.sessionScope)
         }
         tasks.forEach { $0.cancel() }
-        session?.invalidateAndCancel()
+        return scope
     }
 
     // MARK: Engine
@@ -58,6 +70,7 @@ final class FileProviderExtension: NSObject, NSFileProviderReplicatedExtension, 
 
     /// Rebuilt when the configuration or the credential changes, so nothing of an earlier key is kept.
     func engine() throws -> ProviderEngine {
+        guard !FinderAccess.isProxyBlocked(domainID) else { throw Self.proxyBlocked }
         guard FinderAccess.isDomainIdentifier(domainID), let configuration = FinderAccess.loadConfiguration(domainID),
               let data = FinderCredentialStore.load(domainID),
               let credential = try? JSONDecoder().decode(Credential.self, from: data), case .apiKey = credential else {
@@ -66,9 +79,11 @@ final class FileProviderExtension: NSObject, NSFileProviderReplicatedExtension, 
         let key = configuration.accountID + "|" + data.base64EncodedString()
         if let engine = state.withLock({ $0.engineKey == key ? $0.engine : nil }) { return engine }
         let store = try store()
+        let scope = state.withLock { $0.sessionScope }
         let session = Self.session(for: domainID)
+        scope.register(session)
         let client = ImmichClient(serverURL: configuration.serverURL, apiURL: configuration.apiURL, credential: credential,
-                                  session: session)
+                                  session: session, sessionScope: scope)
         let domainID = domainID
         let manager = Unchecked(NSFileProviderManager(for: domain))
         let engine = ProviderEngine(
@@ -82,23 +97,29 @@ final class FileProviderExtension: NSObject, NSFileProviderReplicatedExtension, 
                         current?.refreshRequested)
             },
             signal: { manager.value?.signalEnumerator(for: .workingSet) { _ in } })
-        let (current, replaced) = state.withLock { state -> (ProviderEngine, URLSession?) in
+        let (current, replaced) = state.withLock { state -> (ProviderEngine?, URLSession?) in
+            guard state.sessionScope === scope, !FinderAccess.isProxyBlocked(domainID) else { return (nil, session) }
             // Another call may have built the same engine meanwhile: keep that one.
             if state.engineKey == key, let existing = state.engine { return (existing, session) }
             defer { state.engine = engine; state.engineKey = key; state.session = session }
             return (engine, state.session)
         }
         // Requests already running for the old key finish; nothing new starts on its session.
-        replaced?.finishTasksAndInvalidate()
+        if let replaced { scope.invalidate(replaced, cancelPending: false) }
+        guard let current else { throw Self.proxyBlocked }
         return current
     }
 
+    private static var proxyBlocked: ProviderFailure {
+        .cannotSynchronize(String(localized: "Finder access is paused while this server uses a proxy."))
+    }
+
     func credentialChanged() {
-        let session = state.withLock { state in
+        let (session, scope) = state.withLock { state in
             defer { state.engine = nil; state.engineKey = nil; state.session = nil }
-            return state.session
+            return (state.session, state.sessionScope)
         }
-        session?.finishTasksAndInvalidate()
+        if let session { scope.invalidate(session, cancelPending: false) }
         guard let manager = NSFileProviderManager(for: domain) else { return }
         manager.signalErrorResolved(NSFileProviderError(.notAuthenticated)) { _ in }
         manager.signalEnumerator(for: .workingSet) { _ in }
@@ -175,6 +196,13 @@ final class FileProviderExtension: NSObject, NSFileProviderReplicatedExtension, 
 
     func item(for identifier: NSFileProviderItemIdentifier, request: NSFileProviderRequest,
               completionHandler: @escaping (NSFileProviderItem?, Error?) -> Void) -> Progress {
+        if identifier == .rootContainer, FinderAccess.isDomainIdentifier(domainID), FinderAccess.isProxyBlocked(domainID) {
+            // Keep the local location and its XPC service visible while remote access is paused.
+            let root = ProviderRendering.folder(.root, name: "Immich Gallery",
+                                                options: ProviderOptions(allowChanges: false, allowRemoving: false))
+            completionHandler(FileProviderItem(root), nil)
+            return Progress(totalUnitCount: 1)
+        }
         let completion = Unchecked(completionHandler)
         return run(Progress(totalUnitCount: 1)) { [self] in
             do { completion.value(FileProviderItem(try await engine().item(identifier.rawValue)), nil) }

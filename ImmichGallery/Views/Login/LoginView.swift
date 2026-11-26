@@ -18,6 +18,9 @@ struct LoginView: View {
     @State private var email = ""
     @State private var password = ""
     @State private var apiKey = ""
+    @State private var proxyDraft = ServerProxyDraft()
+    @State private var proxyDraftServer: String?
+    @State private var proxyReadError: String?
     @State private var method = Method.password
     /// The server's single sign-on button text, when it offers OAuth.
     @State private var oauthButton: String?
@@ -26,6 +29,10 @@ struct LoginView: View {
     @FocusState private var focused: Field?
 
     private enum Field { case server, email, password, apiKey }
+
+    private var serverKey: String? {
+        ImmichClient.serverCandidates(serverText).first.map(ServerProxy.serverKey)
+    }
 
     var body: some View {
         VStack(spacing: 24) {
@@ -65,6 +72,22 @@ struct LoginView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .disabled(isWorking)
         .onAppear { focused = .server }
+        .onChange(of: serverKey, initial: true) { _, key in
+            do {
+                proxyDraft = try savedProxyDraft(for: key)
+                proxyDraftServer = key
+                if errorMessage == proxyReadError { errorMessage = nil }
+                proxyReadError = nil
+            } catch {
+                proxyReadError = error.localizedDescription
+                errorMessage = proxyReadError
+            }
+        }
+    }
+
+    private func savedProxyDraft(for key: String?) throws -> ServerProxyDraft {
+        let profiles = try AccountVault.loadProxies()
+        return ServerProxyDraft(key.flatMap { profiles[$0] })
     }
 
     private var subtitle: String {
@@ -81,8 +104,9 @@ struct LoginView: View {
                 .controlSize(.large)
                 .focused($focused, equals: .server)
                 .onSubmit(connect)
+            ServerProxyFields(draft: $proxyDraft)
             primaryButton("Continue", action: connect)
-                .disabled(serverText.trimmingCharacters(in: .whitespaces).isEmpty)
+                .disabled(serverText.trimmingCharacters(in: .whitespaces).isEmpty || proxyReadError != nil)
         }
     }
 
@@ -95,6 +119,10 @@ struct LoginView: View {
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.large)
+                if client.proxy != nil {
+                    Text("Browser sign-in uses system network settings. If it cannot reach this server, use an API key or password.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
 
                 HStack {
                     VStack { Divider() }
@@ -165,8 +193,10 @@ struct LoginView: View {
     }
 
     private func connect() {
+        guard proxyReadError == nil else { return }
         run {
-            let client = try await ImmichClient.discover(serverText)
+            let draft = proxyDraftServer == serverKey ? proxyDraft : try savedProxyDraft(for: serverKey)
+            let client = try await ImmichClient.discover(serverText, proxy: draft.value())
             async let features = try? client.serverFeatures()
             async let version = try? client.serverVersion()
             let f = await features ?? ServerFeatures()

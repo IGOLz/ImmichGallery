@@ -51,8 +51,7 @@ final class AdminModel {
         configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
         configuration.httpAdditionalHeaders = ["User-Agent": ImmichClient.userAgent]
         configuration.timeoutIntervalForRequest = 30
-        client = ImmichClient(serverURL: session.client.serverURL, apiURL: session.client.apiURL,
-                              credential: session.client.credential, session: URLSession(configuration: configuration))
+        client = session.client.isolatedClient(configuration)
     }
 
     func checkAccess() async throws {

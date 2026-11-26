@@ -68,7 +68,7 @@ struct AssetViewer: View {
             if viewer?.window != nil && !isPresentation {
                 Color(nsColor: .windowBackgroundColor)
             } else if item.isVideo {
-                VideoPlayerView(url: session.client.videoURL(item.id), headers: session.client.credential?.headers ?? [:],
+                AssetVideoPlayer(client: session.client, assetID: item.id,
                                 playing: viewer?.slideshow != true || viewer?.paused != true,
                                 onFinished: videoFinished,
                                 onProgress: { viewer?.videoStalledElapsed = 0 },
@@ -81,9 +81,8 @@ struct AssetViewer: View {
                               zoomRequest: zoomRequest)
                     .id(item.id)
                 if playLive, let videoID = item.livePhotoVideoID {
-                    VideoPlayerView(
-                        url: session.client.videoURL(videoID),
-                        headers: session.client.credential?.headers ?? [:],
+                    AssetVideoPlayer(
+                        client: session.client, assetID: videoID,
                         showsControls: false,
                         onFinished: { playLive = false })
                         .id(videoID)
@@ -340,7 +339,55 @@ private struct ZoomableImage: View {
     }
 }
 
-/// Authenticated range playback. Sound settings persist across assets and app launches.
+struct AssetVideoPlayer: View {
+    let client: ImmichClient
+    let assetID: String
+    var showsControls = true
+    var playing = true
+    var onFinished: (@MainActor @Sendable () -> Void)?
+    var onProgress: (@MainActor @Sendable () -> Void)?
+    var onFailed: (@MainActor @Sendable () -> Void)?
+    @State private var file: URL?
+    @State private var error: String?
+
+    var body: some View {
+        if client.proxy == nil {
+            player(url: client.videoURL(assetID), headers: client.credential?.headers ?? [:])
+        } else {
+            Group {
+                if let file { player(url: file, headers: [:]) }
+                else if let error { Label(error, systemImage: "exclamationmark.triangle").padding() }
+                else { ProgressView("Downloading video…") }
+            }
+            .task {
+                do {
+                    let url = try await client.downloadVideoForPlayback(assetID)
+                    guard !Task.isCancelled else {
+                        MacTransferCache.release(url.deletingLastPathComponent(), remove: true)
+                        return
+                    }
+                    file = url
+                } catch {
+                    guard !Task.isCancelled else { return }
+                    self.error = error.localizedDescription
+                    onFailed?()
+                }
+            }
+            .onDisappear {
+                if let file { MacTransferCache.release(file.deletingLastPathComponent(), remove: true) }
+                file = nil
+                error = nil
+            }
+        }
+    }
+
+    private func player(url: URL, headers: [String: String]) -> some View {
+        VideoPlayerView(url: url, headers: headers, showsControls: showsControls, playing: playing,
+                        onFinished: onFinished, onProgress: onProgress, onFailed: onFailed)
+    }
+}
+
+/// Sound settings persist across assets and app launches.
 struct VideoPlayerView: NSViewRepresentable {
     let url: URL
     let headers: [String: String]
@@ -358,7 +405,10 @@ struct VideoPlayerView: NSViewRepresentable {
         view.allowsPictureInPicturePlayback = showsControls
         view.showsFullScreenToggleButton = false
         view.videoGravity = .resizeAspect
-        let item = AVPlayerItem(asset: AVURLAsset(url: url, options: ["AVURLAssetHTTPHeaderFieldsKey": headers]))
+        let options: [String: Any] = url.isFileURL
+            ? [AVURLAssetReferenceRestrictionsKey: NSNumber(value: AVAssetReferenceRestrictions.forbidAll.rawValue)]
+            : ["AVURLAssetHTTPHeaderFieldsKey": headers]
+        let item = AVPlayerItem(asset: AVURLAsset(url: url, options: options))
         let player = AVPlayer(playerItem: item)
         player.isMuted = UserDefaults.standard.bool(forKey: "viewer.videoMuted")
         player.volume = UserDefaults.standard.object(forKey: "viewer.videoVolume") as? Float ?? 1

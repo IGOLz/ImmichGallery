@@ -62,6 +62,57 @@ final class FinderAccessModel {
         }
     }
 
+    /// Pause existing domains before committing the route, without deleting a Finder key or pending changes.
+    func updateProxyPolicy(account: AccountStore.Account, userID: String, entries: [AccountVault.Entry],
+                           blocked: Bool, commit: () throws -> Void) async throws {
+        guard FinderAccess.signingTeam != nil else { try commit(); return }
+        guard FinderAccess.rootDirectory != nil else {
+            guard try await NSFileProviderManager.domains().isEmpty else { throw FinderAccessError.unsigned }
+            try commit()
+            return
+        }
+        let server = ServerProxy.serverKey(account.serverURL)
+        let saved = Dictionary(uniqueKeysWithValues: entries.map {
+            (FinderAccess.domainIdentifier(apiURL: $0.account.apiURL, userID: $0.userID), ServerProxy.serverKey($0.account.serverURL))
+        })
+        var ids = Set(saved.keys.filter { saved[$0] == server })
+        ids.insert(FinderAccess.domainIdentifier(apiURL: account.apiURL, userID: userID))
+        guard busy.isDisjoint(with: ids) else { throw FinderAccessError.busy }
+        busy.formUnion(ids)
+        defer { busy.subtract(ids) }
+        let domains = try await NSFileProviderManager.domains().filter { domain in
+            let id = domain.identifier.rawValue
+            return ids.contains(id) || (saved[id] == nil && FinderAccess.loadConfiguration(id).map {
+                ServerProxy.serverKey($0.serverURL) == server
+            } == true)
+        }
+        let orphans = Set(domains.map { $0.identifier.rawValue }).subtracting(ids)
+        guard busy.isDisjoint(with: orphans) else { throw FinderAccessError.busy }
+        busy.formUnion(orphans)
+        ids.formUnion(orphans)
+
+        if blocked {
+            let newlyBlocked = ids.filter { !FinderAccess.isProxyBlocked($0) }
+            do {
+                for id in ids { try FinderAccess.setProxyBlocked(true, for: id) }
+                for domain in domains {
+                    try await call(domain) { service, reply in service.cancelDirectRequests(reply: reply) }
+                }
+                try commit()
+            } catch {
+                for id in newlyBlocked { try? FinderAccess.setProxyBlocked(false, for: id); signal(id) }
+                throw error
+            }
+        } else {
+            // Leave Finder paused if the app stops before the saved proxy can be cleared.
+            try commit()
+            for id in ids {
+                do { try FinderAccess.setProxyBlocked(false, for: id); signal(id) }
+                catch { self.error = error.localizedDescription }
+            }
+        }
+    }
+
     // MARK: Turning on and off
 
     func enable(_ entry: AccountVault.Entry) async {
@@ -74,10 +125,14 @@ final class FinderAccessModel {
         await reload()
         guard !locations.contains(where: { $0.id == domainID }) else { return }
         let account = entry.account
-        let client = ImmichClient(serverURL: account.serverURL, apiURL: account.apiURL, credential: account.credential)
-        var createdKey: String?
+        let client: ImmichClient
         do {
             guard available else { throw FinderAccessError.unsigned }
+            client = try AccountVault.client(for: account)
+            guard client.proxy == nil, !FinderAccess.isProxyBlocked(domainID) else { throw FinderAccessError.proxyBlocked }
+        } catch { self.error = error.localizedDescription; return }
+        var createdKey: String?
+        do {
             let (credential, keyID) = try await finderCredential(client: client, account: account)
             createdKey = keyID
             // The key must belong to this very account before anything is shown in Finder.
@@ -120,7 +175,11 @@ final class FinderAccessModel {
         busy.insert(domainID)
         defer { busy.remove(domainID) }
         error = nil
-        let client = ImmichClient(serverURL: entry.account.serverURL, apiURL: entry.account.apiURL, credential: entry.account.credential)
+        let client: ImmichClient
+        do {
+            client = try AccountVault.client(for: entry.account)
+            guard client.proxy == nil, !FinderAccess.isProxyBlocked(domainID) else { throw FinderAccessError.proxyBlocked }
+        } catch { self.error = error.localizedDescription; return }
         var createdKey: String?
         do {
             let (credential, keyID) = try await finderCredential(client: client, account: entry.account)
@@ -178,14 +237,10 @@ final class FinderAccessModel {
     }
 
     /// Sign-out and Remove Account: the account's location goes with it.
-    func accountRemoved(apiURL: URL, userID: String, credential: Credential?) async {
+    func accountRemoved(apiURL: URL, userID: String, client: ImmichClient?) async {
         let domainID = FinderAccess.domainIdentifier(apiURL: apiURL, userID: userID)
         await reload()
         guard locations.contains(where: { $0.id == domainID }) || FinderAccess.loadConfiguration(domainID) != nil else { return }
-        let configuration = FinderAccess.loadConfiguration(domainID)
-        let client = credential.map { credential in
-            ImmichClient(serverURL: configuration?.serverURL ?? apiURL, apiURL: apiURL, credential: credential)
-        }
         await disable(domainID, client: client)
     }
 
@@ -230,7 +285,9 @@ final class FinderAccessModel {
         signalTask = Task { [weak self] in
             try? await Task.sleep(for: .seconds(2))
             guard !Task.isCancelled, let self else { return }
-            for location in self.locations where location.configuration != nil { self.signal(location.id) }
+            for location in self.locations where location.configuration != nil && !FinderAccess.isProxyBlocked(location.id) {
+                self.signal(location.id)
+            }
         }
     }
 
@@ -307,7 +364,7 @@ final class FinderAccessModel {
 }
 
 enum FinderAccessError: LocalizedError {
-    case unsigned, wrongAccount, noService, keyKept
+    case unsigned, wrongAccount, noService, keyKept, busy, proxyBlocked
     /// The server refused a key limited to `FinderAccessModel.permissions` (400), with its message.
     case permissionsRefused(String?)
 
@@ -317,6 +374,8 @@ enum FinderAccessError: LocalizedError {
         case .wrongAccount: String(localized: "The server answered for another account. Finder access wasn't turned on.")
         case .noService: String(localized: "Finder didn't respond. Try again in a moment.")
         case .keyKept: String(localized: "The Finder key couldn't be deleted from the server.")
+        case .busy: String(localized: "Finder access is updating for this server. Try again in a moment.")
+        case .proxyBlocked: String(localized: "Finder access is paused while this server uses a proxy.")
         case .permissionsRefused(let detail):
             [String(localized: "This server didn't accept a key limited to what Finder access needs, so no key was made. Update Immich, or sign in to this account with an API key you created to let Finder use that key."),
              detail].compactMap { $0 }.joined(separator: " ")

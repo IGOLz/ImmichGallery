@@ -12,10 +12,16 @@ enum AccountVault {
     static var legacyAccountForMigration: AccountStore.Account? { nil }
     @MainActor static var restoreReads = 0
     @MainActor static func loadEntries() throws -> [Entry] { restoreReads += 1; return [] }
+    static func loadProxies() throws -> [String: ServerProxy] { [:] }
     static func selectedEntry() throws -> Entry? { nil }
     static func remove(_ id: String) throws { fatalError("No credential access") }
     static func select(_ id: String) throws { fatalError("No credential access") }
     static func save(account: AccountStore.Account, user: User) throws { fatalError("No credential access") }
+    static func save(account: AccountStore.Account, user: User, proxy: ServerProxy?) throws { fatalError("No credential access") }
+    static func saveProxy(_ proxy: ServerProxy?, for serverURL: URL) throws { fatalError("No credential access") }
+    static func client(for account: AccountStore.Account, proxy: ServerProxy? = nil) throws -> ImmichClient {
+        fatalError("No credential access")
+    }
 }
 @MainActor final class MacIntegrationRouter {
     static let shared = MacIntegrationRouter()

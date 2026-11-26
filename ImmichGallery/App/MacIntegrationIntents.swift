@@ -31,11 +31,12 @@ struct OpenAlbumIntent: AppIntent {
 
     @MainActor func perform() async throws -> some IntentResult {
         let account = try MacIntentAccount.require()
-        let client = ImmichClient(serverURL: account.serverURL, apiURL: account.apiURL, credential: account.credential)
-        let matches = try await client.albums().filter { $0.albumName.localizedCaseInsensitiveCompare(name) == .orderedSame }
+        guard let session = MacIntegrationRouter.shared.app?.services else { throw MacIntentError.signIn }
+        let matches = try await session.client.albums().filter { $0.albumName.localizedCaseInsensitiveCompare(name) == .orderedSame }
         guard matches.count == 1, let album = matches.first else { throw MacIntentError.albumName }
         let current = try MacIntentAccount.require()
-        guard current.apiURL == account.apiURL, current.credential == account.credential else { throw MacIntentError.signIn }
+        guard MacIntegrationRouter.shared.app?.services === session,
+              current.apiURL == account.apiURL, current.credential == account.credential else { throw MacIntentError.signIn }
         MacIntegrationRouter.shared.pending.append(MacWindowRoute(albumID: album.id))
         return .result()
     }

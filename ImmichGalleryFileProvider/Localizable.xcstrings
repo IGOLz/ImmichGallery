@@ -1,6 +1,86 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "For SOCKS5 authentication, enter a username and password of up to 255 bytes each.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Per l’autenticazione SOCKS5, inserisci un nome utente e una password di massimo 255 byte ciascuno."
+          }
+        }
+      }
+    },
+    "Couldn't connect through the proxy. Check the proxy address and whether it can reach the server.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossibile connettersi tramite il proxy. Controlla l’indirizzo del proxy e verifica che possa raggiungere il server."
+          }
+        }
+      }
+    },
+    "Couldn't establish a secure connection to the Immich server through the proxy. Check the server's HTTPS certificate.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossibile stabilire una connessione sicura al server Immich tramite il proxy. Controlla il certificato HTTPS del server."
+          }
+        }
+      }
+    },
+    "Enter a proxy hostname or IP address and a port from 1 to 65535. Enter a username if you supply a password.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inserisci il nome host o l’indirizzo IP del proxy e una porta da 1 a 65535. Se inserisci una password, indica anche il nome utente."
+          }
+        }
+      }
+    },
+    "Enter an Immich server hostname. macOS can bypass the proxy for IP addresses and localhost.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inserisci il nome host del server Immich. macOS può ignorare il proxy per gli indirizzi IP e per localhost."
+          }
+        }
+      }
+    },
+    "Finder access is paused while this server uses a proxy.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L’accesso dal Finder è sospeso mentre questo server usa un proxy."
+          }
+        }
+      }
+    },
+    "Use an HTTPS Immich server address when a proxy is enabled.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usa un indirizzo HTTPS del server Immich quando è attivo un proxy."
+          }
+        }
+      }
+    },
+    "The proxy rejected the connection. Check the proxy username and password.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il proxy ha rifiutato la connessione. Controlla il nome utente e la password del proxy."
+          }
+        }
+      }
+    },
     "%lld items could not be added: %@.": {
       "localizations": {
         "it": {

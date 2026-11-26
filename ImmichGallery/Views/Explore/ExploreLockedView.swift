@@ -86,7 +86,7 @@ struct ExploreLockedView: View {
     /// Callers pass the account client, read before any await: the view may be gone afterwards.
     private static func uncached<T>(_ account: ImmichClient, _ request: (ImmichClient) async throws -> T) async throws -> T {
         let client = account.explorePrivateClient()
-        defer { client.session.finishTasksAndInvalidate() }
+        defer { client.invalidateSession(cancelPending: false) }
         return try await request(client)
     }
 

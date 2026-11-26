@@ -118,6 +118,7 @@ struct AccountSwitcherView: View {
     @Environment(AppModel.self) private var app
     @State private var operation = AccountOperation()
     @State private var adding = false
+    @State private var editingProxy: AccountVault.Entry?
     var body: some View {
         Form {
             Section("Saved Accounts") {
@@ -133,6 +134,7 @@ struct AccountSwitcherView: View {
                         } else {
                             Button("Switch") { operation.run { try await app.switchAccount(entry) } }
                         }
+                        Button("Proxy…") { editingProxy = entry }
                         Button("Remove", role: .destructive) {
                             operation.run { try app.removeAccount(entry) }
                         }.help("Remove saved credentials from this Mac")
@@ -143,6 +145,9 @@ struct AccountSwitcherView: View {
             AccountOperationStatus(operation: operation)
         }
         .formStyle(.grouped).disabled(operation.busy || app.switching)
+        .sheet(item: $editingProxy) { entry in
+            ServerProxySettings(entry: entry).environment(app)
+        }
         .sheet(isPresented: $adding) {
             VStack {
                 LoginView()
